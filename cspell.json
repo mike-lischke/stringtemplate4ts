@@ -1,11 +1,17 @@
 {
     "version": "0.2",
-    "ignorePaths": [],
+    "ignorePaths": [
+        "historical-contributors-agreement.txt"
+    ],
     "dictionaryDefinitions": [],
     "dictionaries": [],
     "words": [],
     "ignoreWords": [
-        "stringtemplate"
+        "ANTLR",
+        "CLASSPATH",
+        "mvnrepository",
+        "stringtemplate",
+        "userid"
     ],
     "import": []
 }

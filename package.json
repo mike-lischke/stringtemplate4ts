@@ -15,5 +15,8 @@
     "license": "MIT",
     "scripts": {
         "test": "test"
+    },
+    "devDependencies": {
+        "typescript": "5.3.3"
     }
 }

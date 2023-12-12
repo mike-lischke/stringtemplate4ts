@@ -1,0 +1,71 @@
+ANTLR Project Contributors Certification of Origin and Rights
+
+All contributors to StringTemplate v4 must formally agree to abide by this
+certificate of origin by signing on the bottom with their github
+userid, full name, email address (you can obscure your e-mail, but it
+must be computable by human), and date.
+
+By signing this agreement, you are warranting and representing that
+you have the right to release code contributions or other content free
+of any obligations to third parties and are granting Terence Parr and
+ANTLR project contributors, henceforth referred to as The ANTLR
+Project, a license to incorporate it into The ANTLR Project tools
+(such as ANTLRWorks and StringTemplate) or related works under the BSD
+license. You understand that The ANTLR Project may or may not
+incorporate your contribution and you warrant and represent the
+following:
+
+1. I am the creator of all my contributions. I am the author of all
+   contributed work submitted and further warrant and represent that
+   such work is my original creation and I have the right to license
+   it to The ANTLR Project for release under the 3-clause BSD
+   license. I hereby grant The ANTLR Project a nonexclusive,
+   irrevocable, royalty-free, worldwide license to reproduce,
+   distribute, prepare derivative works, and otherwise use this
+   contribution as part of the ANTLR project, associated
+   documentation, books, and tools at no cost to The ANTLR Project.
+
+2. I have the right to submit. This submission does not violate the
+   rights of any person or entity and that I have legal authority over
+   this submission and to make this certification.
+
+3. If I violate another's rights, liability lies with me. I agree to
+   defend, indemnify, and hold The ANTLR Project and ANTLR users
+   harmless from any claim or demand, including reasonable attorney
+   fees, made by any third party due to or arising out of my violation
+   of these terms and conditions or my violation of the rights of
+   another person or entity.
+
+4. I understand and agree that this project and the contribution are
+   public and that a record of the contribution (including all
+   personal information I submit with it, including my sign-off) is
+   maintained indefinitely and may be redistributed consistent with
+   this project or the open source license indicated in the file.
+
+I have read this agreement and do so certify by adding my signoff to
+the end of the following contributors list.
+
+CONTRIBUTORS:
+
+YYYY/MM/DD, github id, Full name, email
+2012/07/12, parrt, Terence Parr, parrt@antlr.org
+2012/08/13, pgelinas, Pascal Gélinas, pascal.gelinas@polymtl.ca
+2015/05/28, jsnyders, John Snyders, jjsnyders at rcn.com
+2015/12/07, sharwell, Sam Harwell, sam@tunnelvisionlabs.com
+2016/08/23, BurtHarris, Burt Harris, Burt_Harris.github@azxs.33mail.com
+2016/07/18, jeff5, Jeff Allen, ja.py@farowl.co.uk
+2018/11/06, drealeed , Drea Leed, drealeed2@yahoo.com
+2018/11/08, leonlee, Leon Lee, blackicebird@gmail.com
+2018/11/11, adityanarkar, Aditya Narkar, aditya.narkar25@gmail.com
+2019/01/21, cfraizer, Colin Frazier, colin.fraizer@gmail.com
+2019/09/09, seanabraham, Sean Abraham, Sean.A208@gmail.com
+2019/12/22, Clashsoft, Adrian Kunz, clashsoft at hotmail dot com
+2020/04/21, steinybot, Jason Pickens, jasonpickensnz@gmail.com
+2020/07/23, mma-tapad, Marvin Ma, marvin.ma@tapad.com
+2020/07/23, zjzsliyang, Yang Li, zjzsliyang@gmail.com
+2020/07/23, jamesmahler2, James Mahler, jmahler@andrew.cmu.edu
+2020/07/23, dyuan0226, David Yuan, dyuan1@andrew.cmu.edu
+2020/09/06, peteruhnak, Peter Uhnak, i.uhnak@gmail.com
+2020/09/16, Dvoreth, Jarmila Emanuela Panwitz, jaremapan@gmail.com
+2020/10/01, beccagaspard, Becca Gaspard, beccagaspard at gmail dot com
+2021/11/10, StephanRichter, Stephan Richter, postbox: s.richter domain: srsoftware.de
