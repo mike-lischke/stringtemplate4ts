@@ -1,0 +1,19 @@
+{
+    "name": "stringtemplate4-ts",
+    "version": "1.0.0",
+    "description": "A TypeScript port of the Java StringTemplate 4 library",
+    "main": "index.js",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/mike-lischke/stringtemplate4-ts"
+    },
+    "keywords": [
+        "string",
+        "template"
+    ],
+    "author": "Mike Lischke",
+    "license": "MIT",
+    "scripts": {
+        "test": "test"
+    }
+}
