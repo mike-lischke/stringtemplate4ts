@@ -33,29 +33,23 @@ import { java, type int } from "jree";
 import { STMessage } from "./STMessage.js";
 import { ErrorType } from "./ErrorType.js";
 
-type String = java.lang.String;
-const String = java.lang.String;
-type Throwable = java.lang.Throwable;
-const Throwable = java.lang.Throwable;
-
 
 
 /** */
 export  class STLexerMessage extends STMessage {
-    public  msg:  String;
+    public  msg:  string;
     /** overall token pulled from group file */
     public  templateToken:  Token;
-    public  srcName:  String;
+    public  srcName:  string;
 
-    public  constructor(srcName: String, msg: String, templateToken: Token, cause: Throwable) {
+    public  constructor(srcName: string, msg: string, templateToken: Token, cause: java.lang.Throwable) {
         super(ErrorType.LEXER_ERROR, null, cause, null);
         this.msg = msg;
         this.templateToken = templateToken;
         this.srcName = srcName;
     }
 
-    @Override
-public override  toString():  String {
+    public override  toString():  string {
         let  re = this.cause as RecognitionException;
         let  line = re.line;
         let  charPos = re.charPositionInLine;
@@ -69,8 +63,8 @@ public override  toString():  String {
         }
         let  filepos = line+":"+charPos;
         if ( this.srcName!==null ) {
-            return this.srcName+" "+filepos+": "+String.format(this.error.message, this.msg);
+            return this.srcName+" "+filepos+": "+string.format(this.error.message, this.msg);
         }
-        return filepos+": "+String.format(this.error.message, this.msg);
+        return filepos+": "+string.format(this.error.message, this.msg);
     }
 }

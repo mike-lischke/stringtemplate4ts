@@ -1,14 +1,21 @@
 {
     "version": "0.2",
     "ignorePaths": [
+        ".eslintrc.json",
         "historical-contributors-agreement.txt"
     ],
     "dictionaryDefinitions": [],
     "dictionaries": [],
-    "words": [],
+    "words": [
+        "Iteratable"
+    ],
     "ignoreWords": [
         "ANTLR",
         "CLASSPATH",
+        "Compiletime",
+        "Interp",
+        "Subtemplate",
+        "messageformat",
         "mvnrepository",
         "stringtemplate",
         "userid"

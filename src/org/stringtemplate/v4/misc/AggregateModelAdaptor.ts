@@ -29,25 +29,20 @@
 
 
 
-import { JavaObject, java } from "jree";
+import { JavaObject } from "jree";
 import { MapModelAdaptor } from "./MapModelAdaptor.js";
 import { Aggregate } from "./Aggregate.js";
 import { Interpreter } from "../Interpreter.js";
 import { ModelAdaptor } from "../ModelAdaptor.js";
 import { ST } from "../ST.js";
 
-type String = java.lang.String;
-const String = java.lang.String;
-
 
 
 /** Deal with structs created via {@link ST#addAggr}{@code ("structname.{prop1, prop2}", ...);}. */
-export  class AggregateModelAdaptor extends JavaObject implements ModelAdaptor<Aggregate> {
-    private readonly  mapAdaptor = new  MapModelAdaptor();
+export class AggregateModelAdaptor implements ModelAdaptor<Aggregate> {
+    private readonly mapAdaptor = new MapModelAdaptor();
 
-    @Override
-public  getProperty(interp: Interpreter, self: ST, o: Aggregate, property: java.lang.Object, propertyName: String):  java.lang.Object
-    {
+    public getProperty(interp: Interpreter, self: ST, o: Aggregate, property: Object, propertyName: string): Object {
         return this.mapAdaptor.getProperty(interp, self, o.properties, property, propertyName);
     }
 }

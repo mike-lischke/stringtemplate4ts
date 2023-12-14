@@ -28,31 +28,26 @@
 
 import { JavaObject, java, type int } from "jree";
 
-type Throwable = java.lang.Throwable;
-const Throwable = java.lang.Throwable;
-type String = java.lang.String;
-const String = java.lang.String;
-type StackTraceElement = java.lang.StackTraceElement;
-const StackTraceElement = java.lang.StackTraceElement;
-
 
 
 /** An event that happens when building ST trees, adding attributes etc... */
-export  class ConstructionEvent extends JavaObject {
-    public  stack:  Throwable;
-    public  constructor() { super();
-this.stack = new  Throwable(); }
+export class ConstructionEvent {
+    public stack: java.lang.Throwable;
+    public constructor() {
+        super();
+        this.stack = new java.lang.Throwable();
+    }
 
-    public  getFileName():  String { return this.getSTEntryPoint().getFileName(); }
-    public  getLine():  int { return this.getSTEntryPoint().getLineNumber(); }
-    
-    public  getSTEntryPoint():  StackTraceElement {
-        let  trace = this.stack.getStackTrace();
+    public getFileName(): string { return this.getSTEntryPoint().getFileName(); }
+    public getLine(): int { return this.getSTEntryPoint().getLineNumber(); }
+
+    public getSTEntryPoint(): java.lang.StackTraceElement {
+        let trace = this.stack.getStackTrace();
         for (let e of trace) {
-            let  name = e.toString();
-            if ( !name.startsWith("org.stringtemplate.v4") ) {
- return e;
-}
+            let name = e.toString();
+            if (!name.startsWith("org.stringtemplate.v4")) {
+                return e;
+            }
 
         }
         return trace[0];

@@ -28,11 +28,7 @@
 
 import { java, S } from "jree";
 
-const Enum = java.lang.Enum;
-type String = java.lang.String;
-const String = java.lang.String;
-
-export class ErrorType extends Enum<ErrorType> {
+export class ErrorType extends java.lang.Enum<ErrorType> {
     // RUNTIME SEMANTIC ERRORS
     public static readonly NO_SUCH_TEMPLATE: ErrorType = new class extends ErrorType {
 }("no such template: %s",S`NO_SUCH_TEMPLATE`, 0);
@@ -103,8 +99,8 @@ export class ErrorType extends Enum<ErrorType> {
     public static readonly CANT_LOAD_GROUP_FILE: ErrorType = new class extends ErrorType {
 }("can't load group file %s",S`CANT_LOAD_GROUP_FILE`, 31);
 
-    public  message:  String;
+    public  message:  string;
 
-    protected constructor(m: String, $name$: java.lang.String, $index$: number) { super($name$, $index$);
+    protected constructor(m: string, $name$: java.lang.String, $index$: number) { super($name$, $index$);
 this.message = m; }
 }

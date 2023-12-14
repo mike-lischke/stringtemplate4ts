@@ -35,44 +35,36 @@ import { Bytecode } from "./Bytecode.js";
 import { Interval } from "../misc/Interval.js";
 import { Misc } from "../misc/Misc.js";
 
-type String = java.lang.String;
-const String = java.lang.String;
-type StringBuilder = java.lang.StringBuilder;
-const StringBuilder = java.lang.StringBuilder;
-type IllegalArgumentException = java.lang.IllegalArgumentException;
-const IllegalArgumentException = java.lang.IllegalArgumentException;
-type List<E> = java.util.List<E>;
-type ArrayList<E> = java.util.ArrayList<E>;
-const ArrayList = java.util.ArrayList;
 
 
+export class BytecodeDisassembler {
+    protected code: CompiledST;
 
-export  class BytecodeDisassembler extends JavaObject {
-    protected  code: CompiledST;
+    public constructor(code: CompiledST) {
+        super();
+        this.code = code;
+    }
 
-    public  constructor(code: CompiledST) { super();
-this.code = code; }
-
-    public static  getShort(memory: Int8Array, index: int):  int {
-        let  b1 = memory[index]&0xFF; // mask off sign-extended bits
-        let  b2 = memory[index+1]&0xFF;
-        let  word = b1<<(8*1) | b2;
+    public static getShort(memory: Int8Array, index: int): int {
+        let b1 = memory[index] & 0xFF; // mask off sign-extended bits
+        let b2 = memory[index + 1] & 0xFF;
+        let word = b1 << (8 * 1) | b2;
         return word;
     }
 
-    public  instrs():  String {
-        let  buf = new  StringBuilder();
-        let  ip=0;
-        while (ip<this.code.codeSize) {
-            if ( ip>0 ) {
- buf.append(", ");
-}
+    public instrs(): string {
+        let buf = new java.lang.StringBuilder();
+        let ip = 0;
+        while (ip < this.code.codeSize) {
+            if (ip > 0) {
+                buf.append(", ");
+            }
 
-            let  opcode = this.code.instrs[ip];
-            let  I = Bytecode.instructions[opcode];
+            let opcode = this.code.instrs[ip];
+            let I = Bytecode.instructions[opcode];
             buf.append(I.name);
             ip++;
-            for (let  opnd=0; opnd<I.nopnds; opnd++) {
+            for (let opnd = 0; opnd < I.nopnds; opnd++) {
                 buf.append(' ');
                 buf.append(BytecodeDisassembler.getShort(this.code.instrs, ip));
                 ip += Bytecode.OPND_SIZE_IN_BYTES;
@@ -81,80 +73,80 @@ this.code = code; }
         return buf.toString();
     }
 
-    public  disassemble():  String {
-        let  buf = new  StringBuilder();
-        let  i=0;
-        while (i<this.code.codeSize) {
+    public disassemble(): string {
+        let buf = new java.lang.StringBuilder();
+        let i = 0;
+        while (i < this.code.codeSize) {
             i = this.disassembleInstruction(buf, i);
             buf.append('\n');
         }
         return buf.toString();
     }
 
-    public  disassembleInstruction(buf: StringBuilder, ip: int):  int {
-        let  opcode = this.code.instrs[ip];
-        if ( ip>=this.code.codeSize ) {
-            throw new  IllegalArgumentException("ip out of range: "+ip);
+    public disassembleInstruction(buf: java.lang.StringBuilder, ip: int): int {
+        let opcode = this.code.instrs[ip];
+        if (ip >= this.code.codeSize) {
+            throw new java.lang.IllegalArgumentException("ip out of range: " + ip);
         }
-        let  I =
+        let I =
             Bytecode.instructions[opcode];
-        if ( I===null ) {
-            throw new  IllegalArgumentException("no such instruction "+opcode+
-                " at address "+ip);
+        if (I === null) {
+            throw new java.lang.IllegalArgumentException("no such instruction " + opcode +
+                " at address " + ip);
         }
-        let  instrName = I.name;
-        buf.append( String.format("%04d:\t%-14s", ip, instrName) );
+        let instrName = I.name;
+        buf.append(string.format("%04d:\t%-14s", ip, instrName));
         ip++;
-        if ( I.nopnds ===0 ) {
+        if (I.nopnds === 0) {
             buf.append("  ");
             return ip;
         }
-        let  operands = new  ArrayList<String>();
-        for (let  i=0; i<I.nopnds; i++) {
-            let  opnd = BytecodeDisassembler.getShort(this.code.instrs, ip);
+        let operands = new Array<string>();
+        for (let i = 0; i < I.nopnds; i++) {
+            let opnd = BytecodeDisassembler.getShort(this.code.instrs, ip);
             ip += Bytecode.OPND_SIZE_IN_BYTES;
-            switch ( I.type[i] ) {
-                case STLexer.STRING :{
+            switch (I.type[i]) {
+                case STLexer.STRING: {
                     operands.add(this.showConstPoolOperand(opnd));
                     break;
-}
+                }
 
-                case Bytecode.OperandType.ADDR :
-                case Bytecode.OperandType.INT :{
-                    operands.add(String.valueOf(opnd));
+                case Bytecode.OperandType.ADDR:
+                case Bytecode.OperandType.INT: {
+                    operands.add(string.valueOf(opnd));
                     break;
-}
+                }
 
-                default:{
-                    operands.add(String.valueOf(opnd));
+                default: {
+                    operands.add(string.valueOf(opnd));
                     break;
-}
+                }
 
             }
         }
-        for (let  i = 0; i < operands.size(); i++) {
-            let  s = operands.get(i);
-            if ( i>0 ) {
- buf.append(", ");
-}
+        for (let i = 0; i < operands.size(); i++) {
+            let s = operands.get(i);
+            if (i > 0) {
+                buf.append(", ");
+            }
 
-            buf.append( s );
+            buf.append(s);
         }
         return ip;
     }
 
-    public  strings():  String {
-        let  buf = new  StringBuilder();
-        let  addr = 0;
-        if ( this.code.strings!==null ) {
+    public strings(): string {
+        let buf = new java.lang.StringBuilder();
+        let addr = 0;
+        if (this.code.strings !== null) {
             for (let o of this.code.strings) {
-                if ( o instanceof String ) {
-                    let  s = o as String;
+                if (o instanceof string) {
+                    let s = String(o);
                     s = Misc.replaceEscapes(s);
-                    buf.append( String.format("%04d: \"%s\"\n", addr, s) );
+                    buf.append(string.format("%04d: \"%s\"\n", addr, s));
                 }
                 else {
-                    buf.append( String.format("%04d: %s\n", addr, o) );
+                    buf.append(string.format("%04d: %s\n", addr, o));
                 }
                 addr++;
             }
@@ -162,34 +154,34 @@ this.code = code; }
         return buf.toString();
     }
 
-    public  sourceMap():  String {
-        let  buf = new  StringBuilder();
-        let  addr = 0;
+    public sourceMap(): string {
+        let buf = new java.lang.StringBuilder();
+        let addr = 0;
         for (let I of this.code.sourceMap) {
-            if ( I!==null ) {
-                let  chunk = this.code.template.substring(I.a,I.b+1);
-                buf.append( String.format("%04d: %s\t\"%s\"\n", addr, I, chunk) );
+            if (I !== null) {
+                let chunk = this.code.template.substring(I.a, I.b + 1);
+                buf.append(string.format("%04d: %s\t\"%s\"\n", addr, I, chunk));
             }
             addr++;
         }
         return buf.toString();
     }
 
-    private  showConstPoolOperand(poolIndex: int):  String {
-        let  buf = new  StringBuilder();
+    private showConstPoolOperand(poolIndex: int): string {
+        let buf = new java.lang.StringBuilder();
         buf.append("#");
         buf.append(poolIndex);
-        let  s = "<bad string index>";
-        if ( poolIndex<this.code.strings.length ) {
-            if ( this.code.strings[poolIndex]===null ) {
- s = "null";
-}
+        let s = "<bad string index>";
+        if (poolIndex < this.code.strings.length) {
+            if (this.code.strings[poolIndex] === null) {
+                s = "null";
+            }
 
             else {
                 s = this.code.strings[poolIndex];
                 if (this.code.strings[poolIndex] !== null) {
                     s = Misc.replaceEscapes(s);
-                    s='"'+s+'"';
+                    s = '"' + s + '"';
                 }
             }
         }

@@ -48,48 +48,7 @@ import { Misc } from "./misc/Misc.js";
 import { ObjectModelAdaptor } from "./misc/ObjectModelAdaptor.js";
 import { STModelAdaptor } from "./misc/STModelAdaptor.js";
 import { TypeRegistry } from "./misc/TypeRegistry.js";
-
-type String = java.lang.String;
-const String = java.lang.String;
-type List<E> = java.util.List<E>;
-type Collections = java.util.Collections;
-const Collections = java.util.Collections;
-type ArrayList<E> = java.util.ArrayList<E>;
-const ArrayList = java.util.ArrayList;
-type Map<K,​V> = java.util.Map<K,​V>;
-type LinkedHashMap<K,​V> = java.util.LinkedHashMap<K,​V>;
-const LinkedHashMap = java.util.LinkedHashMap;
-type HashMap<K,​V> = java.util.HashMap<K,​V>;
-const HashMap = java.util.HashMap;
-type Class<T> = java.lang.Class<T>;
-const Class = java.lang.Class;
-type System = java.lang.System;
-const System = java.lang.System;
-type IllegalArgumentException = java.lang.IllegalArgumentException;
-const IllegalArgumentException = java.lang.IllegalArgumentException;
-type Compiler = java.lang.Compiler;
-const Compiler = java.lang.Compiler;
-type URL = java.net.URL;
-const URL = java.net.URL;
-type MalformedURLException = java.net.MalformedURLException;
-const MalformedURLException = java.net.MalformedURLException;
-type InputStream = java.io.InputStream;
-const InputStream = java.io.InputStream;
-type IOException = java.io.IOException;
-const IOException = java.io.IOException;
-type Exception = java.lang.Exception;
-const Exception = java.lang.Exception;
-type Arrays = java.util.Arrays;
-const Arrays = java.util.Arrays;
-type ClassLoader = java.lang.ClassLoader;
-const ClassLoader = java.lang.ClassLoader;
-type Thread = java.lang.Thread;
-const Thread = java.lang.Thread;
-type StringBuilder = java.lang.StringBuilder;
-const StringBuilder = java.lang.StringBuilder;
-type Set<E> = java.util.Set<E>;
-type HashSet<E> = java.util.HashSet<E>;
-const HashSet = java.util.HashSet;
+import { Token } from "antlr4ng";
 
 
 
@@ -99,68 +58,68 @@ const HashSet = java.util.HashSet;
  *  ST v3 had just the pure template inside, not the template name and header.
  *  Name inside must match filename (minus suffix).
  */
-export  class STGroup extends JavaObject {
-    public static readonly  GROUP_FILE_EXTENSION:  String;
-    public static readonly  TEMPLATE_FILE_EXTENSION:  String;
+export class STGroup {
+    public static readonly GROUP_FILE_EXTENSION: string;
+    public static readonly TEMPLATE_FILE_EXTENSION: string;
 
     /** When we use key as a value in a dictionary, this is how we signify. */
-    public static readonly  DICT_KEY = "key";
-    public static readonly  DEFAULT_KEY = "default";
+    public static readonly DICT_KEY = "key";
+    public static readonly DEFAULT_KEY = "default";
 
-    public static readonly  DEFAULT_ERR_MGR = new  java.util.logging.ErrorManager();
+    public static readonly DEFAULT_ERR_MGR = new java.util.logging.ErrorManager();
 
     /** Watch loading of groups and templates. */
-    public static  verbose = false;
+    public static verbose = false;
 
     /**
      * For debugging with {@link STViz}. Records where in code an {@link ST} was
      * created and where code added attributes.
      */
-    public static  trackCreationEvents = false;
+    public static trackCreationEvents = false;
 
-    public static  defaultGroup = new  STGroup();
+    public static defaultGroup = new STGroup();
 
     /** Used to indicate that the template doesn't exist.
      *  Prevents duplicate group file loads and unnecessary file checks.
      */
-    protected static readonly  NOT_FOUND_ST = new  CompiledST();
+    protected static readonly NOT_FOUND_ST = new CompiledST();
 
-    private static readonly  RESERVED_CHARACTERS = new  boolean[](127);
+    private static readonly RESERVED_CHARACTERS = new boolean[](127);
 
     /** The encoding to use for loading files. Defaults to UTF-8. */
-    public  encoding = "UTF-8";
+    public encoding = "UTF-8";
 
-    public  delimiterStartChar = '<'; // Use <expr> by default
-    public  delimiterStopChar = '>';
+    public delimiterStartChar = '<'; // Use <expr> by default
+    public delimiterStopChar = '>';
 
     /** v3 compatibility; used to iterate across {@link Map#values()} instead of
      *  v4's default {@link Map#keySet()}.
      *  But to convert ANTLR templates, it's too hard to find without
      *  static typing in templates.
      */
-    public  iterateAcrossValues = false;
+    public iterateAcrossValues = false;
 
     /** The {@link ErrorManager} for entire group; all compilations and executions.
      *  This gets copied to parsers, walkers, and interpreters.
      */
-    public  errMgr = STGroup.DEFAULT_ERR_MGR;
+    public errMgr = STGroup.DEFAULT_ERR_MGR;
 
     /** Every group can import templates/dictionaries from other groups.
      *  The list must be synchronized (see {@link STGroup#importTemplates}).
      */
-    protected readonly  imports = Collections.synchronizedList(new  ArrayList<STGroup>());
+    protected readonly imports = java.util.Collections.synchronizedList(new Array<STGroup>());
 
-    protected readonly  importsToClearOnUnload = Collections.synchronizedList(new  ArrayList<STGroup>());
+    protected readonly importsToClearOnUnload = java.util.Collections.synchronizedList(new Array<STGroup>());
 
     /** Maps template name to {@link CompiledST} object. This map is synchronized. */
-    protected  templates =
-        Collections.synchronizedMap(new  LinkedHashMap<String, CompiledST>());
+    protected templates =
+        java.util.Collections.synchronizedMap(new java.util.LinkedHashMap<string, CompiledST>());
 
     /** Maps dictionary names to {@link Map} objects representing the dictionaries
      *  defined by the user like {@code typeInitMap ::= ["int":"0"]}.
      */
-    protected  dictionaries =
-        Collections.synchronizedMap(new  HashMap<String, Map<String,java.lang.Object>>());
+    protected dictionaries =
+        java.util.Collections.synchronizedMap(new Map<string, Map<string, Object>>());
 
     /** A dictionary that allows people to register a renderer for
      *  a particular kind of object for any template evaluated relative to this
@@ -181,7 +140,7 @@ export  class STGroup extends JavaObject {
      *  <p>
      *  This structure is synchronized.</p>
      */
-    protected  renderers:  Map<Class<unknown>, AttributeRenderer<unknown>>;
+    protected renderers: Map<java.lang.Class<unknown>, AttributeRenderer<unknown>>;
 
     /** A dictionary that allows people to register a model adaptor for
      *  a particular kind of object (subclass or implementation). Applies
@@ -192,45 +151,45 @@ export  class STGroup extends JavaObject {
      * <p>
      *  The last one you register gets priority; do least to most specific.</p>
      */
-    protected readonly  adaptors:  Map<Class<unknown>, ModelAdaptor<unknown>>;
+    protected readonly adaptors: Map<java.lang.Class<unknown>, ModelAdaptor<unknown>>;
 
-    public  constructor();
+    public constructor();
 
-    public  constructor(delimiterStartChar: char, delimiterStopChar: char);
+    public constructor(delimiterStartChar: char, delimiterStopChar: char);
     public constructor(...args: unknown[]) {
-		switch (args.length) {
-			case 0: {
- super();
+        switch (args.length) {
+            case 0: {
+                super();
 
 
-				break;
-			}
+                break;
+            }
 
-			case 2: {
-				const [delimiterStartChar, delimiterStopChar] = args as [char, char];
+            case 2: {
+                const [delimiterStartChar, delimiterStopChar] = args as [char, char];
 
 
-        super();
-this.delimiterStartChar = delimiterStartChar;
-        this.delimiterStopChar = delimiterStopChar;
-    
+                super();
+                this.delimiterStartChar = delimiterStartChar;
+                this.delimiterStopChar = delimiterStopChar;
 
-				break;
-			}
 
-			default: {
-				throw new java.lang.IllegalArgumentException(S`Invalid number of arguments`);
-			}
-		}
+                break;
+            }
 
-        let  registry = new  TypeRegistry<ModelAdaptor<unknown>>();
-        registry.put(java.lang.Object.class, new  ObjectModelAdaptor<java.lang.Object>());
-        registry.put(ST.class, new  STModelAdaptor());
-        registry.put(Map.class, new  MapModelAdaptor());
-        registry.put(Aggregate.class, new  AggregateModelAdaptor());
-        this.adaptors = Collections.synchronizedMap(registry);
-    
-	}
+            default: {
+                throw new java.lang.IllegalArgumentException(S`Invalid number of arguments`);
+            }
+        }
+
+        let registry = new TypeRegistry<ModelAdaptor<unknown>>();
+        registry.put(Object.class, new ObjectModelAdaptor<Object>());
+        registry.put(ST.class, new STModelAdaptor());
+        registry.put(Map.class, new MapModelAdaptor());
+        registry.put(Aggregate.class, new AggregateModelAdaptor());
+        this.adaptors = java.util.Collections.synchronizedMap(registry);
+
+    }
 
 
     /**
@@ -243,7 +202,7 @@ this.delimiterStartChar = delimiterStartChar;
      *
      * @since 4.0.9
      */
-    public static  isReservedCharacter(c: char):  boolean {
+    public static isReservedCharacter(c: char): boolean {
         return c >= 0
             && c < STGroup.RESERVED_CHARACTERS.length
             && STGroup.RESERVED_CHARACTERS[c];
@@ -252,58 +211,57 @@ this.delimiterStartChar = delimiterStartChar;
     /** The {@code "foo"} of {@code t() ::= "<@foo()>"} is mangled to
      *  {@code "/region__/t__foo"}
      */
-    public static  getMangledRegionName(enclosingTemplateName: String,
-                                              name: String):  String
-    {
-        if ( enclosingTemplateName.charAt(0)!=='/' ) {
-            enclosingTemplateName = '/'+enclosingTemplateName;
+    public static getMangledRegionName(enclosingTemplateName: string,
+        name: string): string {
+        if (enclosingTemplateName.charAt(0) !== '/') {
+            enclosingTemplateName = '/' + enclosingTemplateName;
         }
-        return "/region__"+enclosingTemplateName+"__"+name;
+        return "/region__" + enclosingTemplateName + "__" + name;
     }
 
     /** Return {@code "t.foo"} from {@code "/region__/t__foo"} */
-    public static  getUnMangledTemplateName(mangledName: String):  String {
-        let  t = mangledName.substring("/region__".length(),
-                                         mangledName.lastIndexOf("__"));
-        let  r = mangledName.substring(mangledName.lastIndexOf("__")+2,
-                                         mangledName.length());
-        return t+'.'+r;
+    public static getUnMangledTemplateName(mangledName: string): string {
+        let t = mangledName.substring("/region__".length(),
+            mangledName.lastIndexOf("__"));
+        let r = mangledName.substring(mangledName.lastIndexOf("__") + 2,
+            mangledName.length());
+        return t + '.' + r;
     }
 
     /** The primary means of getting an instance of a template from this
      *  group. Names must be absolute, fully-qualified names like {@code /a/b}.
      */
-    public  getInstanceOf(name: String):  ST {
-        if ( name===null ) {
- return null;
-}
+    public getInstanceOf(name: string): ST {
+        if (name === null) {
+            return null;
+        }
 
-        if ( STGroup.verbose ) {
- System.out.println(this.getName()+".getInstanceOf("+name+")");
-}
+        if (STGroup.verbose) {
+            java.lang.System.out.println(this.getName() + ".getInstanceOf(" + name + ")");
+        }
 
-        if ( name.charAt(0)!=='/' ) {
- name = "/"+name;
-}
+        if (name.charAt(0) !== '/') {
+            name = "/" + name;
+        }
 
-        let  c = this.lookupTemplate(name);
-        if ( c!==null ) {
+        let c = this.lookupTemplate(name);
+        if (c !== null) {
             return this.createStringTemplate(c);
         }
         return null;
     }
 
     /** Create singleton template for use with dictionary values. */
-    public  createSingleton(templateToken: Token):  ST {
-        let  template: String;
-        if ( templateToken.getType()===GroupParser.BIGSTRING || templateToken.getType()===GroupParser.BIGSTRING_NO_NL ) {
-            template = Misc.strip(templateToken.getText(),2);
+    public createSingleton(templateToken: Token): ST {
+        let template: string;
+        if (templateToken.getType() === GroupParser.BIGSTRING || templateToken.getType() === GroupParser.BIGSTRING_NO_NL) {
+            template = Misc.strip(templateToken.getText(), 2);
         }
         else {
-            template = Misc.strip(templateToken.getText(),1);
+            template = Misc.strip(templateToken.getText(), 1);
         }
-        let  impl = this.compile(this.getFileName(), null, null, template, templateToken);
-        let  st = this.createStringTemplateInternally(impl);
+        let impl = this.compile(this.getFileName(), null, null, template, templateToken);
+        let st = this.createStringTemplateInternally(impl);
         st.groupThatCreatedThisInstance = this;
         st.impl.hasFormalArgs = false;
         st.impl.name = ST.UNKNOWN_NAME;
@@ -314,50 +272,50 @@ this.delimiterStartChar = delimiterStartChar;
     /** Is this template defined in this group or from this group below?
      *  Names must be absolute, fully-qualified names like {@code /a/b}.
      */
-    public  isDefined(name: String):  boolean {
-        return this.lookupTemplate(name)!==null;
+    public isDefined(name: string): boolean {
+        return this.lookupTemplate(name) !== null;
     }
 
     /** Look up a fully-qualified name. */
-    public  lookupTemplate(name: String):  CompiledST {
-        if ( name.charAt(0)!=='/' ) {
- name = "/"+name;
-}
+    public lookupTemplate(name: string): CompiledST {
+        if (name.charAt(0) !== '/') {
+            name = "/" + name;
+        }
 
-        if ( STGroup.verbose ) {
- System.out.println(this.getName()+".lookupTemplate("+name+")");
-}
+        if (STGroup.verbose) {
+            java.lang.System.out.println(this.getName() + ".lookupTemplate(" + name + ")");
+        }
 
-        let  code = this.rawGetTemplate(name);
-        if ( code===STGroup.NOT_FOUND_ST ) {
-            if ( STGroup.verbose ) {
- System.out.println(name+" previously seen as not found");
-}
+        let code = this.rawGetTemplate(name);
+        if (code === STGroup.NOT_FOUND_ST) {
+            if (STGroup.verbose) {
+                java.lang.System.out.println(name + " previously seen as not found");
+            }
 
             return null;
         }
         // try to load from disk and look up again
-        if ( code===null ) {
- code = this.load(name);
-}
+        if (code === null) {
+            code = this.load(name);
+        }
 
-        if ( code===null ) {
- code = this.lookupImportedTemplate(name);
-}
+        if (code === null) {
+            code = this.lookupImportedTemplate(name);
+        }
 
-        if ( code===null ) {
-            if ( STGroup.verbose ) {
- System.out.println(name+" recorded not found");
-}
+        if (code === null) {
+            if (STGroup.verbose) {
+                java.lang.System.out.println(name + " recorded not found");
+            }
 
             this.templates.put(name, STGroup.NOT_FOUND_ST);
         }
-        if ( STGroup.verbose ) {
- if ( code!==null ) {
- System.out.println(this.getName()+".lookupTemplate("+name+") found");
-}
+        if (STGroup.verbose) {
+            if (code !== null) {
+                java.lang.System.out.println(this.getName() + ".lookupTemplate(" + name + ") found");
+            }
 
-}
+        }
 
         return code;
     }
@@ -369,7 +327,7 @@ this.delimiterStartChar = delimiterStartChar;
      * group in the {@link #imports} list, and remove all elements in
      * {@link #importsToClearOnUnload} from {@link #imports}.
      */
-    public  unload():  void {
+    public unload(): void {
         this.templates.clear();
         this.dictionaries.clear();
         for (let imp of this.imports) {
@@ -382,142 +340,142 @@ this.delimiterStartChar = delimiterStartChar;
     }
 
     /** Force a load if it makes sense for the group. */
-    public  load():  void;
+    public load(): void;
 
     /** Load st from disk if directory or load whole group file if .stg file (then
      *  return just one template). {@code name} is fully-qualified.
      */
-    protected  load(name: String):  CompiledST;
-public load(...args: unknown[]):  void |  CompiledST {
-		switch (args.length) {
-			case 0: {
- 
-
-				break;
-			}
-
-			case 1: {
-				const [name] = args as [String];
-
- return null; 
-
-				break;
-			}
-
-			default: {
-				throw new java.lang.IllegalArgumentException(S`Invalid number of arguments`);
-			}
-		}
-	}
+    protected load(name: string): CompiledST;
+    public load(...args: unknown[]): void | CompiledST {
+        switch (args.length) {
+            case 0: {
 
 
-    public  rawGetTemplate(name: String):  CompiledST { return this.templates.get(name); }
-    public  rawGetDictionary(name: String):  Map<String,java.lang.Object> { return this.dictionaries.get(name); }
-    public  isDictionary(name: String):  boolean { return this.dictionaries.get(name)!==null; }
+                break;
+            }
+
+            case 1: {
+                const [name] = args as [string];
+
+                return null;
+
+                break;
+            }
+
+            default: {
+                throw new java.lang.IllegalArgumentException(S`Invalid number of arguments`);
+            }
+        }
+    }
+
+
+    public rawGetTemplate(name: string): CompiledST { return this.templates.get(name); }
+    public rawGetDictionary(name: string): Map<string, Object> { return this.dictionaries.get(name); }
+    public isDictionary(name: string): boolean { return this.dictionaries.get(name) !== null; }
 
     /** for testing */
-    public  defineTemplate(templateName: String, template: String):  CompiledST;
+    public defineTemplate(templateName: string, template: string): CompiledST;
 
     /** for testing */
-    public  defineTemplate(name: String, argsS: String, template: String):  CompiledST;
+    public defineTemplate(name: string, argsS: string, template: string): CompiledST;
 
-    public  defineTemplate(fullyQualifiedTemplateName: String,
-                                     nameT: Token,
-                                     args: List<FormalArgument>,
-                                     template: String,
-                                     templateToken: Token):  CompiledST;
-public defineTemplate(...args: unknown[]):  CompiledST {
-		switch (args.length) {
-			case 2: {
-				const [templateName, template] = args as [String, String];
-
-
-        if ( templateName.charAt(0)!=='/' ) {
- templateName = "/"+templateName;
-}
-
-        try {
-            let  impl =
-                this.defineTemplate(templateName,
-                               new  CommonToken(GroupParser.ID, templateName),
-                               null, template, null);
-            return impl;
-        } catch (se) {
-if (se instanceof STException) {
-            // we have reported the error; the exception just blasts us
-            // out of parsing this template
-        } else {
-	throw se;
-	}
-}
-        return null;
-    
-
-				break;
-			}
-
-			case 3: {
-				const [name, argsS, template] = args as [String, String, String];
+    public defineTemplate(fullyQualifiedTemplateName: string,
+        nameT: Token,
+        args: java.util.List<FormalArgument>,
+        template: string,
+        templateToken: Token): CompiledST;
+    public defineTemplate(...args: unknown[]): CompiledST {
+        switch (args.length) {
+            case 2: {
+                const [templateName, template] = args as [string, string];
 
 
-        if ( name.charAt(0)!=='/' ) {
- name = "/"+name;
-}
+                if (templateName.charAt(0) !== '/') {
+                    templateName = "/" + templateName;
+                }
 
-        let  args = argsS.split(",");
-        let  a = new  ArrayList<FormalArgument>();
-        for (let arg of args) {
-            a.add(new  FormalArgument(arg));
+                try {
+                    let impl =
+                        this.defineTemplate(templateName,
+                            new CommonToken(GroupParser.ID, templateName),
+                            null, template, null);
+                    return impl;
+                } catch (se) {
+                    if (se instanceof STException) {
+                        // we have reported the error; the exception just blasts us
+                        // out of parsing this template
+                    } else {
+                        throw se;
+                    }
+                }
+                return null;
+
+
+                break;
+            }
+
+            case 3: {
+                const [name, argsS, template] = args as [string, string, string];
+
+
+                if (name.charAt(0) !== '/') {
+                    name = "/" + name;
+                }
+
+                let args = argsS.split(",");
+                let a = new Array<FormalArgument>();
+                for (let arg of args) {
+                    a.add(new FormalArgument(arg));
+                }
+                return this.defineTemplate(name, new CommonToken(GroupParser.ID, name),
+                    a, template, null);
+
+
+                break;
+            }
+
+            case 5: {
+                const [fullyQualifiedTemplateName, nameT, args, template, templateToken] = args as [string, Token, java.util.List<FormalArgument>, string, Token];
+
+
+                if (STGroup.verbose) {
+                    java.lang.System.out.println("defineTemplate(" + fullyQualifiedTemplateName + ")");
+                }
+
+                if (fullyQualifiedTemplateName === null || fullyQualifiedTemplateName.length() === 0) {
+                    throw new java.lang.IllegalArgumentException("empty template name");
+                }
+                if (fullyQualifiedTemplateName.indexOf('.') >= 0) {
+                    throw new java.lang.IllegalArgumentException("cannot have '.' in template names");
+                }
+                template = Misc.trimOneStartingNewline(template);
+                template = Misc.trimOneTrailingNewline(template);
+                // compile, passing in templateName as enclosing name for any embedded regions
+                let code = this.compile(this.getFileName(), fullyQualifiedTemplateName, args, template, templateToken);
+                code.name = fullyQualifiedTemplateName;
+                this.rawDefineTemplate(fullyQualifiedTemplateName, code, nameT);
+                code.defineArgDefaultValueTemplates(this);
+                code.defineImplicitlyDefinedTemplates(this); // define any anonymous subtemplates
+
+                return code;
+
+
+                break;
+            }
+
+            default: {
+                throw new java.lang.IllegalArgumentException(S`Invalid number of arguments`);
+            }
         }
-        return this.defineTemplate(name, new  CommonToken(GroupParser.ID, name),
-                              a, template, null);
-    
-
-				break;
-			}
-
-			case 5: {
-				const [fullyQualifiedTemplateName, nameT, args, template, templateToken] = args as [String, Token, List<FormalArgument>, String, Token];
-
-
-        if ( STGroup.verbose ) {
- System.out.println("defineTemplate("+fullyQualifiedTemplateName+")");
-}
-
-        if ( fullyQualifiedTemplateName===null || fullyQualifiedTemplateName.length()===0 ) {
-            throw new  IllegalArgumentException("empty template name");
-        }
-        if ( fullyQualifiedTemplateName.indexOf('.')>=0 ) {
-            throw new  IllegalArgumentException("cannot have '.' in template names");
-        }
-        template = Misc.trimOneStartingNewline(template);
-        template = Misc.trimOneTrailingNewline(template);
-        // compile, passing in templateName as enclosing name for any embedded regions
-        let  code = this.compile(this.getFileName(), fullyQualifiedTemplateName, args, template, templateToken);
-        code.name = fullyQualifiedTemplateName;
-        this.rawDefineTemplate(fullyQualifiedTemplateName, code, nameT);
-        code.defineArgDefaultValueTemplates(this);
-        code.defineImplicitlyDefinedTemplates(this); // define any anonymous subtemplates
-
-        return code;
-    
-
-				break;
-			}
-
-			default: {
-				throw new java.lang.IllegalArgumentException(S`Invalid number of arguments`);
-			}
-		}
-	}
+    }
 
 
     /** Make name and alias for target.  Replace any previous definition of name. */
-    public  defineTemplateAlias(aliasT: Token, targetT: Token):  CompiledST {
-        let  alias = aliasT.getText();
-        let  target = targetT.getText();
-        let  targetCode = this.rawGetTemplate("/"+target);
-        if ( targetCode===null ){
+    public defineTemplateAlias(aliasT: Token, targetT: Token): CompiledST {
+        let alias = aliasT.getText();
+        let target = targetT.getText();
+        let targetCode = this.rawGetTemplate("/" + target);
+        if (targetCode === null) {
             this.errMgr.compileTimeError(ErrorType.ALIAS_TARGET_UNDEFINED, null, aliasT, alias, target);
             return null;
         }
@@ -525,21 +483,20 @@ if (se instanceof STException) {
         return targetCode;
     }
 
-    public  defineRegion(enclosingTemplateName: String,
-                                   regionT: Token,
-                                   template: String,
-                                   templateToken: Token):  CompiledST
-    {
-        let  name = regionT.getText();
+    public defineRegion(enclosingTemplateName: string,
+        regionT: Token,
+        template: string,
+        templateToken: Token): CompiledST {
+        let name = regionT.getText();
         template = Misc.trimOneStartingNewline(template);
         template = Misc.trimOneTrailingNewline(template);
-        let  code = this.compile(this.getFileName(), enclosingTemplateName, null, template, templateToken);
-        let  mangled = STGroup.getMangledRegionName(enclosingTemplateName, name);
+        let code = this.compile(this.getFileName(), enclosingTemplateName, null, template, templateToken);
+        let mangled = STGroup.getMangledRegionName(enclosingTemplateName, name);
 
-        if ( this.lookupTemplate(mangled)===null ) {
+        if (this.lookupTemplate(mangled) === null) {
             this.errMgr.compileTimeError(ErrorType.NO_SUCH_REGION, templateToken, regionT,
-                                          enclosingTemplateName, name);
-            return new  CompiledST();
+                enclosingTemplateName, name);
+            return new CompiledST();
         }
         code.name = mangled;
         code.isRegion = true;
@@ -553,59 +510,56 @@ if (se instanceof STException) {
         return code;
     }
 
-    public  defineTemplateOrRegion(
-        fullyQualifiedTemplateName: String,
-        regionSurroundingTemplateName: String,
+    public defineTemplateOrRegion(
+        fullyQualifiedTemplateName: string,
+        regionSurroundingTemplateName: string,
         templateToken: Token,
-        template: String,
+        template: string,
         nameToken: Token,
-        args: List<FormalArgument>):  void
-    {
+        args: java.util.List<FormalArgument>): void {
         try {
-            if ( regionSurroundingTemplateName!==null ) {
+            if (regionSurroundingTemplateName !== null) {
                 this.defineRegion(regionSurroundingTemplateName, nameToken, template, templateToken);
             }
             else {
                 this.defineTemplate(fullyQualifiedTemplateName, nameToken, args, template, templateToken);
             }
         } catch (e) {
-if (e instanceof STException) {
-            // after getting syntax error in a template, we emit msg
-            // and throw exception to blast all the way out to here.
-        } else {
-	throw e;
-	}
-}
+            if (e instanceof STException) {
+                // after getting syntax error in a template, we emit msg
+                // and throw exception to blast all the way out to here.
+            } else {
+                throw e;
+            }
+        }
     }
 
-    public  rawDefineTemplate(name: String, code: CompiledST, defT: Token):  void {
-        let  prev = this.rawGetTemplate(name);
-        if ( prev!==null ) {
-            if ( !prev.isRegion ) {
+    public rawDefineTemplate(name: string, code: CompiledST, defT: Token): void {
+        let prev = this.rawGetTemplate(name);
+        if (prev !== null) {
+            if (!prev.isRegion) {
                 this.errMgr.compileTimeError(ErrorType.TEMPLATE_REDEFINITION, null, defT);
                 return;
             }
             else {
-                if ( code.regionDefType!==ST.RegionType.IMPLICIT &&
-                     prev.regionDefType===ST.RegionType.EMBEDDED )
-                {
+                if (code.regionDefType !== ST.RegionType.IMPLICIT &&
+                    prev.regionDefType === ST.RegionType.EMBEDDED) {
                     this.errMgr.compileTimeError(ErrorType.EMBEDDED_REGION_REDEFINITION,
-                                            null,
-                                            defT,
-                                            STGroup.getUnMangledTemplateName(name));
+                        null,
+                        defT,
+                        STGroup.getUnMangledTemplateName(name));
                     return;
                 }
                 else {
- if ( code.regionDefType===ST.RegionType.IMPLICIT ||
-                          prev.regionDefType===ST.RegionType.EXPLICIT )
-                {
-                    this.errMgr.compileTimeError(ErrorType.REGION_REDEFINITION,
-                                            null,
-                                            defT,
-                                            STGroup.getUnMangledTemplateName(name));
-                    return;
+                    if (code.regionDefType === ST.RegionType.IMPLICIT ||
+                        prev.regionDefType === ST.RegionType.EXPLICIT) {
+                        this.errMgr.compileTimeError(ErrorType.REGION_REDEFINITION,
+                            null,
+                            defT,
+                            STGroup.getUnMangledTemplateName(name));
+                        return;
+                    }
                 }
-}
 
             }
         }
@@ -614,19 +568,19 @@ if (e instanceof STException) {
         this.templates.put(name, code);
     }
 
-    public  undefineTemplate(name: String):  void {
+    public undefineTemplate(name: string): void {
         this.templates.remove(name);
     }
 
     /** Compile a template. */
-    public  compile(srcName: String,
-                              name: String,
-                              args: List<FormalArgument>,
-                              template: String,
-                              templateToken: Token):  CompiledST // for error location
+    public compile(srcName: string,
+        name: string,
+        args: java.util.List<FormalArgument>,
+        template: string,
+        templateToken: Token): CompiledST // for error location
     {
         //System.out.println("STGroup.compile: "+enclosingTemplateName);
-        let  c = new  Compiler(this);
+        let c = new java.lang.Compiler(this);
         return c.compile(srcName, name, args, template, templateToken);
     }
 
@@ -634,7 +588,7 @@ if (e instanceof STException) {
      * <p>
      * Not thread safe...do not keep adding these while you reference them.</p>
      */
-    public  defineDictionary(name: String, mapping: Map<String,java.lang.Object>):  void {
+    public defineDictionary(name: string, mapping: Map<string, Object>): void {
         this.dictionaries.put(name, mapping);
     }
 
@@ -643,7 +597,7 @@ if (e instanceof STException) {
      *<p>
      * On unload imported templates are unloaded but stay in the {@link #imports} list.</p>
      */
-    public  importTemplates(g: STGroup):  void;
+    public importTemplates(g: STGroup): void;
 
     /** Import template files, directories, and group files.
      *  Priority is given to templates defined in the current group;
@@ -664,202 +618,202 @@ if (e instanceof STException) {
      *  group files. Use {@link #importTemplates(STGroup)} to import templates
      *  'programmatically'.</p>
      */
-    public  importTemplates(fileNameToken: Token):  void;
+    public importTemplates(fileNameToken: Token): void;
 
-    protected  importTemplates(g: STGroup, clearOnUnload: boolean):  void;
-public importTemplates(...args: unknown[]):  void {
-		switch (args.length) {
-			case 1: {
-				const [g] = args as [STGroup];
-
-
-        this.importTemplates(g, false);
-    
-
-				break;
-			}
-
-			case 1: {
-				const [fileNameToken] = args as [Token];
+    protected importTemplates(g: STGroup, clearOnUnload: boolean): void;
+    public importTemplates(...args: unknown[]): void {
+        switch (args.length) {
+            case 1: {
+                const [g] = args as [STGroup];
 
 
-        if ( STGroup.verbose ) {
- System.out.println("importTemplates("+fileNameToken.getText()+")");
-}
+                this.importTemplates(g, false);
 
-        let  fileName = fileNameToken.getText();
-        // do nothing upon syntax error
-        if ( fileName===null || fileName.equals("<missing STRING>") ) {
- return;
-}
 
-        fileName = Misc.strip(fileName, 1);
+                break;
+            }
 
-        //System.out.println("import "+fileName);
-        let  isGroupFile = fileName.endsWith(STGroup.GROUP_FILE_EXTENSION);
-        let  isTemplateFile = fileName.endsWith(STGroup.TEMPLATE_FILE_EXTENSION);
-        let  isGroupDir = !(isGroupFile || isTemplateFile);
+            case 1: {
+                const [fileNameToken] = args as [Token];
 
-        let  g = null;
 
-        // search path is: working dir, g.stg's dir, CLASSPATH
-        let  thisRoot = this.getRootDirURL();
-        let  fileUnderRoot: URL;
-//      System.out.println("thisRoot="+thisRoot);
-        try {
-            fileUnderRoot = new  URL(thisRoot+"/"+fileName);
-        } catch (mfe) {
-if (mfe instanceof MalformedURLException) {
-            this.errMgr.internalError(null, "can't build URL for "+thisRoot+"/"+fileName, mfe);
-            return;
-        } else {
-	throw mfe;
-	}
-}
-        if ( isTemplateFile ) {
-            g = new  STGroup(this.delimiterStartChar, this.delimiterStopChar);
-            g.setListener(this.getListener());
-            let  fileURL: URL;
-            if ( Misc.urlExists(fileUnderRoot) ) {
- fileURL = fileUnderRoot;
-}
+                if (STGroup.verbose) {
+                    java.lang.System.out.println("importTemplates(" + fileNameToken.getText() + ")");
+                }
 
-            else {
- fileURL = this.getURL(fileName);
-}
- // try CLASSPATH
-            if ( fileURL!==null ) {
+                let fileName = fileNameToken.getText();
+                // do nothing upon syntax error
+                if (fileName === null || fileName.equals("<missing STRING>")) {
+                    return;
+                }
+
+                fileName = Misc.strip(fileName, 1);
+
+                //System.out.println("import "+fileName);
+                let isGroupFile = fileName.endsWith(STGroup.GROUP_FILE_EXTENSION);
+                let isTemplateFile = fileName.endsWith(STGroup.TEMPLATE_FILE_EXTENSION);
+                let isGroupDir = !(isGroupFile || isTemplateFile);
+
+                let g = null;
+
+                // search path is: working dir, g.stg's dir, CLASSPATH
+                let thisRoot = this.getRootDirURL();
+                let fileUnderRoot: java.net.URL;
+                //      System.out.println("thisRoot="+thisRoot);
                 try {
-                    let  s = fileURL.openStream();
-                    let  templateStream = new  ANTLRInputStream(s, this.encoding);
-                    templateStream.name = fileName;
-                    let  code = g.loadTemplateFile("/", fileName, templateStream);
-                    if ( code===null ) {
- g = null;
-}
+                    fileUnderRoot = new java.net.URL(thisRoot + "/" + fileName);
+                } catch (mfe) {
+                    if (mfe instanceof java.net.MalformedURLException) {
+                        this.errMgr.internalError(null, "can't build URL for " + thisRoot + "/" + fileName, mfe);
+                        return;
+                    } else {
+                        throw mfe;
+                    }
+                }
+                if (isTemplateFile) {
+                    g = new STGroup(this.delimiterStartChar, this.delimiterStopChar);
+                    g.setListener(this.getListener());
+                    let fileURL: java.net.URL;
+                    if (Misc.urlExists(fileUnderRoot)) {
+                        fileURL = fileUnderRoot;
+                    }
 
-                } catch (ioe) {
-if (ioe instanceof IOException) {
-                    this.errMgr.internalError(null, "can't read from "+fileURL, ioe);
-                    g = null;
-                } else {
-	throw ioe;
-	}
-}
+                    else {
+                        fileURL = this.getURL(fileName);
+                    }
+                    // try CLASSPATH
+                    if (fileURL !== null) {
+                        try {
+                            let s = fileURL.openStream();
+                            let templateStream = new ANTLRInputStream(s, this.encoding);
+                            templateStream.name = fileName;
+                            let code = g.loadTemplateFile("/", fileName, templateStream);
+                            if (code === null) {
+                                g = null;
+                            }
+
+                        } catch (ioe) {
+                            if (ioe instanceof java.io.IOException) {
+                                this.errMgr.internalError(null, "can't read from " + fileURL, ioe);
+                                g = null;
+                            } else {
+                                throw ioe;
+                            }
+                        }
+                    }
+                    else {
+                        g = null;
+                    }
+                }
+                else {
+                    if (isGroupFile) {
+                        //System.out.println("look for fileUnderRoot: "+fileUnderRoot);
+                        if (Misc.urlExists(fileUnderRoot)) {
+                            g = new STGroupFile(fileUnderRoot, this.encoding, this.delimiterStartChar, this.delimiterStopChar);
+                            g.setListener(this.getListener());
+                        }
+                        else {
+                            g = new STGroupFile(fileName, this.delimiterStartChar, this.delimiterStopChar);
+                            g.setListener(this.getListener());
+                        }
+                    }
+                    else {
+                        if (isGroupDir) {
+                            //          System.out.println("try dir "+fileUnderRoot);
+                            if (Misc.urlExists(fileUnderRoot)) {
+                                g = new STGroupDir(fileUnderRoot, this.encoding, this.delimiterStartChar, this.delimiterStopChar);
+                                g.setListener(this.getListener());
+                            }
+                            else {
+                                // try in CLASSPATH
+                                //              System.out.println("try dir in CLASSPATH "+fileName);
+                                g = new STGroupDir(fileName, this.delimiterStartChar, this.delimiterStopChar);
+                                g.setListener(this.getListener());
+                            }
+                        }
+                    }
+
+                }
+
+
+                if (g === null) {
+                    this.errMgr.compileTimeError(ErrorType.CANT_IMPORT, null,
+                        fileNameToken, fileName);
+                }
+                else {
+                    this.importTemplates(g, true);
+                }
+
+
+                break;
             }
-            else {
-                g = null;
+
+            case 2: {
+                const [g, clearOnUnload] = args as [STGroup, boolean];
+
+
+                if (g === null) {
+                    return;
+                }
+
+                this.imports.add(g);
+                if (clearOnUnload) {
+                    this.importsToClearOnUnload.add(g);
+                }
+
+
+                break;
+            }
+
+            default: {
+                throw new java.lang.IllegalArgumentException(S`Invalid number of arguments`);
             }
         }
-        else {
- if ( isGroupFile ) {
-            //System.out.println("look for fileUnderRoot: "+fileUnderRoot);
-            if ( Misc.urlExists(fileUnderRoot) ) {
-                g = new  STGroupFile(fileUnderRoot, this.encoding, this.delimiterStartChar, this.delimiterStopChar);
-                g.setListener(this.getListener());
-            }
-            else {
-                g = new  STGroupFile(fileName, this.delimiterStartChar, this.delimiterStopChar);
-                g.setListener(this.getListener());
-            }
-        }
-        else {
- if ( isGroupDir ) {
-//          System.out.println("try dir "+fileUnderRoot);
-            if ( Misc.urlExists(fileUnderRoot) ) {
-                g = new  STGroupDir(fileUnderRoot, this.encoding, this.delimiterStartChar, this.delimiterStopChar);
-                g.setListener(this.getListener());
-            }
-            else {
-                // try in CLASSPATH
-//              System.out.println("try dir in CLASSPATH "+fileName);
-                g = new  STGroupDir(fileName, this.delimiterStartChar, this.delimiterStopChar);
-                g.setListener(this.getListener());
-            }
-        }
-}
-
-}
+    }
 
 
-        if ( g===null ) {
-            this.errMgr.compileTimeError(ErrorType.CANT_IMPORT, null,
-                                    fileNameToken, fileName);
-        }
-        else {
-            this.importTemplates(g, true);
-        }
-    
-
-				break;
-			}
-
-			case 2: {
-				const [g, clearOnUnload] = args as [STGroup, boolean];
-
-
-        if ( g===null ) {
- return;
-}
-
-        this.imports.add(g);
-        if (clearOnUnload) {
-            this.importsToClearOnUnload.add(g);
-        }
-    
-
-				break;
-			}
-
-			default: {
-				throw new java.lang.IllegalArgumentException(S`Invalid number of arguments`);
-			}
-		}
-	}
-
-
-    public  getImportedGroups():  List<STGroup> { return this.imports; }
+    public getImportedGroups(): java.util.List<STGroup> { return this.imports; }
 
     /** Load a group file with full path {@code fileName}; it's relative to root by {@code prefix}. */
-    public  loadGroupFile(prefix: String, fileName: String):  void {
-        if ( STGroup.verbose ) {
- System.out.println(this.getClass().getSimpleName()+
-                                          ".loadGroupFile(group-file-prefix="+prefix+", fileName="+fileName+")");
-}
+    public loadGroupFile(prefix: string, fileName: string): void {
+        if (STGroup.verbose) {
+            java.lang.System.out.println(this.getClass().getSimpleName() +
+                ".loadGroupFile(group-file-prefix=" + prefix + ", fileName=" + fileName + ")");
+        }
 
-        let  parser: GroupParser;
+        let parser: GroupParser;
         try {
-            let  f = new  URL(fileName);
-            let  fs = new  ANTLRInputStream(f.openStream(), this.encoding);
-            let  lexer = new  GroupLexer(fs);
+            let f = new java.net.URL(fileName);
+            let fs = new ANTLRInputStream(f.openStream(), this.encoding);
+            let lexer = new GroupLexer(fs);
             fs.name = fileName;
-            let  tokens = new  CommonTokenStream(lexer);
-            parser = new  GroupParser(tokens);
+            let tokens = new CommonTokenStream(lexer);
+            parser = new GroupParser(tokens);
             parser.group(this, prefix);
         } catch (e) {
-if (e instanceof Exception) {
-            this.errMgr.IOError(null, ErrorType.CANT_LOAD_GROUP_FILE, e, fileName);
-        } else {
-	throw e;
-	}
-}
+            if (e instanceof java.lang.Exception) {
+                this.errMgr.IOError(null, ErrorType.CANT_LOAD_GROUP_FILE, e, fileName);
+            } else {
+                throw e;
+            }
+        }
     }
 
     /** Load template file into this group using absolute {@code fileName}. */
-    public  loadAbsoluteTemplateFile(fileName: String):  CompiledST {
-        let  fs: ANTLRFileStream;
+    public loadAbsoluteTemplateFile(fileName: string): CompiledST {
+        let fs: ANTLRFileStream;
         try {
-            fs = new  ANTLRFileStream(fileName, this.encoding);
+            fs = new ANTLRFileStream(fileName, this.encoding);
             fs.name = fileName;
         } catch (ioe) {
-if (ioe instanceof IOException) {
-            // doesn't exist
-            //errMgr.IOError(null, ErrorType.NO_SUCH_TEMPLATE, ioe, fileName);
-            return null;
-        } else {
-	throw ioe;
-	}
-}
+            if (ioe instanceof java.io.IOException) {
+                // doesn't exist
+                //errMgr.IOError(null, ErrorType.NO_SUCH_TEMPLATE, ioe, fileName);
+                return null;
+            } else {
+                throw ioe;
+            }
+        }
         return this.loadTemplateFile("", fileName, fs);
     }
 
@@ -868,29 +822,29 @@ if (ioe instanceof IOException) {
      *  {@code unqualifiedFileName} like {@code "/subdir"} if file is in
      *  {@code /subdir/a.st}.
      */
-    public  loadTemplateFile(prefix: String, unqualifiedFileName: String, templateStream: CharStream):  CompiledST {
-        let  lexer = new  GroupLexer(templateStream);
-        let  tokens = new  CommonTokenStream(lexer);
-        let  parser = new  GroupParser(tokens);
+    public loadTemplateFile(prefix: string, unqualifiedFileName: string, templateStream: CharStream): CompiledST {
+        let lexer = new GroupLexer(templateStream);
+        let tokens = new CommonTokenStream(lexer);
+        let parser = new GroupParser(tokens);
         parser.group = this;
         lexer.group = this;
         try {
             parser.templateDef(prefix);
         } catch (re) {
-if (re instanceof RecognitionException) {
-            this.errMgr.groupSyntaxError(ErrorType.SYNTAX_ERROR,
-                                    unqualifiedFileName,
-                                    re, re.getMessage());
-        } else {
-	throw re;
-	}
-}
-        let  templateName = Misc.getFileNameNoSuffix(unqualifiedFileName);
-        if ( prefix!==null && prefix.length()>0 ) {
- templateName = prefix+templateName;
-}
+            if (re instanceof RecognitionException) {
+                this.errMgr.groupSyntaxError(ErrorType.SYNTAX_ERROR,
+                    unqualifiedFileName,
+                    re, re.getMessage());
+            } else {
+                throw re;
+            }
+        }
+        let templateName = Misc.getFileNameNoSuffix(unqualifiedFileName);
+        if (prefix !== null && prefix.length() > 0) {
+            templateName = prefix + templateName;
+        }
 
-        let  impl = this.rawGetTemplate(templateName);
+        let impl = this.rawGetTemplate(templateName);
         impl.prefix = prefix;
         return impl;
     }
@@ -908,18 +862,18 @@ if (re instanceof RecognitionException) {
      * This must invalidate cache entries, so set your adaptors up before
      * calling {@link ST#render} for efficiency.</p>
      */
-    public  registerModelAdaptor <T>(attributeType: Class<T>, adaptor: ModelAdaptor< T>):  void {
-        if ( attributeType.isPrimitive() ) {
-            throw new  IllegalArgumentException("can't register ModelAdaptor for primitive type "+
-                                               attributeType.getSimpleName());
+    public registerModelAdaptor<T>(attributeType: java.lang.Class<T>, adaptor: ModelAdaptor<T>): void {
+        if (attributeType.isPrimitive()) {
+            throw new java.lang.IllegalArgumentException("can't register ModelAdaptor for primitive type " +
+                attributeType.getSimpleName());
         }
 
         this.adaptors.put(attributeType, adaptor);
     }
 
-    public  getModelAdaptor <T>(attributeType: Class<T>):  ModelAdaptor< T> {
+    public getModelAdaptor<T>(attributeType: java.lang.Class<T>): ModelAdaptor<T> {
         //noinspection unchecked
-        return  this.adaptors.get(attributeType) as ModelAdaptor< T>;
+        return this.adaptors.get(attributeType) as ModelAdaptor<T>;
     }
 
     /** Register a renderer for all objects of a particular "kind" for all
@@ -927,52 +881,52 @@ if (re instanceof RecognitionException) {
      *  object in question is an instance of {@code attributeType}.  Recursively
      *  set renderer into all import groups.
      */
-    public  registerRenderer <T>(attributeType: Class<T>, r: AttributeRenderer< T>):  void;
+    public registerRenderer<T>(attributeType: java.lang.Class<T>, r: AttributeRenderer<T>): void;
 
-    public  registerRenderer <T>(attributeType: Class<T>, r: AttributeRenderer< T>, recursive: boolean):  void;
-public registerRenderer <T>(...args: unknown[]):  void {
-		switch (args.length) {
-			case 2: {
-				const [attributeType, r] = args as [Class<T>, AttributeRenderer< T>];
-
-
-        this.registerRenderer(attributeType, r, true);
-    
-
-				break;
-			}
-
-			case 3: {
-				const [attributeType, r, recursive] = args as [Class<T>, AttributeRenderer< T>, boolean];
+    public registerRenderer<T>(attributeType: java.lang.Class<T>, r: AttributeRenderer<T>, recursive: boolean): void;
+    public registerRenderer<T>(...args: unknown[]): void {
+        switch (args.length) {
+            case 2: {
+                const [attributeType, r] = args as [java.lang.Class<T>, AttributeRenderer<T>];
 
 
-        if ( attributeType.isPrimitive() ) {
-            throw new  IllegalArgumentException("can't register renderer for primitive type "+
-                                               attributeType.getSimpleName());
-        }
+                this.registerRenderer(attributeType, r, true);
 
-        if ( this.renderers === null ) {
-            this.renderers = Collections.synchronizedMap(new  TypeRegistry<AttributeRenderer<unknown>>());
-        }
 
-        this.renderers.put(attributeType, r);
+                break;
+            }
 
-        if ( recursive ) {
-            this.load(); // make sure imports exist (recursively)
-            for (let g of this.imports) {
-                g.registerRenderer(attributeType, r, true);
+            case 3: {
+                const [attributeType, r, recursive] = args as [java.lang.Class<T>, AttributeRenderer<T>, boolean];
+
+
+                if (attributeType.isPrimitive()) {
+                    throw new java.lang.IllegalArgumentException("can't register renderer for primitive type " +
+                        attributeType.getSimpleName());
+                }
+
+                if (this.renderers === null) {
+                    this.renderers = java.util.Collections.synchronizedMap(new TypeRegistry<AttributeRenderer<unknown>>());
+                }
+
+                this.renderers.put(attributeType, r);
+
+                if (recursive) {
+                    this.load(); // make sure imports exist (recursively)
+                    for (let g of this.imports) {
+                        g.registerRenderer(attributeType, r, true);
+                    }
+                }
+
+
+                break;
+            }
+
+            default: {
+                throw new java.lang.IllegalArgumentException(S`Invalid number of arguments`);
             }
         }
-    
-
-				break;
-			}
-
-			default: {
-				throw new java.lang.IllegalArgumentException(S`Invalid number of arguments`);
-			}
-		}
-	}
+    }
 
 
     /** Get renderer for class {@code T} associated with this group.
@@ -986,22 +940,22 @@ public registerRenderer <T>(...args: unknown[]):  void {
      *  have multiple renderers for {@code String}, say, then just make uber combined
      *  renderer with more specific format names.</p>
      */
-    public  getAttributeRenderer <T>(attributeType: Class<T>):  AttributeRenderer< T> {
-        if ( this.renderers===null ) {
+    public getAttributeRenderer<T>(attributeType: java.lang.Class<T>): AttributeRenderer<T> {
+        if (this.renderers === null) {
             return null;
         }
 
         //noinspection unchecked
-        return  this.renderers.get(attributeType) as AttributeRenderer< T>;
+        return this.renderers.get(attributeType) as AttributeRenderer<T>;
     }
 
-    public  createStringTemplate(impl: CompiledST):  ST {
-        let  st = new  ST();
+    public createStringTemplate(impl: CompiledST): ST {
+        let st = new ST();
         st.impl = impl;
         st.groupThatCreatedThisInstance = this;
-        if ( impl.formalArguments!==null ) {
-            st.locals = new  Array<java.lang.Object>(impl.formalArguments.size());
-            Arrays.fill(st.locals, ST.EMPTY_ATTR);
+        if (impl.formalArguments !== null) {
+            st.locals = new Array<Object>(impl.formalArguments.size());
+            java.util.Arrays.fill(st.locals, ST.EMPTY_ATTR);
         }
         return st;
     }
@@ -1009,44 +963,44 @@ public registerRenderer <T>(...args: unknown[]):  void {
     /** Differentiate so we can avoid having creation events for regions,
      *  map operations, and other implicit "new ST" events during rendering.
      */
-    public  createStringTemplateInternally(impl: CompiledST):  ST;
+    public createStringTemplateInternally(impl: CompiledST): ST;
 
-    public  createStringTemplateInternally(proto: ST):  ST;
-public createStringTemplateInternally(...args: unknown[]):  ST {
-		switch (args.length) {
-			case 1: {
-				const [impl] = args as [CompiledST];
+    public createStringTemplateInternally(proto: ST): ST;
+    public createStringTemplateInternally(...args: unknown[]): ST {
+        switch (args.length) {
+            case 1: {
+                const [impl] = args as [CompiledST];
 
 
-        let  st = this.createStringTemplate(impl);
-        if ( STGroup.trackCreationEvents && st.debugState!==null ) {
-            st.debugState.newSTEvent = null; // toss it out
+                let st = this.createStringTemplate(impl);
+                if (STGroup.trackCreationEvents && st.debugState !== null) {
+                    st.debugState.newSTEvent = null; // toss it out
+                }
+                return st;
+
+
+                break;
+            }
+
+            case 1: {
+                const [proto] = args as [ST];
+
+
+                return new ST(proto); // no need to wack debugState; not set in ST(proto).
+
+
+                break;
+            }
+
+            default: {
+                throw new java.lang.IllegalArgumentException(S`Invalid number of arguments`);
+            }
         }
-        return st;
-    
-
-				break;
-			}
-
-			case 1: {
-				const [proto] = args as [ST];
+    }
 
 
-        return new  ST(proto); // no need to wack debugState; not set in ST(proto).
-    
-
-				break;
-			}
-
-			default: {
-				throw new java.lang.IllegalArgumentException(S`Invalid number of arguments`);
-			}
-		}
-	}
-
-
-    public  getName():  String { return "<no name>;"; }
-    public  getFileName():  String { return null; }
+    public getName(): string { return "<no name>;"; }
+    public getFileName(): string { return null; }
 
     /** Return root dir if this is group dir; return dir containing group file
      *  if this is group file.  This is derived from original incoming
@@ -1054,67 +1008,66 @@ public createStringTemplateInternally(...args: unknown[]):  ST {
      *  as full absolute path.  If only a URL is available, return URL of
      *  one dir up.
      */
-    public  getRootDirURL():  URL { return null; }
+    public getRootDirURL(): java.net.URL { return null; }
 
-    public  getURL(fileName: String):  URL {
-        let  url = null;
-        let  cl = Thread.currentThread().getContextClassLoader();
-        if ( cl!==null ) {
- url = cl.getResource(fileName);
-}
+    public getURL(fileName: string): java.net.URL {
+        let url = null;
+        let cl = java.lang.Thread.currentThread().getContextClassLoader();
+        if (cl !== null) {
+            url = cl.getResource(fileName);
+        }
 
-        if ( url===null ) {
+        if (url === null) {
             cl = this.getClass().getClassLoader();
-            if ( cl!==null ) {
- url = cl.getResource(fileName);
-}
+            if (cl !== null) {
+                url = cl.getResource(fileName);
+            }
 
         }
         return url;
     }
 
-    @Override
-public override  toString():  String { return this.getName(); }
+    public override  toString(): string { return this.getName(); }
 
-    public  show():  String {
-        let  buf = new  StringBuilder();
-        if ( this.imports.size()!==0 ) {
- buf.append(" : "+this.imports);
-}
+    public show(): string {
+        let buf = new java.lang.StringBuilder();
+        if (this.imports.size() !== 0) {
+            buf.append(" : " + this.imports);
+        }
 
         for (let name of this.templates.keySet()) {
-            let  c = this.rawGetTemplate(name);
-            if ( c.isAnonSubtemplate || c===STGroup.NOT_FOUND_ST ) {
- continue;
-}
+            let c = this.rawGetTemplate(name);
+            if (c.isAnonSubtemplate || c === STGroup.NOT_FOUND_ST) {
+                continue;
+            }
 
-            let  slash = name.lastIndexOf('/');
-            name = name.substring(slash+1, name.length());
+            let slash = name.lastIndexOf('/');
+            name = name.substring(slash + 1, name.length());
             buf.append(name);
             buf.append('(');
-            if ( c.formalArguments!==null ) {
- buf.append( Misc.join(c.formalArguments.values().iterator(), ",") );
-}
+            if (c.formalArguments !== null) {
+                buf.append(Misc.join(c.formalArguments.values().iterator(), ","));
+            }
 
             buf.append(')');
-            buf.append(" ::= <<"+Misc.newline);
-            buf.append(c.template+ Misc.newline);
-            buf.append(">>"+Misc.newline);
+            buf.append(" ::= <<" + Misc.newline);
+            buf.append(c.template + Misc.newline);
+            buf.append(">>" + Misc.newline);
         }
         return buf.toString();
     }
 
-    public  getListener():  STErrorListener {
+    public getListener(): STErrorListener {
         return this.errMgr.listener;
     }
 
-    public  setListener(listener: STErrorListener):  void {
-        this.errMgr = new  java.util.logging.ErrorManager(listener);
+    public setListener(listener: STErrorListener): void {
+        this.errMgr = new java.util.logging.ErrorManager(listener);
     }
 
-    public  getTemplateNames():  Set<String> {
+    public getTemplateNames(): java.util.Set<string> {
         this.load();
-        let  result = new  HashSet<String>();
+        let result = new java.util.HashSet<string>();
         for (let eof this.templates.entrySet()) {
             if (e.getValue() !== STGroup.NOT_FOUND_ST) {
                 result.add(e.getKey());
@@ -1123,71 +1076,70 @@ public override  toString():  String { return this.getName(); }
         return result;
     }
 
-    protected  getEmbeddedInstanceOf(interp: Interpreter,
-                                       scope: InstanceScope,
-                                       name: String):  ST
-    {
-        let  fullyQualifiedName = name;
-        if ( name.charAt(0)!=='/' ) {
+    protected getEmbeddedInstanceOf(interp: Interpreter,
+        scope: InstanceScope,
+        name: string): ST {
+        let fullyQualifiedName = name;
+        if (name.charAt(0) !== '/') {
             fullyQualifiedName = scope.st.impl.prefix + name;
         }
-        if ( STGroup.verbose ) {
- System.out.println("getEmbeddedInstanceOf(" + fullyQualifiedName +")");
-}
+        if (STGroup.verbose) {
+            java.lang.System.out.println("getEmbeddedInstanceOf(" + fullyQualifiedName + ")");
+        }
 
-        let  st = this.getInstanceOf(fullyQualifiedName);
-        if ( st===null ) {
+        let st = this.getInstanceOf(fullyQualifiedName);
+        if (st === null) {
             this.errMgr.runTimeError(interp, scope,
-                                ErrorType.NO_SUCH_TEMPLATE,
-                                fullyQualifiedName);
-            return this.createStringTemplateInternally(new  CompiledST());
+                ErrorType.NO_SUCH_TEMPLATE,
+                fullyQualifiedName);
+            return this.createStringTemplateInternally(new CompiledST());
         }
         // this is only called internally. wack any debug ST create events
-        if ( STGroup.trackCreationEvents ) {
+        if (STGroup.trackCreationEvents) {
             st.debugState.newSTEvent = null; // toss it out
         }
         return st;
     }
 
-    protected  lookupImportedTemplate(name: String):  CompiledST {
-        if ( this.imports.size()===0 ) {
- return null;
-}
+    protected lookupImportedTemplate(name: string): CompiledST {
+        if (this.imports.size() === 0) {
+            return null;
+        }
 
         for (let g of this.imports) {
-            if ( STGroup.verbose ) {
- System.out.println("checking "+g.getName()+" for imported "+name);
-}
+            if (STGroup.verbose) {
+                java.lang.System.out.println("checking " + g.getName() + " for imported " + name);
+            }
 
-            let  code = g.lookupTemplate(name);
-            if ( code!==null ) {
-                if ( STGroup.verbose ) {
- System.out.println(g.getName()+".lookupImportedTemplate("+name+") found");
-}
+            let code = g.lookupTemplate(name);
+            if (code !== null) {
+                if (STGroup.verbose) {
+                    java.lang.System.out.println(g.getName() + ".lookupImportedTemplate(" + name + ") found");
+                }
 
                 return code;
             }
         }
-        if ( STGroup.verbose ) {
- System.out.println(name+" not found in "+this.getName()+" imports");
-}
+        if (STGroup.verbose) {
+            java.lang.System.out.println(name + " not found in " + this.getName() + " imports");
+        }
 
         return null;
     }
-     static {
+    static {
         STGroup.GROUP_FILE_EXTENSION = ".stg";
         STGroup.TEMPLATE_FILE_EXTENSION = ".st";
     }
-     static {
-        for (let  c = 'a'; c <= 'z'; c++) {
+    static {
+        for (let c = 'a'; c <= 'z'; c++) {
             STGroup.RESERVED_CHARACTERS[c] = true;
         }
 
-        for (let  c = 'A'; c <= 'Z'; c++) {
+        for (let c = 'A'; c <= 'Z'; c++) {
             STGroup.RESERVED_CHARACTERS[c] = true;
         }
 
-        for (let  c = '0'; c <= '9'; c++) {
+        for (let c = '0'; c <= '9'; c++) {
             STGroup.RESERVED_CHARACTERS[c] = true;
         }
 

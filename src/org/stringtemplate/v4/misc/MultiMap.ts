@@ -37,7 +37,7 @@ export  class MultiMap<K, V> extends java.util.LinkedHashMap<K, java.util.List<V
     public  map(key: K, value: V):  void {
         let  elementsForKey = this.get(key);
         if ( elementsForKey===null ) {
-            elementsForKey = new  java.util.ArrayList<V>();
+            elementsForKey = new  Array<V>();
             super.put(key, elementsForKey);
         }
         elementsForKey.add(value);

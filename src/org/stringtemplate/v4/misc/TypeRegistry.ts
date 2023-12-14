@@ -32,58 +32,38 @@
 import { java, JavaObject, type int } from "jree";
 import { AmbiguousMatchException } from "./AmbiguousMatchException.js";
 
-type Map<K,​V> = java.util.Map<K,​V>;
-type Class<T> = java.lang.Class<T>;
-const Class = java.lang.Class;
-type HashMap<K,​V> = java.util.HashMap<K,​V>;
-const HashMap = java.util.HashMap;
-type Void = java.lang.Void;
-const Void = java.lang.Void;
-type List<E> = java.util.List<E>;
-type ArrayList<E> = java.util.ArrayList<E>;
-const ArrayList = java.util.ArrayList;
-type StringBuilder = java.lang.StringBuilder;
-const StringBuilder = java.lang.StringBuilder;
-type String = java.lang.String;
-const String = java.lang.String;
-type Set<E> = java.util.Set<E>;
-type Collections = java.util.Collections;
-const Collections = java.util.Collections;
-type Collection<E> = java.util.Collection<E>;
-
 
 
 /**
  *
  * @author Sam Harwell
  */
-export  class TypeRegistry<V> extends JavaObject implements Map<Class<unknown>, V> {
+export class TypeRegistry<V> implements Map<java.lang.Class<unknown>, V> {
 
-    private readonly  backingStore = new  HashMap<Class<unknown>, V>();
-    private readonly  cache = new  HashMap<Class<unknown>, Class<unknown>>();
+    private readonly backingStore = new Map<java.lang.Class<unknown>, V>();
+    private readonly cache = new Map<java.lang.Class<unknown>, java.lang.Class<unknown>>();
 
-    public  size():  int {
+    public size(): int {
         return this.backingStore.size();
     }
 
-    public  isEmpty():  boolean {
+    public isEmpty(): boolean {
         return this.backingStore.isEmpty();
     }
 
-    public  containsKey(key: java.lang.Object):  boolean {
+    public containsKey(key: Object): boolean {
         if (this.cache.containsKey(key)) {
             return true;
         }
 
-        if (!(key instanceof Class)) {
+        if (!(key instanceof java.lang.Class)) {
             return false;
         }
 
         return this.get(key) !== null;
     }
 
-    @SuppressWarnings("unchecked")
-public  containsValue(value: java.lang.Object):  boolean {
+    public containsValue(value: Object): boolean {
         return this.values().contains(value);
     }
 
@@ -93,15 +73,15 @@ public  containsValue(value: java.lang.Object):  boolean {
      * @throws AmbiguousMatchException if the registry contains more than value
      * mapped to a maximally-specific type from which {@code key} is derived.
      */
-    public  get(key: java.lang.Object):  V {
-        let  value = this.backingStore.get(key);
+    public get(key: Object): V {
+        let value = this.backingStore.get(key);
         if (value !== null) {
             return value;
         }
 
-        let  redirect = this.cache.get(key);
+        let redirect = this.cache.get(key);
         if (redirect !== null) {
-            if (redirect === Void.TYPE) {
+            if (redirect === java.lang.Void.TYPE) {
                 return null;
             }
             else {
@@ -109,12 +89,12 @@ public  containsValue(value: java.lang.Object):  boolean {
             }
         }
 
-        if (!(key instanceof Class)) {
+        if (!(key instanceof java.lang.Class)) {
             return null;
         }
 
-        let  keyClass = key as Class<unknown>;
-        let  candidates = new  ArrayList<Class<unknown>>();
+        let keyClass = key as java.lang.Class<unknown>;
+        let candidates = new Array<java.lang.Class<unknown>>();
         for (let clazz of this.backingStore.keySet()) {
             if (clazz.isAssignableFrom(keyClass)) {
                 candidates.add(clazz);
@@ -122,80 +102,80 @@ public  containsValue(value: java.lang.Object):  boolean {
         }
 
         if (candidates.isEmpty()) {
-            this.cache.put(keyClass, Void.TYPE);
+            this.cache.put(keyClass, java.lang.Void.TYPE);
             return null;
         }
         else {
- if (candidates.size() === 1) {
-            this.cache.put(keyClass, candidates.get(0));
-            return this.backingStore.get(candidates.get(0));
-        }
-        else {
-            for (let  i = 0; i < candidates.size() - 1; i++) {
-                if (candidates.get(i) === null) {
-                    continue;
-                }
-
-                for (let  j = i + 1; j < candidates.size(); j++) {
-                    if (candidates.get(i).isAssignableFrom(candidates.get(j))) {
-                        candidates.set(i, null);
-                        break;
+            if (candidates.size() === 1) {
+                this.cache.put(keyClass, candidates.get(0));
+                return this.backingStore.get(candidates.get(0));
+            }
+            else {
+                for (let i = 0; i < candidates.size() - 1; i++) {
+                    if (candidates.get(i) === null) {
+                        continue;
                     }
-                    else {
- if (candidates.get(j).isAssignableFrom(candidates.get(i))) {
-                        candidates.set(j, null);
+
+                    for (let j = i + 1; j < candidates.size(); j++) {
+                        if (candidates.get(i).isAssignableFrom(candidates.get(j))) {
+                            candidates.set(i, null);
+                            break;
+                        }
+                        else {
+                            if (candidates.get(j).isAssignableFrom(candidates.get(i))) {
+                                candidates.set(j, null);
+                            }
+                        }
+
                     }
-}
-
                 }
+
+                let j = 0;
+                for (let i = 0; i < candidates.size(); i++) {
+                    let current = candidates.get(i);
+                    if (current === null) {
+                        continue;
+                    }
+
+                    if (i !== j) {
+                        candidates.set(j, current);
+                    }
+
+                    j++;
+                }
+
+                /* assert j > 0; */
+                if (j !== 1) {
+                    let builder = new java.lang.StringBuilder();
+                    builder.append(string.format("The class '%s' does not match a single item in the registry. The %d ambiguous matches are:", keyClass.getName(), j));
+                    for (let i = 0; i < j; i++) {
+                        builder.append(string.format("%n    %s", candidates.get(j).getName()));
+                    }
+
+                    throw new AmbiguousMatchException(builder.toString());
+                }
+
+                this.cache.put(keyClass, candidates.get(0));
+                return this.backingStore.get(candidates.get(0));
             }
-
-            let  j = 0;
-            for (let  i = 0; i < candidates.size(); i++) {
-                let  current = candidates.get(i);
-                if (current === null) {
-                    continue;
-                }
-
-                if (i !== j) {
-                    candidates.set(j, current);
-                }
-
-                j++;
-            }
-
-            /* assert j > 0; */ 
-            if (j !== 1) {
-                let  builder = new  StringBuilder();
-                builder.append(String.format("The class '%s' does not match a single item in the registry. The %d ambiguous matches are:", keyClass.getName(), j));
-                for (let  i = 0; i < j; i++) {
-                    builder.append(String.format("%n    %s", candidates.get(j).getName()));
-                }
-
-                throw new  AmbiguousMatchException(builder.toString());
-            }
-
-            this.cache.put(keyClass, candidates.get(0));
-            return this.backingStore.get(candidates.get(0));
         }
-}
 
     }
 
-    public  put(key: Class<unknown>, value: V):  V {
-        let  result = this.get(key);
+    public put(key: java.lang.Class<unknown>, value: V): V {
+        let result = this.get(key);
         this.backingStore.put(key, value);
         this.handleAlteration(key);
         return result;
     }
 
-    public  remove(key: java.lang.Object):  V {
-        if (!(key instanceof Class)) {
+    public remove(key: Object): V {
+        if (!(key instanceof java.lang.Class)) {
             return null;
         }
 
-        let  clazz = key as Class<unknown>;
-        let  previous = this.get(clazz);
+        let clazz = key as java.lang.Class<unknown>;
+        let previous = this.get(clazz);
         if (this.backingStore.remove(clazz) !== null) {
             this.handleAlteration(clazz);
         }
@@ -203,30 +183,30 @@ public  containsValue(value: java.lang.Object):  boolean {
         return previous;
     }
 
-    public  putAll(m: Map< Class<unknown>,  V>):  void {
+    public putAll(m: Map<java.lang.Class<unknown>, V>): void {
         for (let entry of m.entrySet()) {
             this.put(entry.getKey(), entry.getValue());
         }
     }
 
-    public  clear():  void {
+    public clear(): void {
         this.backingStore.clear();
         this.cache.clear();
     }
 
-    public  keySet():  Set<Class<unknown>> {
-        return Collections.unmodifiableSet(this.backingStore.keySet());
+    public keySet(): java.util.Set<java.lang.Class<unknown>> {
+        return java.util.Collections.unmodifiableSet(this.backingStore.keySet());
     }
 
-    public  values():  Collection<V> {
-        return Collections.unmodifiableCollection(this.backingStore.values());
+    public values(): java.util.Collection<V> {
+        return java.util.Collections.unmodifiableCollection(this.backingStore.values());
     }
 
-    public  entrySet():  Set<java.security.KeyStore.Entry<Class<unknown>, V>> {
-        return Collections.unmodifiableSet(this.backingStore.entrySet());
+    public entrySet(): java.util.Set<java.security.KeyStore.Entry<java.lang.Class<unknown>, V>> {
+        return java.util.Collections.unmodifiableSet(this.backingStore.entrySet());
     }
 
-    protected  handleAlteration(clazz: Class<unknown>):  void {
+    protected handleAlteration(clazz: java.lang.Class<unknown>): void {
         for (let entry of this.cache.entrySet()) {
             if (clazz.isAssignableFrom(entry.getKey())) {
                 entry.setValue(null);

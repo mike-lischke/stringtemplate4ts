@@ -26,21 +26,19 @@
  *  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-import { JavaObject, type int, java } from "jree";
-
-type String = java.lang.String;
-const String = java.lang.String;
+import { JavaObject, type int } from "jree";
 
 
 
 /** An inclusive interval {@code a..b}.  Used to track ranges in output and
  *  template patterns (for debugging).
  */
-export  class Interval extends JavaObject {
-    public  a:  int;
-    public  b:  int;
-    public  constructor(a: int, b: int) { super();
-this.a=a; this.b=b; }
-    @Override
-public override  toString():  String { return this.a+".."+this.b; }    
+export class Interval {
+    public a: int;
+    public b: int;
+    public constructor(a: int, b: int) {
+        super();
+        this.a = a; this.b = b;
+    }
+    public override  toString(): string { return this.a + ".." + this.b; }
 }

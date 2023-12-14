@@ -32,21 +32,15 @@ import { java, type int } from "jree";
 import { STWriter } from "./STWriter.js";
 import { AutoIndentWriter } from "./AutoIndentWriter.js";
 
-type Writer = java.io.Writer;
-const Writer = java.io.Writer;
-type String = java.lang.String;
-const String = java.lang.String;
-
 
 
 /** Just pass through the text. */
 export  class NoIndentWriter extends AutoIndentWriter {
-    public  constructor(out: Writer) {
+    public  constructor(out: java.io.Writer) {
         super(out);
     }
 
-    @Override
-public override  write(str: String):  int {
+    public override  write(str: string):  int {
         this.out.write(str);
         return str.length();
     }

@@ -32,11 +32,6 @@ import { java } from "jree";
 import { ST } from "./ST.js";
 import { Interpreter } from "./Interpreter.js";
 
-type Object = java.lang.Object;
-const Object = java.lang.Object;
-type String = java.lang.String;
-const String = java.lang.String;
-
 
 
 /**
@@ -64,5 +59,5 @@ const String = java.lang.String;
      * any key type. If we need to convert to {@code String}, then it's done by
      * {@code ST} and passed in here.</p>
      */
-      getProperty(interp: Interpreter, self: ST, model: T, property: Object, propertyName: String): Object;
+      getProperty(interp: Interpreter, self: ST, model: T, property: Object, propertyName: string): Object;
 }

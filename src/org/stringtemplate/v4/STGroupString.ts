@@ -34,28 +34,23 @@ import { STGroup } from "./STGroup.js";
 import { CompiledST } from "./compiler/CompiledST.js";
 import { ErrorType } from "./misc/ErrorType.js";
 
-type String = java.lang.String;
-const String = java.lang.String;
-type Exception = java.lang.Exception;
-const Exception = java.lang.Exception;
-
 
 
 /** A group derived from a string not a file or directory. */
 export  class STGroupString extends STGroup {
-    public  sourceName:  String;
-    public  text:  String;
+    public  sourceName:  string;
+    public  text:  string;
     protected  alreadyLoaded = false;
 
-    public  constructor(text: String);
+    public  constructor(text: string);
 
-    public  constructor(sourceName: String, text: String);
+    public  constructor(sourceName: string, text: string);
 
-    public  constructor(sourceName: String, text: String, delimiterStartChar: char, delimiterStopChar: char);
+    public  constructor(sourceName: string, text: string, delimiterStartChar: char, delimiterStopChar: char);
     public constructor(...args: unknown[]) {
 		switch (args.length) {
 			case 1: {
-				const [text] = args as [String];
+				const [text] = args as [string];
 
  this("<string>", text, '<', '>'); 
 
@@ -63,7 +58,7 @@ export  class STGroupString extends STGroup {
 			}
 
 			case 2: {
-				const [sourceName, text] = args as [String, String];
+				const [sourceName, text] = args as [string, string];
 
  this(sourceName, text, '<', '>'); 
 
@@ -71,7 +66,7 @@ export  class STGroupString extends STGroup {
 			}
 
 			case 4: {
-				const [sourceName, text, delimiterStartChar, delimiterStopChar] = args as [String, String, char, char];
+				const [sourceName, text, delimiterStartChar, delimiterStopChar] = args as [string, string, char, char];
 
 
         super(delimiterStartChar, delimiterStopChar);
@@ -89,8 +84,7 @@ export  class STGroupString extends STGroup {
 	}
 
 
-    @Override
-public override  isDictionary(name: String):  boolean {
+    public override  isDictionary(name: string):  boolean {
         if ( !this.alreadyLoaded ) {
  this.load();
 }
@@ -98,8 +92,7 @@ public override  isDictionary(name: String):  boolean {
         return super.isDictionary(name);
     }
 
-    @Override
-public override  isDefined(name: String):  boolean {
+    public override  isDefined(name: string):  boolean {
         if ( !this.alreadyLoaded ) {
  this.load();
 }
@@ -107,11 +100,9 @@ public override  isDefined(name: String):  boolean {
         return super.isDefined(name);
     }
 
-    @Override
-public override  load():  void;
+    public override  load():  void;
 
-    @Override
-protected override  load(name: String):  CompiledST;
+    protected override  load(name: string):  CompiledST;
 public override load(...args: unknown[]):  void |  CompiledST {
 		switch (args.length) {
 			case 0: {
@@ -132,7 +123,7 @@ public override load(...args: unknown[]):  void |  CompiledST {
             // beneath it.
             parser.group(this, "/");
         } catch (e) {
-if (e instanceof Exception) {
+if (e instanceof java.lang.Exception) {
             this.errMgr.IOError(null, ErrorType.CANT_LOAD_GROUP_FILE, e, "<string>");
         } else {
 	throw e;
@@ -144,7 +135,7 @@ if (e instanceof Exception) {
 			}
 
 			case 1: {
-				const [name] = args as [String];
+				const [name] = args as [string];
 
 
         if ( !this.alreadyLoaded ) {
@@ -164,6 +155,5 @@ if (e instanceof Exception) {
 	}
 
 
-    @Override
-public override  getFileName():  String { return "<string>"; }
+    public override  getFileName():  string { return "<string>"; }
 }

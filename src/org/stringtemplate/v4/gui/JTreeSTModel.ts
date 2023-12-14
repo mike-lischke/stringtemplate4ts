@@ -28,49 +28,45 @@
 
 
 
-import { JavaObject, type int, java } from "jree";
+import { JavaObject, type int } from "jree";
 import { Interpreter } from "../Interpreter.js";
 import { ST } from "../ST.js";
 import { StringRenderer } from "../StringRenderer.js";
 import { EvalTemplateEvent } from "../debug/EvalTemplateEvent.js";
 
-type String = java.lang.String;
-const String = java.lang.String;
 
 
+export class JTreeSTModel implements TreeModel {
 
-export  class JTreeSTModel extends JavaObject implements TreeModel {
+    public static Wrapper = class Wrapper {
+        protected event: EvalTemplateEvent;
+        public constructor(event: EvalTemplateEvent) {
+            super();
+            this.event = event;
+        }
 
-    public static Wrapper =  class Wrapper extends JavaObject {
-        protected  event: EvalTemplateEvent;
-        public  constructor(event: EvalTemplateEvent) { super();
-this.event = event; }
-
-        @Override
-public override  hashCode():  int {
+        public override  hashCode(): int {
             return this.event.hashCode();
         }
 
-        @Override
-public override  equals(o: java.lang.Object):  boolean {
-            if ( o === null ) {
- return false;
-}
+        public override  equals(o: Object): boolean {
+            if (o === null) {
+                return false;
+            }
 
             //System.out.println(event+"=="+((Wrapper)o).event+" is "+(this.event == ((Wrapper)o).event));
             return this.event === (o as Wrapper).event;
         }
 
-        @Override
-public override  toString():  String {
-            let  st = this.event.scope.st;
-            if ( st.isAnonSubtemplate() ) {
- return "{...}";
-}
+        public override  toString(): string {
+            let st = this.event.scope.st;
+            if (st.isAnonSubtemplate()) {
+                return "{...}";
+            }
 
-            if ( st.debugState!==null && st.debugState.newSTEvent!==null ) {
-                let  label = st.toString()+" @ "+st.debugState.newSTEvent.getFileName()+":"+
-                       st.debugState.newSTEvent.getLine();
+            if (st.debugState !== null && st.debugState.newSTEvent !== null) {
+                let label = st.toString() + " @ " + st.debugState.newSTEvent.getFileName() + ":" +
+                    st.debugState.newSTEvent.getLine();
                 return "<html><b>" + StringRenderer.escapeHTML(label) + "</b></html>";
             }
             else {
@@ -79,36 +75,33 @@ public override  toString():  String {
         }
     };
 
-    public  interp:  Interpreter;
-    public  root:  JTreeSTModel.Wrapper;
+    public interp: Interpreter;
+    public root: JTreeSTModel.Wrapper;
 
-    public  constructor(interp: Interpreter, root: EvalTemplateEvent) {
+    public constructor(interp: Interpreter, root: EvalTemplateEvent) {
         super();
-this.interp = interp;
-        this.root = new  JTreeSTModel.Wrapper(root);
+        this.interp = interp;
+        this.root = new JTreeSTModel.Wrapper(root);
     }
 
-    @Override
-public  getChild(parent: java.lang.Object, index: int):  java.lang.Object {
-        let  e = (parent as JTreeSTModel.Wrapper).event;
-        return new  JTreeSTModel.Wrapper(e.scope.childEvalTemplateEvents.get(index));
+    public getChild(parent: Object, index: int): Object {
+        let e = (parent as JTreeSTModel.Wrapper).event;
+        return new JTreeSTModel.Wrapper(e.scope.childEvalTemplateEvents.get(index));
     }
 
-    @Override
-public  getChildCount(parent: java.lang.Object):  int {
-        let  e = (parent as JTreeSTModel.Wrapper).event;
+    public getChildCount(parent: Object): int {
+        let e = (parent as JTreeSTModel.Wrapper).event;
         return e.scope.childEvalTemplateEvents.size();
     }
 
-    @Override
-public  getIndexOfChild(parent: java.lang.Object, child: java.lang.Object):  int {
-        let  p = (parent as JTreeSTModel.Wrapper).event;
-        let  c = (parent as JTreeSTModel.Wrapper).event;
-        let  i = 0;
+    public getIndexOfChild(parent: Object, child: Object): int {
+        let p = (parent as JTreeSTModel.Wrapper).event;
+        let c = (parent as JTreeSTModel.Wrapper).event;
+        let i = 0;
         for (let e of p.scope.childEvalTemplateEvents) {
-            if ( e.scope.st === c.scope.st ) {
-//              System.out.println(i);
-//              System.out.println("found "+e.self+" as child of "+parentST);
+            if (e.scope.st === c.scope.st) {
+                //              System.out.println(i);
+                //              System.out.println("found "+e.self+" as child of "+parentST);
                 return i;
             }
             i++;
@@ -116,30 +109,23 @@ public  getIndexOfChild(parent: java.lang.Object, child: java.lang.Object):  int
         return -1;
     }
 
-    @Override
-public  isLeaf(node: java.lang.Object):  boolean {
+    public isLeaf(node: Object): boolean {
         return this.getChildCount(node) === 0;
     }
 
-    @Override
-public  getRoot():  java.lang.Object { return this.root; }
+    public getRoot(): Object { return this.root; }
 
-    @Override
-public  valueForPathChanged(treePath: TreePath, o: java.lang.Object):  void {
+    public valueForPathChanged(treePath: TreePath, o: Object): void {
     }
 
-    @Override
-public  addTreeModelListener(treeModelListener: TreeModelListener):  void {
+    public addTreeModelListener(treeModelListener: TreeModelListener): void {
     }
 
-    @Override
-public  removeTreeModelListener(treeModelListener: TreeModelListener):  void {
+    public removeTreeModelListener(treeModelListener: TreeModelListener): void {
     }
 }
 
 // eslint-disable-next-line @typescript-eslint/no-namespace, no-redeclare
 export namespace JTreeSTModel {
-	export type Wrapper = InstanceType<typeof JTreeSTModel.Wrapper>;
+    export type Wrapper = InstanceType<typeof JTreeSTModel.Wrapper>;
 }
-
-

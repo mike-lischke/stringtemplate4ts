@@ -34,85 +34,75 @@ import { ModelAdaptor } from "../ModelAdaptor.js";
 import { ST } from "../ST.js";
 import { STGroup } from "../STGroup.js";
 
-type Map<K,​V> = java.util.Map<K,​V>;
-type String = java.lang.String;
-const String = java.lang.String;
-type Boolean = java.lang.Boolean;
-const Boolean = java.lang.Boolean;
-type ClassCastException = java.lang.ClassCastException;
-const ClassCastException = java.lang.ClassCastException;
 
 
+export class MapModelAdaptor implements ModelAdaptor<Map<unknown, unknown>> {
 
-export  class MapModelAdaptor extends JavaObject implements ModelAdaptor<Map<unknown, unknown>> {
-
-    private static  containsKey(map: Map<unknown, unknown>, key: java.lang.Object):  Boolean {
+    private static containsKey(map: Map<unknown, unknown>, key: Object): java.lang.Boolean {
         try {
             return map.containsKey(key);
         } catch (ex) {
-if (ex instanceof ClassCastException) {
-            // Map.containsKey is allowed to throw ClassCastException if the key
-            // cannot be compared to keys already in the map.
-            return false;
-        } else {
-	throw ex;
-	}
-}
+            if (ex instanceof java.lang.ClassCastException) {
+                // Map.containsKey is allowed to throw ClassCastException if the key
+                // cannot be compared to keys already in the map.
+                return false;
+            } else {
+                throw ex;
+            }
+        }
     }
 
-    private static  getDefaultValue(map: Map<unknown, unknown>):  java.lang.Object {
+    private static getDefaultValue(map: Map<unknown, unknown>): Object {
         try {
             return map.get(STGroup.DEFAULT_KEY);
         } catch (ex) {
-if (ex instanceof ClassCastException) {
-            // Map.containsKey is allowed to throw ClassCastException if the key
-            // cannot be compared to keys already in the map.
-            return false;
-        } else {
-	throw ex;
-	}
-}
-    }
-    @Override
-public  getProperty(interp: Interpreter, self: ST, model: Map<unknown, unknown>, property: java.lang.Object, propertyName: String):  java.lang.Object
-    {
-        let  value: java.lang.Object;
-        if ( property===null ) {
- value = MapModelAdaptor.getDefaultValue(model);
-}
-
-        else {
- if ( MapModelAdaptor.containsKey(model, property) ) {
- value = model.get(property);
-}
-
-        else {
- if ( MapModelAdaptor.containsKey(model, propertyName) ) { // if can't find the key, try toString version
-            value = model.get(propertyName);
+            if (ex instanceof java.lang.ClassCastException) {
+                // Map.containsKey is allowed to throw ClassCastException if the key
+                // cannot be compared to keys already in the map.
+                return false;
+            } else {
+                throw ex;
+            }
         }
-        else {
- if ( property.equals("keys") ) {
- value = model.keySet();
-}
+    }
+    public getProperty(interp: Interpreter, self: ST, model: Map<unknown, unknown>, property: Object, propertyName: string): Object {
+        let value: Object;
+        if (property === null) {
+            value = MapModelAdaptor.getDefaultValue(model);
+        }
 
         else {
- if ( property.equals("values") ) {
- value = model.values();
-}
+            if (MapModelAdaptor.containsKey(model, property)) {
+                value = model.get(property);
+            }
 
-        else {
- value = MapModelAdaptor.getDefaultValue(model);
-}
+            else {
+                if (MapModelAdaptor.containsKey(model, propertyName)) { // if can't find the key, try toString version
+                    value = model.get(propertyName);
+                }
+                else {
+                    if (property.equals("keys")) {
+                        value = model.keySet();
+                    }
 
-}
+                    else {
+                        if (property.equals("values")) {
+                            value = model.values();
+                        }
 
-}
+                        else {
+                            value = MapModelAdaptor.getDefaultValue(model);
+                        }
 
-}
+                    }
 
-}
- // not found, use default
-        if ( value === STGroup.DICT_KEY ) {
+                }
+
+            }
+
+        }
+        // not found, use default
+        if (value === STGroup.DICT_KEY) {
             value = property;
         }
         return value;

@@ -8,32 +8,25 @@ import { STLexer } from "./compiler/STLexer.js";
 import { CompiledST } from "./compiler/CompiledST.js";
 import { Misc } from "./misc/Misc.js";
 
-type String = java.lang.String;
-const String = java.lang.String;
-type URL = java.net.URL;
-const URL = java.net.URL;
-type Compiler = java.lang.Compiler;
-const Compiler = java.lang.Compiler;
-
 
 
 /** A directory of templates without headers like ST v3 had.  Still allows group
  *  files in directory though like {@link STGroupDir} parent.
  */
 export  class STRawGroupDir extends STGroupDir {
-    public  constructor(dirName: String);
+    public  constructor(dirName: string);
 
-    public  constructor(dirName: String, encoding: String);
+    public  constructor(dirName: string, encoding: string);
 
-    public  constructor(dirName: String, delimiterStartChar: char, delimiterStopChar: char);
+    public  constructor(dirName: string, delimiterStartChar: char, delimiterStopChar: char);
 
-    public  constructor(dirName: String, encoding: String, delimiterStartChar: char, delimiterStopChar: char);
+    public  constructor(dirName: string, encoding: string, delimiterStartChar: char, delimiterStopChar: char);
 
-    public  constructor(root: URL, encoding: String, delimiterStartChar: char, delimiterStopChar: char);
+    public  constructor(root: java.net.URL, encoding: string, delimiterStartChar: char, delimiterStopChar: char);
     public constructor(...args: unknown[]) {
 		switch (args.length) {
 			case 1: {
-				const [dirName] = args as [String];
+				const [dirName] = args as [string];
 
 
         super(dirName);
@@ -43,7 +36,7 @@ export  class STRawGroupDir extends STGroupDir {
 			}
 
 			case 2: {
-				const [dirName, encoding] = args as [String, String];
+				const [dirName, encoding] = args as [string, string];
 
 
         super(dirName, encoding);
@@ -53,7 +46,7 @@ export  class STRawGroupDir extends STGroupDir {
 			}
 
 			case 3: {
-				const [dirName, delimiterStartChar, delimiterStopChar] = args as [String, char, char];
+				const [dirName, delimiterStartChar, delimiterStopChar] = args as [string, char, char];
 
 
         super(dirName, delimiterStartChar, delimiterStopChar);
@@ -63,7 +56,7 @@ export  class STRawGroupDir extends STGroupDir {
 			}
 
 			case 4: {
-				const [dirName, encoding, delimiterStartChar, delimiterStopChar] = args as [String, String, char, char];
+				const [dirName, encoding, delimiterStartChar, delimiterStopChar] = args as [string, string, char, char];
 
 
         super(dirName, encoding, delimiterStartChar, delimiterStopChar);
@@ -73,7 +66,7 @@ export  class STRawGroupDir extends STGroupDir {
 			}
 
 			case 4: {
-				const [root, encoding, delimiterStartChar, delimiterStopChar] = args as [URL, String, char, char];
+				const [root, encoding, delimiterStartChar, delimiterStopChar] = args as [java.net.URL, string, char, char];
 
 
         super(root, encoding, delimiterStartChar, delimiterStopChar);
@@ -89,14 +82,13 @@ export  class STRawGroupDir extends STGroupDir {
 	}
 
 
-    @Override
-public override  loadTemplateFile(prefix: String, unqualifiedFileName: String,
+    public override  loadTemplateFile(prefix: string, unqualifiedFileName: string,
                                        templateStream: CharStream):  CompiledST
     {
         let  template = templateStream.substring(0, templateStream.size() - 1);
         let  templateName = Misc.getFileNameNoSuffix(unqualifiedFileName);
         let  fullyQualifiedTemplateName = prefix + templateName;
-        let  impl = new  Compiler(this).compile(fullyQualifiedTemplateName, template);
+        let  impl = new  java.lang.Compiler(this).compile(fullyQualifiedTemplateName, template);
         let  nameT = new  CommonToken(STLexer.SEMI); // Seems like a hack, best I could come up with.
         nameT.setInputStream(templateStream);
         $outer.rawDefineTemplate(fullyQualifiedTemplateName, impl, nameT);

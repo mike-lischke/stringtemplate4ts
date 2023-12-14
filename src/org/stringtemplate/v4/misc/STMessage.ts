@@ -1,169 +1,128 @@
+/* java2ts: keep */
+
 /*
- * [The "BSD license"]
- *  Copyright (c) 2011 Terence Parr
- *  All rights reserved.
- *
- *  Redistribution and use in source and binary forms, with or without
- *  modification, are permitted provided that the following conditions
- *  are met:
- *  1. Redistributions of source code must retain the above copyright
- *     notice, this list of conditions and the following disclaimer.
- *  2. Redistributions in binary form must reproduce the above copyright
- *     notice, this list of conditions and the following disclaimer in the
- *     documentation and/or other materials provided with the distribution.
- *  3. The name of the author may not be used to endorse or promote products
- *     derived from this software without specific prior written permission.
- *
- *  THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
- *  IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
- *  OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
- *  IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
- *  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
- *  NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- *  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- *  THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- *  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
- *  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Copyright (c) Terence Parr. All rights reserved.
+ * Licensed under the BSD-3 License. See License.txt in the project root for license information.
  */
 
+import { Token } from "antlr4ng";
+import { printf } from "fast-printf";
 
-
-import { java, JavaObject, S } from "jree";
 import { ErrorType } from "./ErrorType.js";
 import { ST } from "../ST.js";
 
-type Throwable = java.lang.Throwable;
-const Throwable = java.lang.Throwable;
-type String = java.lang.String;
-const String = java.lang.String;
-type StringWriter = java.io.StringWriter;
-const StringWriter = java.io.StringWriter;
-type PrintWriter = java.io.PrintWriter;
-const PrintWriter = java.io.PrintWriter;
-
-
-
-/** Upon error, ST creates an {@link STMessage} or subclass instance and notifies
- *  the listener.  This root class is used for IO and internal errors.
+/**
+ * Upon error, ST creates an {@link STMessage} or subclass instance and notifies
+ * the listener. This root class is used for IO and internal errors.
  *
  *  @see STRuntimeMessage
  *  @see STCompiletimeMessage
  */
-export  class STMessage extends JavaObject {
-    /** if in debug mode, has created instance, add attr events and eval
+export class STMessage {
+    /**
+     * if in debug mode, has created instance, add attr events and eval
      *  template events.
      */
-    public  self:  ST;
-    public  error:  ErrorType;
-    public  arg:  java.lang.Object;
-    public  arg2:  java.lang.Object;
-    public  arg3:  java.lang.Object;
-    public  cause:  Throwable;
+    public self?: ST;
+    public error: ErrorType;
+    public arg: unknown;
+    public arg2: unknown;
+    public arg3: unknown;
+    public cause?: Error;
 
-    public  constructor(error: ErrorType);
-    public  constructor(error: ErrorType, self: ST);
-    public  constructor(error: ErrorType, self: ST, cause: Throwable);
-    public  constructor(error: ErrorType, self: ST, cause: Throwable, arg: java.lang.Object);
-    @SuppressWarnings("ChainingConstructorIgnoresParameter")
-public  constructor(error: ErrorType, self: ST, cause: Throwable, where: Token, arg: java.lang.Object);
-    public  constructor(error: ErrorType, self: ST, cause: Throwable, arg: java.lang.Object, arg2: java.lang.Object);
-    public  constructor(error: ErrorType, self: ST, cause: Throwable, arg: java.lang.Object, arg2: java.lang.Object, arg3: java.lang.Object);
+    public constructor(error: ErrorType);
+    public constructor(error: ErrorType, self: ST);
+    public constructor(error: ErrorType, self?: ST, cause?: Error);
+    public constructor(error: ErrorType, self?: ST, cause?: Error, arg?: unknown);
+    public constructor(error: ErrorType, self?: ST, cause?: Error, where?: Token, arg?: unknown);
+    public constructor(error: ErrorType, self?: ST, cause?: Error, arg?: unknown, arg2?: unknown);
+    public constructor(error: ErrorType, self?: ST, cause?: Error, arg?: unknown, arg2?: unknown, arg3?: unknown);
     public constructor(...args: unknown[]) {
-		switch (args.length) {
-			case 1: {
-				const [error] = args as [ErrorType];
+        switch (args.length) {
+            case 1: {
+                const [error] = args as [ErrorType];
+                this.error = error;
 
+                break;
+            }
 
-        super();
-this.error = error;
-    
+            case 2: {
+                const [error, self] = args as [ErrorType, ST];
 
-				break;
-			}
+                this.error = error;
+                this.self = self;
 
-			case 2: {
-				const [error, self] = args as [ErrorType, ST];
+                break;
+            }
 
+            case 3: {
+                const [error, self, cause] = args as [ErrorType, ST, Error];
 
-        this(error);
-        this.self = self;
-    
+                this.error = error;
+                this.self = self;
+                this.cause = cause;
 
-				break;
-			}
+                break;
+            }
 
-			case 3: {
-				const [error, self, cause] = args as [ErrorType, ST, Throwable];
+            case 4: {
+                const [error, self, cause, arg] = args as [ErrorType, ST, Error, unknown];
 
+                this.error = error;
+                this.self = self;
+                this.cause = cause;
+                this.arg = arg;
 
-        this(error,self);
-        this.cause = cause;
-    
+                break;
+            }
 
-				break;
-			}
+            case 5: {
+                if (args[3] && typeof args[3] === "object" && "tokenIndex" in args[3]) {
+                    const [error, self, cause, _where, arg] = args as [ErrorType, ST, Error, Token, unknown];
 
-			case 4: {
-				const [error, self, cause, arg] = args as [ErrorType, ST, Throwable, java.lang.Object];
+                    this.error = error;
+                    this.self = self;
+                    this.cause = cause;
+                    this.arg = arg;
+                } else {
+                    const [error, self, cause, arg, arg2] = args as [ErrorType, ST, Error, unknown, unknown];
 
+                    this.error = error;
+                    this.self = self;
+                    this.cause = cause;
+                    this.arg = arg;
+                    this.arg2 = arg2;
+                }
 
-        this(error,self,cause);
-        this.arg = arg;
-    
+                break;
+            }
 
-				break;
-			}
+            case 6: {
+                const [error, self, cause, arg, arg2, arg3] = args as [ErrorType, ST, Error, unknown, unknown, unknown];
 
-			case 5: {
-				const [error, self, cause, where, arg] = args as [ErrorType, ST, Throwable, Token, java.lang.Object];
+                this.error = error;
+                this.self = self;
+                this.cause = cause;
+                this.arg = arg;
+                this.arg2 = arg2;
+                this.arg3 = arg3;
 
+                break;
+            }
 
-        this(error,self,cause,where);
-        this.arg = arg;
-    
-
-				break;
-			}
-
-			case 5: {
-				const [error, self, cause, arg, arg2] = args as [ErrorType, ST, Throwable, java.lang.Object, java.lang.Object];
-
-
-        this(error,self,cause,arg);
-        this.arg2 = arg2;
-    
-
-				break;
-			}
-
-			case 6: {
-				const [error, self, cause, arg, arg2, arg3] = args as [ErrorType, ST, Throwable, java.lang.Object, java.lang.Object, java.lang.Object];
-
-
-        this(error,self,cause,arg,arg2);
-        this.arg3 = arg3;
-    
-
-				break;
-			}
-
-			default: {
-				throw new java.lang.IllegalArgumentException(S`Invalid number of arguments`);
-			}
-		}
-	}
-
-
-    @Override
-public override  toString():  String {
-        let  sw = new  StringWriter();
-        let  pw = new  PrintWriter(sw);
-        let  msg = String.format(this.error.message, this.arg, this.arg2, this.arg3);
-        pw.print(msg);
-        if ( this.cause!==null ) {
-            pw.print("\nCaused by: ");
-            this.cause.printStackTrace(pw);
+            default: {
+                throw new Error("Invalid number of arguments");
+            }
         }
-        return sw.toString();
+    }
+
+    public toString(): string {
+        let msg = printf(this.error.message, this.arg, this.arg2, this.arg3);
+        if (this.cause) {
+            msg += "\nCaused by: ";
+            msg += this.cause.stack ?? "";
+        }
+
+        return msg;
     }
 }

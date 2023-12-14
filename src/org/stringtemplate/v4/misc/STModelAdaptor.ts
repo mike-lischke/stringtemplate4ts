@@ -28,20 +28,15 @@
 
 
 
-import { JavaObject, java } from "jree";
+import { JavaObject } from "jree";
 import { Interpreter } from "../Interpreter.js";
 import { ModelAdaptor } from "../ModelAdaptor.js";
 import { ST } from "../ST.js";
 
-type String = java.lang.String;
-const String = java.lang.String;
 
 
-
-export  class STModelAdaptor extends JavaObject implements ModelAdaptor<ST> {
-    @Override
-public  getProperty(interp: Interpreter, self: ST, model: ST, property: java.lang.Object, propertyName: String):  java.lang.Object
-    {
+export class STModelAdaptor implements ModelAdaptor<ST> {
+    public getProperty(interp: Interpreter, self: ST, model: ST, property: Object, propertyName: string): Object {
         return model.getAttribute(propertyName);
     }
 }

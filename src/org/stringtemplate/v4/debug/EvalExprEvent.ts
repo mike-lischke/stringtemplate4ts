@@ -28,12 +28,9 @@
 
 
 
-import { type int, java } from "jree";
+import { type int } from "jree";
 import { InterpEvent } from "./InterpEvent.js";
 import { InstanceScope } from "../InstanceScope.js";
-
-type String = java.lang.String;
-const String = java.lang.String;
 
 
 
@@ -42,7 +39,7 @@ export  class EvalExprEvent extends InterpEvent {
     public readonly  exprStartChar:  int;
     /** Index of last char in template (inclusive). */
     public readonly  exprStopChar:  int;
-    public readonly  expr:  String;
+    public readonly  expr:  string;
     public  constructor(scope: InstanceScope, start: int, stop: int,
                          exprStartChar: int, exprStopChar: int)
     {
@@ -57,8 +54,7 @@ export  class EvalExprEvent extends InterpEvent {
         }
     }
 
-    @Override
-public override  toString():  String {
+    public override  toString():  string {
         return $outer.getClass().getSimpleName()+"{" +
                "self=" + this.scope.st +
                ", expr='" + this.expr + '\'' +

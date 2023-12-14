@@ -1,3 +1,5 @@
+/* java2ts: keep */
+
 /*
  * [The "BSD license"]
  *  Copyright (c) 2011 Terence Parr
@@ -26,17 +28,6 @@
  *  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-
-
-import { java } from "jree";
-
-type String = java.lang.String;
-const String = java.lang.String;
-type Locale = java.util.Locale;
-const Locale = java.util.Locale;
-
-
-
 /**
  * This interface describes an object that knows how to format or otherwise
  * render an object appropriately. There is one renderer registered per group
@@ -53,6 +44,6 @@ const Locale = java.util.Locale;
  * @param <T>
  *     the type of values this renderer can handle.
  */
- interface AttributeRenderer<T> {
-      toString(value: T, formatString: String, locale: Locale): String;
+export interface AttributeRenderer<T> {
+    toString(value: T, formatString: string, locale: Intl.Locale): string;
 }

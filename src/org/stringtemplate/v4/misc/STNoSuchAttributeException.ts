@@ -29,28 +29,23 @@
 
 
 
-import { java } from "jree";
 import { InstanceScope } from "../InstanceScope.js";
 import { STException } from "../compiler/STException.js";
-
-type String = java.lang.String;
-const String = java.lang.String;
 
 
 
 /** {@code <name>} where {@code name} is not found up the dynamic scoping chain. */
 export  class STNoSuchAttributeException extends STException {
     public  scope:  InstanceScope;
-    public  name:  String;
+    public  name:  string;
 
-    public  constructor(name: String, scope: InstanceScope) {
+    public  constructor(name: string, scope: InstanceScope) {
         super();
 this.name = name;
         this.scope = scope;
     }
 
-    @Override
-public override  getMessage():  String {
+    public override  getMessage():  string {
         return "from template "+this.scope.st.getName()+" no attribute "+this.name+" is visible";
     }
 }

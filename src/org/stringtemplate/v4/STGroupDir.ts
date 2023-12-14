@@ -35,33 +35,6 @@ import { STException } from "./compiler/STException.js";
 import { ErrorType } from "./misc/ErrorType.js";
 import { Misc } from "./misc/Misc.js";
 
-type String = java.lang.String;
-const String = java.lang.String;
-type URL = java.net.URL;
-const URL = java.net.URL;
-type File = java.io.File;
-const File = java.io.File;
-type MalformedURLException = java.net.MalformedURLException;
-const MalformedURLException = java.net.MalformedURLException;
-type System = java.lang.System;
-const System = java.lang.System;
-type ClassLoader = java.lang.ClassLoader;
-const ClassLoader = java.lang.ClassLoader;
-type Thread = java.lang.Thread;
-const Thread = java.lang.Thread;
-type IllegalArgumentException = java.lang.IllegalArgumentException;
-const IllegalArgumentException = java.lang.IllegalArgumentException;
-type UnsupportedOperationException = java.lang.UnsupportedOperationException;
-const UnsupportedOperationException = java.lang.UnsupportedOperationException;
-type URI = java.net.URI;
-const URI = java.net.URI;
-type URISyntaxException = java.net.URISyntaxException;
-const URISyntaxException = java.net.URISyntaxException;
-type InputStream = java.io.InputStream;
-const InputStream = java.io.InputStream;
-type IOException = java.io.IOException;
-const IOException = java.io.IOException;
-
 
 
 // TODO: caching?
@@ -72,25 +45,25 @@ const IOException = java.io.IOException;
  *  subtree (except via imports).
  */
 export  class STGroupDir extends STGroup {
-    public  groupDirName:  String;
-    public  root:  URL;
+    public  groupDirName:  string;
+    public  root:  java.net.URL;
 
-    public  constructor(dirName: String);
-    public  constructor(root: URL);
+    public  constructor(dirName: string);
+    public  constructor(root: java.net.URL);
 
-    public  constructor(dirName: String, encoding: String);
+    public  constructor(dirName: string, encoding: string);
 
-    public  constructor(dirName: String, delimiterStartChar: char, delimiterStopChar: char);
+    public  constructor(dirName: string, delimiterStartChar: char, delimiterStopChar: char);
 
-    public  constructor(dirName: String, encoding: String,
+    public  constructor(dirName: string, encoding: string,
                       delimiterStartChar: char, delimiterStopChar: char);
 
-    public  constructor(root: URL, encoding: String,
+    public  constructor(root: java.net.URL, encoding: string,
                       delimiterStartChar: char, delimiterStopChar: char);
     public constructor(...args: unknown[]) {
 		switch (args.length) {
 			case 1: {
-				const [dirName] = args as [String];
+				const [dirName] = args as [string];
 
  this(dirName, '<', '>'); 
 
@@ -98,7 +71,7 @@ export  class STGroupDir extends STGroup {
 			}
 
 			case 1: {
-				const [root] = args as [URL];
+				const [root] = args as [java.net.URL];
 
  this(root, "UTF-8", '<', '>'); 
 
@@ -106,7 +79,7 @@ export  class STGroupDir extends STGroup {
 			}
 
 			case 2: {
-				const [dirName, encoding] = args as [String, String];
+				const [dirName, encoding] = args as [string, string];
 
 
         this(dirName, encoding, '<', '>');
@@ -116,41 +89,41 @@ export  class STGroupDir extends STGroup {
 			}
 
 			case 3: {
-				const [dirName, delimiterStartChar, delimiterStopChar] = args as [String, char, char];
+				const [dirName, delimiterStartChar, delimiterStopChar] = args as [string, char, char];
 
 
         super(delimiterStartChar, delimiterStopChar);
         this.groupDirName = dirName;
-        let  dir = new  File(dirName);
+        let  dir = new  java.io.File(dirName);
         if ( dir.exists() && dir.isDirectory() ) {
             // we found the directory and it'll be file based
             try {
                 this.root = dir.toURI().toURL();
             } catch (e) {
-if (e instanceof MalformedURLException) {
+if (e instanceof java.net.MalformedURLException) {
                 throw new  STException("can't load dir "+dirName, e);
             } else {
 	throw e;
 	}
 }
             if ( STGroupDir.verbose ) {
- System.out.println("STGroupDir("+dirName+") found at "+this.root);
+ java.lang.System.out.println("STGroupDir("+dirName+") found at "+this.root);
 }
 
         }
         else {
-            let  cl = Thread.currentThread().getContextClassLoader();
+            let  cl = java.lang.Thread.currentThread().getContextClassLoader();
             this.root = cl.getResource(dirName);
             if ( this.root===null ) {
                 cl = this.getClass().getClassLoader();
                 this.root = cl.getResource(dirName);
             }
             if ( STGroupDir.verbose ) {
- System.out.println("STGroupDir("+dirName+") found via CLASSPATH at "+this.root);
+ java.lang.System.out.println("STGroupDir("+dirName+") found via CLASSPATH at "+this.root);
 }
 
             if ( this.root===null ) {
-                throw new  IllegalArgumentException("No such directory: "+
+                throw new  java.lang.IllegalArgumentException("No such directory: "+
                                                        dirName);
             }
         }
@@ -161,7 +134,7 @@ if (e instanceof MalformedURLException) {
 			}
 
 			case 4: {
-				const [dirName, encoding, delimiterStartChar, delimiterStopChar] = args as [String, String, char, char];
+				const [dirName, encoding, delimiterStartChar, delimiterStopChar] = args as [string, string, char, char];
 
 
         this(dirName, delimiterStartChar, delimiterStopChar);
@@ -172,11 +145,11 @@ if (e instanceof MalformedURLException) {
 			}
 
 			case 4: {
-				const [root, encoding, delimiterStartChar, delimiterStopChar] = args as [URL, String, char, char];
+				const [root, encoding, delimiterStartChar, delimiterStopChar] = args as [java.net.URL, string, char, char];
 
 
         super(delimiterStartChar, delimiterStopChar);
-        this.groupDirName = new  File(root.getFile()).getName();
+        this.groupDirName = new  java.io.File(root.getFile()).getName();
         this.root = root;
         this.encoding = encoding;
         this.root = this.normalizeURL(this.root);
@@ -192,26 +165,25 @@ if (e instanceof MalformedURLException) {
 	}
 
 
-    @Override
-public override  importTemplates(fileNameToken: Token):  void {
+    public override  importTemplates(fileNameToken: Token):  void {
         let  msg =
             "import illegal in group files embedded in STGroupDirs; "+
             "import "+fileNameToken.getText()+" in STGroupDir "+this.getName();
-        throw new  UnsupportedOperationException(msg);
+        throw new  java.lang.UnsupportedOperationException(msg);
     }
 
     /** Load .st as relative file name relative to root by {@code prefix}. */
-    public override  loadTemplateFile(prefix: String, unqualifiedFileName: String):  CompiledST {
+    public override  loadTemplateFile(prefix: string, unqualifiedFileName: string):  CompiledST {
         if ( STGroupDir.verbose ) {
- System.out.println("loadTemplateFile("+unqualifiedFileName+") in groupdir "+
+ java.lang.System.out.println("loadTemplateFile("+unqualifiedFileName+") in groupdir "+
                                           "from "+this.root+" prefix="+prefix);
 }
 
-        let  f: URL;
+        let  f: java.net.URL;
         try {
-            f = new  URI(this.root+prefix+unqualifiedFileName).normalize().toURL();
+            f = new  java.net.URI(this.root+prefix+unqualifiedFileName).normalize().toURL();
         } catch (me) {
-if (me instanceof MalformedURLException || me instanceof URISyntaxException) {
+if (me instanceof java.net.MalformedURLException || me instanceof java.net.URISyntaxException) {
             this.errMgr.runTimeError(null, null, ErrorType.INVALID_TEMPLATE_NAME,
                                 me, this.root+ unqualifiedFileName);
             return null;
@@ -225,9 +197,9 @@ if (me instanceof MalformedURLException || me instanceof URISyntaxException) {
             fs = new  ANTLRInputStream(f.openStream(), this.encoding);
             fs.name = unqualifiedFileName;
         } catch (ioe) {
-if (ioe instanceof IOException) {
+if (ioe instanceof java.io.IOException) {
             if ( STGroupDir.verbose ) {
- System.out.println(this.root+"/"+unqualifiedFileName+" doesn't exist");
+ java.lang.System.out.println(this.root+"/"+unqualifiedFileName+" doesn't exist");
 }
 
             //errMgr.IOError(null, ErrorType.NO_SUCH_TEMPLATE, ioe, unqualifiedFileName);
@@ -240,21 +212,18 @@ if (ioe instanceof IOException) {
         return this.loadTemplateFile(prefix, unqualifiedFileName, fs);
     }
 
-    @Override
-public override  getName():  String { return this.groupDirName; }
-    @Override
-public override  getFileName():  String { return this.root.getFile(); }
-    @Override
-public override  getRootDirURL():  URL { return this.root; }
+    public override  getName():  string { return this.groupDirName; }
+    public override  getFileName():  string { return this.root.getFile(); }
+    public override  getRootDirURL():  java.net.URL { return this.root; }
 
     /** verify there is no extra slash on the end of URL */
-    public  normalizeURL(url: URL):  URL {
+    public  normalizeURL(url: java.net.URL):  java.net.URL {
         let  urlS = url.toString();
         if ( urlS.endsWith("/") ) {
             try {
-                url = new  URL(urlS.substring(0,urlS.length()-1));
+                url = new  java.net.URL(urlS.substring(0,urlS.length()-1));
             } catch (e) {
-if (e instanceof MalformedURLException) {
+if (e instanceof java.net.MalformedURLException) {
                 this.errMgr.internalError(null, "bad URL: "+urlS, e);
             } else {
 	throw e;
@@ -267,10 +236,9 @@ if (e instanceof MalformedURLException) {
     /** Load a template from directory or group file.  Group file is given
      *  precedence over directory with same name. {@code name} is always fully-qualified.
      */
-    @Override
-protected override  load(name: String):  CompiledST {
+    protected override  load(name: string):  CompiledST {
         if ( STGroupDir.verbose ) {
- System.out.println("STGroupDir.load("+name+")");
+ java.lang.System.out.println("STGroupDir.load("+name+")");
 }
 
         let  parent = Misc.getParent(name); // must have parent; it's fully-qualified
@@ -280,11 +248,11 @@ protected override  load(name: String):  CompiledST {
 //            return loadTemplateFile("/", name+TEMPLATE_FILE_EXTENSION); // load t.st file
 //      }
 
-        let  groupFileURL: URL;
+        let  groupFileURL: java.net.URL;
         try { // see if parent of template name is a group file
-            groupFileURL = new  URI(this.root+parent+STGroupDir.GROUP_FILE_EXTENSION).normalize().toURL();
+            groupFileURL = new  java.net.URI(this.root+parent+STGroupDir.GROUP_FILE_EXTENSION).normalize().toURL();
         } catch (e) {
-if (e instanceof MalformedURLException || e instanceof URISyntaxException) {
+if (e instanceof java.net.MalformedURLException || e instanceof java.net.URISyntaxException) {
             this.errMgr.internalError(null, "bad URL: "+this.root+parent+STGroupDir.GROUP_FILE_EXTENSION, e);
             return null;
         } else {
@@ -296,7 +264,7 @@ if (e instanceof MalformedURLException || e instanceof URISyntaxException) {
         try {
             is = groupFileURL.openStream();
         } catch (ioe) {
-if (ioe instanceof IOException) {
+if (ioe instanceof java.io.IOException) {
             // must not be in a group file
             let  unqualifiedName = Misc.getFileName(name);
             return this.loadTemplateFile(prefix, unqualifiedName+STGroupDir.TEMPLATE_FILE_EXTENSION); // load t.st file
@@ -311,7 +279,7 @@ if (ioe instanceof IOException) {
 }
 
             } catch (ioe) {
-if (ioe instanceof IOException) {
+if (ioe instanceof java.io.IOException) {
                 this.errMgr.internalError(null, "can't close template file stream "+name, ioe);
             } else {
 	throw ioe;

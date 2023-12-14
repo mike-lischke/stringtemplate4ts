@@ -28,11 +28,8 @@
 
 
 
-import { JavaObject, java, type int, S } from "jree";
+import { JavaObject, type int, S } from "jree";
 import { CompiledST } from "./CompiledST.js";
-
-type String = java.lang.String;
-const String = java.lang.String;
 
 
 
@@ -50,67 +47,67 @@ const String = java.lang.String;
  * I'm leaving the code here as I suspect something may come of it later.
  * Currently, though, cardinality is not used.</p>
  */
-export  class FormalArgument extends JavaObject {
-/*
-    // the following represent bit positions emulating a cardinality bitset.
-    public static final int OPTIONAL = 1;     // a?
-    public static final int REQUIRED = 2;     // a
-    public static final int ZERO_OR_MORE = 4; // a*
-    public static final int ONE_OR_MORE = 8;  // a+
-    public static final String[] suffixes = {
-        null,
-        "?",
-        "",
-        null,
-        "*",
-        null,
-        null,
-        null,
-        "+"
-    };
-    protected int cardinality = REQUIRED;
-     */
+export class FormalArgument {
+    /*
+        // the following represent bit positions emulating a cardinality bitset.
+        public static final int OPTIONAL = 1;     // a?
+        public static final int REQUIRED = 2;     // a
+        public static final int ZERO_OR_MORE = 4; // a*
+        public static final int ONE_OR_MORE = 8;  // a+
+        public static final String[] suffixes = {
+            null,
+            "?",
+            "",
+            null,
+            "*",
+            null,
+            null,
+            null,
+            "+"
+        };
+        protected int cardinality = REQUIRED;
+         */
 
-    public  name:  String;
+    public name: string;
 
-    public  index:  int; // which argument is it? from 0..n-1
+    public index: int; // which argument is it? from 0..n-1
 
     /** If they specified default value {@code x=y}, store the token here */
-    public  defaultValueToken:  Token;
-    public  defaultValue:  java.lang.Object; // x="str", x=true, x=false
-    public  compiledDefaultValue:  CompiledST; // x={...}
+    public defaultValueToken: Token;
+    public defaultValue: Object; // x="str", x=true, x=false
+    public compiledDefaultValue: CompiledST; // x={...}
 
-    public  constructor(name: String);
+    public constructor(name: string);
 
-    public  constructor(name: String, defaultValueToken: Token);
+    public constructor(name: string, defaultValueToken: Token);
     public constructor(...args: unknown[]) {
-		switch (args.length) {
-			case 1: {
-				const [name] = args as [String];
+        switch (args.length) {
+            case 1: {
+                const [name] = args as [string];
 
- super();
-this.name = name; 
+                super();
+                this.name = name;
 
-				break;
-			}
+                break;
+            }
 
-			case 2: {
-				const [name, defaultValueToken] = args as [String, Token];
+            case 2: {
+                const [name, defaultValueToken] = args as [string, Token];
 
 
-        super();
-this.name = name;
-        this.defaultValueToken = defaultValueToken;
-    
+                super();
+                this.name = name;
+                this.defaultValueToken = defaultValueToken;
 
-				break;
-			}
 
-			default: {
-				throw new java.lang.IllegalArgumentException(S`Invalid number of arguments`);
-			}
-		}
-	}
+                break;
+            }
+
+            default: {
+                throw new java.lang.IllegalArgumentException(S`Invalid number of arguments`);
+            }
+        }
+    }
 
 
     /*
@@ -125,30 +122,27 @@ this.name = name;
     }
     */
 
-    @Override
-public override  hashCode():  int {
+    public override  hashCode(): int {
         return this.name.hashCode() + this.defaultValueToken.hashCode();
     }
 
-    @Override
-public override  equals(o: java.lang.Object):  boolean {
-        if ( o===null || !(o instanceof FormalArgument) ) {
+    public override  equals(o: Object): boolean {
+        if (o === null || !(o instanceof FormalArgument)) {
             return false;
         }
-        let  other = o as FormalArgument;
-        if ( !this.name.equals(other.name) ) {
+        let other = o as FormalArgument;
+        if (!this.name.equals(other.name)) {
             return false;
         }
         // only check if there is a default value; that's all
         return !((this.defaultValueToken !== null && other.defaultValueToken === null) ||
-               (this.defaultValueToken === null && other.defaultValueToken !== null));
+            (this.defaultValueToken === null && other.defaultValueToken !== null));
     }
 
-    @Override
-public override  toString():  String {
-        if ( this.defaultValueToken!==null ) {
- return this.name+"="+this.defaultValueToken.getText();
-}
+    public override  toString(): string {
+        if (this.defaultValueToken !== null) {
+            return this.name + "=" + this.defaultValueToken.getText();
+        }
 
         return this.name;
     }

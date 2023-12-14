@@ -31,11 +31,6 @@
 
 import { java, JavaObject } from "jree";
 
-type HashMap<K,​V> = java.util.HashMap<K,​V>;
-const HashMap = java.util.HashMap;
-type String = java.lang.String;
-const String = java.lang.String;
-
 
 
 /** An automatically created aggregate of properties.
@@ -78,20 +73,18 @@ const String = java.lang.String;
  *  method looks for {@code Aggregate} as a special case and does a {@link #get} instead
  *  of {@code getPropertyName}.</p>
  */
-export  class Aggregate extends JavaObject {
-    public  properties = new  HashMap<String, java.lang.Object>();
-    public  get(propName: String):  java.lang.Object {
+export class Aggregate {
+    public properties = new Map<string, Object>();
+    public get(propName: string): Object {
         return this.properties.get(propName);
     }
-    @Override
-public override  toString():  String {
+    public override  toString(): string {
         return this.properties.toString();
     }
     /** Allow StringTemplate to add values, but prevent the end
      *  user from doing so.
      */
-    protected  put(propName: String, propValue: java.lang.Object):  void {
+    protected put(propName: string, propValue: Object): void {
         this.properties.put(propName, propValue);
     }
 }
-

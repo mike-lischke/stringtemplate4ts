@@ -29,9 +29,6 @@
 
 import { java, S } from "jree";
 
-type String = java.lang.String;
-const String = java.lang.String;
-
 
 
 /**
@@ -42,11 +39,11 @@ export  class AmbiguousMatchException extends java.lang.RuntimeException {
 
     public  constructor();
 
-    public  constructor(message: String);
+    public  constructor(message: string);
 
     public  constructor(cause: java.lang.Throwable);
 
-    public  constructor(message: String, cause: java.lang.Throwable);
+    public  constructor(message: string, cause: java.lang.Throwable);
     public constructor(...args: unknown[]) {
 		switch (args.length) {
 			case 0: {
@@ -58,7 +55,7 @@ export  class AmbiguousMatchException extends java.lang.RuntimeException {
 			}
 
 			case 1: {
-				const [message] = args as [String];
+				const [message] = args as [string];
 
 
         super(message);
@@ -78,7 +75,7 @@ export  class AmbiguousMatchException extends java.lang.RuntimeException {
 			}
 
 			case 2: {
-				const [message, cause] = args as [String, java.lang.Throwable];
+				const [message, cause] = args as [string, java.lang.Throwable];
 
 
         super(message, cause);

@@ -26,26 +26,21 @@
  *  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-import { java } from "jree";
 import { ConstructionEvent } from "./ConstructionEvent.js";
-
-type String = java.lang.String;
-const String = java.lang.String;
 
 
 
 export  class AddAttributeEvent extends ConstructionEvent {
-    protected  name: String;
+    protected  name: string;
     /** Reserved for future use. */
-    protected  value: java.lang.Object;
-    public  constructor(name: String, value: java.lang.Object) {
+    protected  value: Object;
+    public  constructor(name: string, value: Object) {
         super();
 this.name = name;
         this.value = value;
     }
 
-    @Override
-public override  toString():  String {
+    public override  toString():  string {
         return "addEvent{" +
             ", name='" + this.name + '\'' +
             ", value=" + this.value +

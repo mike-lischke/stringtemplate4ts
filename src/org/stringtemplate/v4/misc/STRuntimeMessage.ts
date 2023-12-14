@@ -37,13 +37,6 @@ import { Coordinate } from "./Coordinate.js";
 import { InstanceScope } from "../InstanceScope.js";
 import { Interpreter } from "../Interpreter.js";
 
-type Throwable = java.lang.Throwable;
-const Throwable = java.lang.Throwable;
-type String = java.lang.String;
-const String = java.lang.String;
-type StringBuilder = java.lang.StringBuilder;
-const StringBuilder = java.lang.StringBuilder;
-
 
 
 /** Used to track errors that occur in the ST interpreter. */
@@ -59,10 +52,10 @@ export  class STRuntimeMessage extends STMessage {
 
     public  constructor(interp: Interpreter, error: ErrorType, ip: int);
     public  constructor(interp: Interpreter, error: ErrorType, ip: int, scope: InstanceScope);
-    public  constructor(interp: Interpreter, error: ErrorType, ip: int, scope: InstanceScope, arg: java.lang.Object);
-    public  constructor(interp: Interpreter, error: ErrorType, ip: int, scope: InstanceScope, e: Throwable, arg: java.lang.Object);
-    public  constructor(interp: Interpreter, error: ErrorType, ip: int, scope: InstanceScope, e: Throwable, arg: java.lang.Object, arg2: java.lang.Object);
-    public  constructor(interp: Interpreter, error: ErrorType, ip: int, scope: InstanceScope, e: Throwable, arg: java.lang.Object, arg2: java.lang.Object, arg3: java.lang.Object);
+    public  constructor(interp: Interpreter, error: ErrorType, ip: int, scope: InstanceScope, arg: Object);
+    public  constructor(interp: Interpreter, error: ErrorType, ip: int, scope: InstanceScope, e: java.lang.Throwable, arg: Object);
+    public  constructor(interp: Interpreter, error: ErrorType, ip: int, scope: InstanceScope, e: java.lang.Throwable, arg: Object, arg2: Object);
+    public  constructor(interp: Interpreter, error: ErrorType, ip: int, scope: InstanceScope, e: java.lang.Throwable, arg: Object, arg2: Object, arg3: Object);
     public constructor(...args: unknown[]) {
 		switch (args.length) {
 			case 3: {
@@ -86,7 +79,7 @@ export  class STRuntimeMessage extends STMessage {
 			}
 
 			case 5: {
-				const [interp, error, ip, scope, arg] = args as [Interpreter, ErrorType, int, InstanceScope, java.lang.Object];
+				const [interp, error, ip, scope, arg] = args as [Interpreter, ErrorType, int, InstanceScope, Object];
 
 
         this(interp, error, ip, scope, null, arg, null);
@@ -96,7 +89,7 @@ export  class STRuntimeMessage extends STMessage {
 			}
 
 			case 6: {
-				const [interp, error, ip, scope, e, arg] = args as [Interpreter, ErrorType, int, InstanceScope, Throwable, java.lang.Object];
+				const [interp, error, ip, scope, e, arg] = args as [Interpreter, ErrorType, int, InstanceScope, java.lang.Throwable, Object];
 
 
         this(interp, error, ip, scope, e, arg, null);
@@ -106,7 +99,7 @@ export  class STRuntimeMessage extends STMessage {
 			}
 
 			case 7: {
-				const [interp, error, ip, scope, e, arg, arg2] = args as [Interpreter, ErrorType, int, InstanceScope, Throwable, java.lang.Object, java.lang.Object];
+				const [interp, error, ip, scope, e, arg, arg2] = args as [Interpreter, ErrorType, int, InstanceScope, java.lang.Throwable, Object, Object];
 
 
         this(interp, error, ip, scope, e, arg, arg2, null);
@@ -116,7 +109,7 @@ export  class STRuntimeMessage extends STMessage {
 			}
 
 			case 8: {
-				const [interp, error, ip, scope, e, arg, arg2, arg3] = args as [Interpreter, ErrorType, int, InstanceScope, Throwable, java.lang.Object, java.lang.Object, java.lang.Object];
+				const [interp, error, ip, scope, e, arg, arg2, arg3] = args as [Interpreter, ErrorType, int, InstanceScope, java.lang.Throwable, Object, Object, Object];
 
 
         super(error, scope !== null ? scope.st : null, e, arg, arg2, arg3);
@@ -138,7 +131,7 @@ export  class STRuntimeMessage extends STMessage {
     /** Given an IP (code location), get it's range in source template then
      *  return it's template line:col.
      */
-    public  getSourceLocation():  String {
+    public  getSourceLocation():  string {
         if ( this.ip<0 || this.self===null || this.self.impl===null ) {
  return null;
 }
@@ -154,9 +147,8 @@ export  class STRuntimeMessage extends STMessage {
         return loc.toString();
     }
 
-    @Override
-public override  toString():  String {
-        let  buf = new  StringBuilder();
+    public override  toString():  string {
+        let  buf = new  java.lang.StringBuilder();
         let  loc = null;
         if ( this.self!==null ) {
             loc = this.getSourceLocation();

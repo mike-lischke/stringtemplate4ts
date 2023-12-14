@@ -26,16 +26,13 @@
  *  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-import { java, S } from "jree";
-
-type String = java.lang.String;
-const String = java.lang.String;
+import { S } from "jree";
 
 
 
 export  class STException extends java.lang.RuntimeException { // no checking damnit!
     public  constructor();
-    public  constructor(msg: String, cause: java.lang.Exception);
+    public  constructor(msg: string, cause: java.lang.Exception);
     public constructor(...args: unknown[]) {
 		switch (args.length) {
 			case 0: {
@@ -46,7 +43,7 @@ export  class STException extends java.lang.RuntimeException { // no checking da
 			}
 
 			case 2: {
-				const [msg, cause] = args as [String, java.lang.Exception];
+				const [msg, cause] = args as [string, java.lang.Exception];
 
  super(msg,cause); 
 

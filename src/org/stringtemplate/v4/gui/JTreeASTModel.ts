@@ -34,82 +34,74 @@ import { JavaObject, type int, S } from "jree";
 
 
 // TODO: copied from ANTLR v4; rm when upgraded to v4
-export  class JTreeASTModel extends JavaObject implements TreeModel {
-    protected  adaptor: TreeAdaptor;
-    protected  root: java.lang.Object;
+export class JTreeASTModel implements TreeModel {
+    protected adaptor: TreeAdaptor;
+    protected root: Object;
 
-    public  constructor(root: java.lang.Object);
+    public constructor(root: Object);
 
-    public  constructor(adaptor: TreeAdaptor, root: java.lang.Object);
+    public constructor(adaptor: TreeAdaptor, root: Object);
     public constructor(...args: unknown[]) {
-		switch (args.length) {
-			case 1: {
-				const [root] = args as [java.lang.Object];
+        switch (args.length) {
+            case 1: {
+                const [root] = args as [Object];
 
 
-        super();
-this.adaptor = new  CommonTreeAdaptor();
-        this.root = root;
-    
-
-				break;
-			}
-
-			case 2: {
-				const [adaptor, root] = args as [TreeAdaptor, java.lang.Object];
+                super();
+                this.adaptor = new CommonTreeAdaptor();
+                this.root = root;
 
 
-        super();
-this.adaptor = adaptor;
-        this.root = root;
-    
+                break;
+            }
 
-				break;
-			}
-
-			default: {
-				throw new java.lang.IllegalArgumentException(S`Invalid number of arguments`);
-			}
-		}
-	}
+            case 2: {
+                const [adaptor, root] = args as [TreeAdaptor, Object];
 
 
-    @Override
-public  getChildCount(parent: java.lang.Object):  int {
+                super();
+                this.adaptor = adaptor;
+                this.root = root;
+
+
+                break;
+            }
+
+            default: {
+                throw new java.lang.IllegalArgumentException(S`Invalid number of arguments`);
+            }
+        }
+    }
+
+
+    public getChildCount(parent: Object): int {
         return this.adaptor.getChildCount(parent);
     }
 
-    @Override
-public  getIndexOfChild(parent: java.lang.Object, child: java.lang.Object):  int{
-        if ( parent===null ) {
- return -1;
-}
+    public getIndexOfChild(parent: Object, child: Object): int {
+        if (parent === null) {
+            return -1;
+        }
 
         return this.adaptor.getChildIndex(child);
     }
 
-    @Override
-public  getChild(parent: java.lang.Object, index: int):  java.lang.Object{
+    public getChild(parent: Object, index: int): Object {
         return this.adaptor.getChild(parent, index);
     }
 
-    @Override
-public  isLeaf(node: java.lang.Object):  boolean {
-        return this.getChildCount(node)===0;
+    public isLeaf(node: Object): boolean {
+        return this.getChildCount(node) === 0;
     }
 
-    @Override
-public  getRoot():  java.lang.Object { return this.root; }
+    public getRoot(): Object { return this.root; }
 
-    @Override
-public  valueForPathChanged(treePath: TreePath, o: java.lang.Object):  void {
+    public valueForPathChanged(treePath: TreePath, o: Object): void {
     }
 
-    @Override
-public  addTreeModelListener(treeModelListener: TreeModelListener):  void {
+    public addTreeModelListener(treeModelListener: TreeModelListener): void {
     }
 
-    @Override
-public  removeTreeModelListener(treeModelListener: TreeModelListener):  void {
+    public removeTreeModelListener(treeModelListener: TreeModelListener): void {
     }
 }

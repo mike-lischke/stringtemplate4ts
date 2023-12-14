@@ -34,46 +34,33 @@ import { Misc } from "./Misc.js";
 import { ErrorType } from "./ErrorType.js";
 import { STErrorListener } from "../STErrorListener.js";
 
-type List<E> = java.util.List<E>;
-type ArrayList<E> = java.util.ArrayList<E>;
-const ArrayList = java.util.ArrayList;
-type String = java.lang.String;
-const String = java.lang.String;
-type StringBuilder = java.lang.StringBuilder;
-const StringBuilder = java.lang.StringBuilder;
-
 
 
 /** Used during tests to track all errors. */
-export  class ErrorBuffer extends JavaObject implements STErrorListener {
-    public  errors = new  ArrayList<STMessage>();
+export class ErrorBuffer implements STErrorListener {
+    public errors = new Array<STMessage>();
 
-    @Override
-public  compileTimeError(msg: STMessage):  void {
+    public compileTimeError(msg: STMessage): void {
         this.errors.add(msg);
     }
 
-    @Override
-public  runTimeError(msg: STMessage):  void {
-        if ( msg.error !== ErrorType.NO_SUCH_PROPERTY ) { // ignore these
+    public runTimeError(msg: STMessage): void {
+        if (msg.error !== ErrorType.NO_SUCH_PROPERTY) { // ignore these
             this.errors.add(msg);
         }
     }
 
-    @Override
-public  IOError(msg: STMessage):  void {
+    public iOError(msg: STMessage): void {
         this.errors.add(msg);
     }
 
-    @Override
-public  internalError(msg: STMessage):  void {
+    public internalError(msg: STMessage): void {
         this.errors.add(msg);
     }
-    @Override
-public override  toString():  String {
-        let  buf = new  StringBuilder();
+    public override  toString(): string {
+        let buf = new java.lang.StringBuilder();
         for (let m of this.errors) {
-            buf.append(m.toString()+Misc.newline);
+            buf.append(m.toString() + Misc.newline);
         }
         return buf.toString();
     }

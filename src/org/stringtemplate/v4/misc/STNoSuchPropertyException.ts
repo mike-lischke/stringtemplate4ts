@@ -32,23 +32,19 @@
 import { java } from "jree";
 import { STException } from "../compiler/STException.js";
 
-type String = java.lang.String;
-const String = java.lang.String;
-
 
 
 /** For {@code <a.b>}, object {@code a} does not have a property {@code b}. */
 export  class STNoSuchPropertyException extends STException {
-    public  o:  java.lang.Object;
-    public  propertyName:  String;
-    public  constructor(e: java.lang.Exception, o: java.lang.Object, propertyName: String) {
+    public  o:  Object;
+    public  propertyName:  string;
+    public  constructor(e: java.lang.Exception, o: Object, propertyName: string) {
         super(null, e);
         this.o = o;
         this.propertyName = propertyName;
     }
 
-    @Override
-public override  getMessage():  String {
+    public override  getMessage():  string {
         if ( this.o!==null ) {
  return "object "+this.o.getClass()+" has no "+this.propertyName+" property";
 }

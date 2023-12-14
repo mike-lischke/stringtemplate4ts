@@ -31,19 +31,6 @@
 import { java, JavaObject, type int, type char, S } from "jree";
 import { AttributeRenderer } from "./AttributeRenderer.js";
 
-type String = java.lang.String;
-const String = java.lang.String;
-type Locale = java.util.Locale;
-const Locale = java.util.Locale;
-type Character = java.lang.Character;
-const Character = java.lang.Character;
-type URLEncoder = java.net.URLEncoder;
-const URLEncoder = java.net.URLEncoder;
-type UnsupportedEncodingException = java.io.UnsupportedEncodingException;
-const UnsupportedEncodingException = java.io.UnsupportedEncodingException;
-type StringBuilder = java.lang.StringBuilder;
-const StringBuilder = java.lang.StringBuilder;
-
 
 
 /** This render knows to perform a few format operations on {@link String} objects:
@@ -55,43 +42,43 @@ const StringBuilder = java.lang.StringBuilder;
  *  <li>{@code xml-encode}:</li>
  * </ul>
  */
-export  class StringRenderer extends JavaObject implements AttributeRenderer<java.lang.Object> {
+export class StringRenderer implements AttributeRenderer<Object> {
 
-    public static  escapeHTML(s: String):  String {
-        if ( s===null ) {
+    public static escapeHTML(s: string): string {
+        if (s === null) {
             return null;
         }
-        let  buf = new  StringBuilder( s.length() );
-        let  len = s.length();
-        for (let  i=0; i<len;) {
-            let  c = s.codePointAt(i);
-            switch ( c ) {
-                case '&' :{
+        let buf = new java.lang.StringBuilder(s.length());
+        let len = s.length();
+        for (let i = 0; i < len;) {
+            let c = s.codePointAt(i);
+            switch (c) {
+                case '&': {
                     buf.append("&amp;");
                     break;
-}
+                }
 
-                case '<' :{
+                case '<': {
                     buf.append("&lt;");
                     break;
-}
+                }
 
-                case '>' :{
+                case '>': {
                     buf.append("&gt;");
                     break;
-}
+                }
 
                 case '\r':
                 case '\n':
-                case '\t':{
+                case '\t': {
                     buf.append(c as char);
                     break;
-}
+                }
 
-                default:{
-                    let  control = c < ' '; // 32
-                    let  aboveASCII = c > 126;
-                    if ( control || aboveASCII ) {
+                default: {
+                    let control = c < ' '; // 32
+                    let aboveASCII = c > 126;
+                    if (control || aboveASCII) {
                         buf.append("&#");
                         buf.append(c);
                         buf.append(";");
@@ -99,76 +86,75 @@ export  class StringRenderer extends JavaObject implements AttributeRenderer<jav
                     else {
                         buf.append(c as char);
                     }
-}
+                }
 
             }
-            i += Character.charCount(c);
+            i += java.lang.Character.charCount(c);
         }
         return buf.toString();
     }
     // accepts Object for backward compatibility,
     // but fails when value is not a String at runtime
 
-    @Override
-public override  toString(value: java.lang.Object, formatString: String, locale: Locale):  String;
+    public override  toString(value: Object, formatString: string, locale: Intl.Locale): string;
 
     // trim(s) and strlen(s) built-in funcs; these are format options
-    public override  toString(value: String, formatString: String, locale: Locale):  String;
-public override toString(...args: unknown[]):  String {
-		switch (args.length) {
-			case 3: {
-				const [value, formatString, locale] = args as [java.lang.Object, String, Locale];
+    public override  toString(value: string, formatString: string, locale: Intl.Locale): string;
+    public override toString(...args: unknown[]): string {
+        switch (args.length) {
+            case 3: {
+                const [value, formatString, locale] = args as [Object, string, Intl.Locale];
 
 
-        return this.toString( value as String, formatString, locale);
-    
-
-				break;
-			}
-
-			case 3: {
-				const [value, formatString, locale] = args as [String, String, Locale];
+                return this.toString(String(value), formatString, locale);
 
 
-        if ( formatString===null ) {
- return value;
-}
+                break;
+            }
 
-        if ( formatString.equals("upper") ) {
- return value.toUpperCase(locale);
-}
+            case 3: {
+                const [value, formatString, locale] = args as [string, string, Intl.Locale];
 
-        if ( formatString.equals("lower") ) {
- return value.toLowerCase(locale);
-}
 
-        if ( formatString.equals("cap") ) {
-            return (value.length() > 0) ? Character.toUpperCase(value.charAt(0))+value.substring(1) : value;
+                if (formatString === null) {
+                    return value;
+                }
+
+                if (formatString.equals("upper")) {
+                    return value.toUpperCase(locale);
+                }
+
+                if (formatString.equals("lower")) {
+                    return value.toLowerCase(locale);
+                }
+
+                if (formatString.equals("cap")) {
+                    return (value.length() > 0) ? java.lang.Character.toUpperCase(value.charAt(0)) + value.substring(1) : value;
+                }
+                if (formatString.equals("url-encode")) {
+                    try {
+                        return java.net.URLEncoder.encode(value, "UTF-8");
+                    } catch (ex) {
+                        if (ex instanceof java.io.UnsupportedEncodingException) {
+                            // UTF-8 is standard, should always be available
+                        } else {
+                            throw ex;
+                        }
+                    }
+                }
+                if (formatString.equals("xml-encode")) {
+                    return StringRenderer.escapeHTML(value);
+                }
+                return string.format(locale, formatString, value);
+
+
+                break;
+            }
+
+            default: {
+                throw new java.lang.IllegalArgumentException(S`Invalid number of arguments`);
+            }
         }
-        if ( formatString.equals("url-encode") ) {
-            try {
-                return URLEncoder.encode(value, "UTF-8");
-            } catch (ex) {
-if (ex instanceof UnsupportedEncodingException) {
-                // UTF-8 is standard, should always be available
-            } else {
-	throw ex;
-	}
-}
-        }
-        if ( formatString.equals("xml-encode") ) {
-            return StringRenderer.escapeHTML(value);
-        }
-        return String.format(locale, formatString, value);
-    
-
-				break;
-			}
-
-			default: {
-				throw new java.lang.IllegalArgumentException(S`Invalid number of arguments`);
-			}
-		}
-	}
+    }
 
 }

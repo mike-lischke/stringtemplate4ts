@@ -1,39 +1,9 @@
+/* java2ts: keep */
+
 /*
- * [The "BSD license"]
- *  Copyright (c) 2011 Terence Parr
- *  All rights reserved.
- *
- *  Redistribution and use in source and binary forms, with or without
- *  modification, are permitted provided that the following conditions
- *  are met:
- *  1. Redistributions of source code must retain the above copyright
- *     notice, this list of conditions and the following disclaimer.
- *  2. Redistributions in binary form must reproduce the above copyright
- *     notice, this list of conditions and the following disclaimer in the
- *     documentation and/or other materials provided with the distribution.
- *  3. The name of the author may not be used to endorse or promote products
- *     derived from this software without specific prior written permission.
- *
- *  THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
- *  IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
- *  OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
- *  IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
- *  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
- *  NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- *  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- *  THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- *  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
- *  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Copyright (c) Terence Parr. All rights reserved.
+ * Licensed under the BSD-3 License. See License.txt in the project root for license information.
  */
-
-
-
-import { java, type int } from "jree";
-
-type String = java.lang.String;
-const String = java.lang.String;
-
-
 
 /** Generic StringTemplate output writer filter.
  * <p>
@@ -42,28 +12,23 @@ const String = java.lang.String;
  *  handled specially when wrapping lines (we don't want to wrap
  *  in between an element and it's separator).</p>
  */
- interface STWriter {
-
-      pushIndentation(indent: String): void;
-
-      popIndentation(): String;
-
-      pushAnchorPoint(): void;
-
-      popAnchorPoint(): void;
-
-      setLineWidth(lineWidth: int): void;
+export interface STWriter {
+    pushIndentation(indent: string): void;
+    popIndentation(): string | null;
+    pushAnchorPoint(): void;
+    popAnchorPoint(): void;
+    setLineWidth(lineWidth: number): void;
 
     /** Write the string and return how many actual characters were written.
      *  With auto-indentation and wrapping, more chars than {@code str.length()}
      *  can be emitted.  No wrapping is done.
      */
-      write(str: String): int;
+    write(str: string): number;
 
     /** Same as write, but wrap lines using the indicated string as the
      *  wrap character (such as {@code "\n"}).
      */
-      write(str: String, wrap: String): int;
+    write(str: string, wrap: string): number;
 
     /**
      * Because we evaluate ST instance by invoking
@@ -77,22 +42,19 @@ const String = java.lang.String;
      * {@link STWriter#write(String str, String wrap)}. Can't pass to
      * {@link Interpreter#exec}.
      */
-      writeWrap(wrap: String): int;
+    writeWrap(wrap: string): number;
 
     /** Write a separator.  Same as {@link #write(String)} except that a {@code "\n"}
      *  cannot be inserted before emitting a separator.
      */
-      writeSeparator(str: String): int;
+    writeSeparator(str: string): number;
 
     /** Return the absolute char index into the output of the char
      *  we're about to write.  Returns 0 if no char written yet.
      */
-      index(): int;
+    index(): number;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-namespace, no-redeclare
 export namespace STWriter {
-	export const NO_WRAP: int = -1;
+    export const NO_WRAP: number = -1;
 }
-
-

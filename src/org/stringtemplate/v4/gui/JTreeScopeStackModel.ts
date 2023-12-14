@@ -36,147 +36,127 @@ import { ST } from "../ST.js";
 import { StringRenderer } from "../StringRenderer.js";
 import { AddAttributeEvent } from "../debug/AddAttributeEvent.js";
 
-type String = java.lang.String;
-const String = java.lang.String;
-type Set<E> = java.util.Set<E>;
-type HashSet<E> = java.util.HashSet<E>;
-const HashSet = java.util.HashSet;
-type List<E> = java.util.List<E>;
-type Map<K,​V> = java.util.Map<K,​V>;
-type StringBuilder = java.lang.StringBuilder;
-const StringBuilder = java.lang.StringBuilder;
-
 
 
 /** From a scope, get stack of enclosing scopes in order from root down
  *  to scope.  Then show each scope's (ST's) attributes as children.
  */
-export  class JTreeScopeStackModel extends JavaObject implements TreeModel {
+export class JTreeScopeStackModel implements TreeModel {
 
-    public static StringTree =  class StringTree extends CommonTree {
-        protected  text: String;
-        public  constructor(text: String) {super();
-this.text = text;}
-
-        @Override
-public  isNil():  boolean {
-            return this.text===null;
+    public static StringTree = class StringTree extends CommonTree {
+        protected text: string;
+        public constructor(text: string) {
+            super();
+            this.text = text;
         }
 
-        @Override
-public  toString():  String {
-            if ( !this.isNil() ) {
- return this.text;
-}
+        public isNil(): boolean {
+            return this.text === null;
+        }
+
+        public toString(): string {
+            if (!this.isNil()) {
+                return this.text;
+            }
 
             return "nil";
         }
     };
 
-    protected  root: CommonTree;
+    protected root: CommonTree;
 
-    public  constructor(scope: InstanceScope) {
+    public constructor(scope: InstanceScope) {
         super();
-this.root = new  JTreeScopeStackModel.StringTree("Scope stack:");
-        let  names = new  HashSet<String>();
-        let  stack = Interpreter.getScopeStack(scope, false);
+        this.root = new JTreeScopeStackModel.StringTree("Scope stack:");
+        let names = new java.util.HashSet<string>();
+        let stack = Interpreter.getScopeStack(scope, false);
         for (let s of stack) {
-            let  templateNode = new  JTreeScopeStackModel.StringTree(s.st.getName());
+            let templateNode = new JTreeScopeStackModel.StringTree(s.st.getName());
             this.root.insertChild(0, templateNode);
             this.addAttributeDescriptions(s.st, templateNode, names);
         }
         //System.out.println(root.toStringTree());
     }
 
-    public  addAttributeDescriptions(st: ST, node: JTreeScopeStackModel.StringTree, names: Set<String>):  void {
-        let  attrs = st.getAttributes();
-        if ( attrs===null ) {
- return;
-}
+    public addAttributeDescriptions(st: ST, node: JTreeScopeStackModel.StringTree, names: java.util.Set<string>): void {
+        let attrs = st.getAttributes();
+        if (attrs === null) {
+            return;
+        }
 
         for (let a of attrs.keySet()) {
-            let  descr: String;
-            if ( st.debugState!==null && st.debugState.addAttrEvents!==null ) {
-                let  events = st.debugState.addAttrEvents.get(a);
-                let  locations = new  StringBuilder();
-                let  i = 0;
-                if ( events!==null ) {
+            let descr: string;
+            if (st.debugState !== null && st.debugState.addAttrEvents !== null) {
+                let events = st.debugState.addAttrEvents.get(a);
+                let locations = new java.lang.StringBuilder();
+                let i = 0;
+                if (events !== null) {
                     for (let ae of events) {
-                        if ( i>0 ) {
- locations.append(", ");
-}
+                        if (i > 0) {
+                            locations.append(", ");
+                        }
 
-                        locations.append(ae.getFileName()+":"+ae.getLine());
+                        locations.append(ae.getFileName() + ":" + ae.getLine());
                         i++;
                     }
                 }
-                if ( locations.length()>0 ) {
-                    descr = a+" = "+attrs.get(a)+" @ "+locations.toString();
+                if (locations.length() > 0) {
+                    descr = a + " = " + attrs.get(a) + " @ " + locations.toString();
                 }
                 else {
-                    descr = a + " = " +attrs.get(a);
+                    descr = a + " = " + attrs.get(a);
                 }
             }
             else {
-                descr = a + " = " +attrs.get(a);
+                descr = a + " = " + attrs.get(a);
             }
 
             if (!names.add(a)) {
-                let  builder = new  StringBuilder();
+                let builder = new java.lang.StringBuilder();
                 builder.append("<html><font color=\"gray\">");
                 builder.append(StringRenderer.escapeHTML(descr));
                 builder.append("</font></html>");
                 descr = builder.toString();
             }
 
-            node.addChild( new  JTreeScopeStackModel.StringTree(descr) );
+            node.addChild(new JTreeScopeStackModel.StringTree(descr));
         }
     }
 
-    @Override
-public  getRoot():  java.lang.Object {
+    public getRoot(): Object {
         return this.root;
     }
 
-    @Override
-public  getChild(parent: java.lang.Object, i: int):  java.lang.Object {
-        let  t = parent as JTreeScopeStackModel.StringTree;
+    public getChild(parent: Object, i: int): Object {
+        let t = parent as JTreeScopeStackModel.StringTree;
         return t.getChild(i);
     }
 
-    @Override
-public  getChildCount(parent: java.lang.Object):  int {
-        let  t = parent as JTreeScopeStackModel.StringTree;
+    public getChildCount(parent: Object): int {
+        let t = parent as JTreeScopeStackModel.StringTree;
         return t.getChildCount();
     }
 
-    @Override
-public  isLeaf(node: java.lang.Object):  boolean {
+    public isLeaf(node: Object): boolean {
         return this.getChildCount(node) === 0;
     }
 
-    @Override
-public  getIndexOfChild(parent: java.lang.Object, child: java.lang.Object):  int {
-        let  c = child as JTreeScopeStackModel.StringTree;
+    public getIndexOfChild(parent: Object, child: Object): int {
+        let c = child as JTreeScopeStackModel.StringTree;
         return c.getChildIndex();
     }
 
-    @Override
-public  valueForPathChanged(treePath: TreePath, o: java.lang.Object):  void {
+    public valueForPathChanged(treePath: TreePath, o: Object): void {
     }
 
-    @Override
-public  addTreeModelListener(treeModelListener: TreeModelListener):  void {
+    public addTreeModelListener(treeModelListener: TreeModelListener): void {
     }
 
-    @Override
-public  removeTreeModelListener(treeModelListener: TreeModelListener):  void {
+    public removeTreeModelListener(treeModelListener: TreeModelListener): void {
     }
 }
 
 // eslint-disable-next-line @typescript-eslint/no-namespace, no-redeclare
 export namespace JTreeScopeStackModel {
-	export type StringTree = InstanceType<typeof JTreeScopeStackModel.StringTree>;
+    export type StringTree = InstanceType<typeof JTreeScopeStackModel.StringTree>;
 }
-
-

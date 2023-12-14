@@ -30,39 +30,32 @@
 
 import { java, JavaObject, type int } from "jree";
 
-type LinkedHashMap<K,​V> = java.util.LinkedHashMap<K,​V>;
-const LinkedHashMap = java.util.LinkedHashMap;
-type String = java.lang.String;
-const String = java.lang.String;
-type Integer = java.lang.Integer;
-const Integer = java.lang.Integer;
-
 
 
 /** A unique set of strings where we can get a string's index.
- *  We can also get them back out in original order. 
+ *  We can also get them back out in original order.
  */
-export  class StringTable extends JavaObject {
-    protected  table = new  LinkedHashMap<String,Integer>();
-    protected  i = -1;
+export class StringTable {
+    protected table = new java.util.LinkedHashMap<string, number>();
+    protected i = -1;
 
-    public  add(s: String):  int {
-        let  I = this.table.get(s);
-        if ( I!==null ) {
- return I;
-}
+    public add(s: string): int {
+        let I = this.table.get(s);
+        if (I !== null) {
+            return I;
+        }
 
         this.i++;
         this.table.put(s, this.i);
         return this.i;
     }
 
-    public  toArray():  String[] {
-        let  a = new  Array<String>(this.table.size());
-        let  i = 0;
+    public toArray(): string[] {
+        let a = new Array<string>(this.table.size());
+        let i = 0;
         for (let s of this.table.keySet()) {
- a[i++] = s;
-}
+            a[i++] = s;
+        }
 
         return a;
     }

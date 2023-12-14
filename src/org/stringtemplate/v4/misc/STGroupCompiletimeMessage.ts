@@ -33,28 +33,23 @@ import { java, type int, S } from "jree";
 import { STMessage } from "./STMessage.js";
 import { ErrorType } from "./ErrorType.js";
 
-type String = java.lang.String;
-const String = java.lang.String;
-type Throwable = java.lang.Throwable;
-const Throwable = java.lang.Throwable;
-
 
 
 /** */
 export  class STGroupCompiletimeMessage extends STMessage {
     /** token inside group file */
     public  token:  Token;
-    public  srcName:  String;
+    public  srcName:  string;
 
-    public  constructor(error: ErrorType, srcName: String, t: Token, cause: Throwable);
-    public  constructor(error: ErrorType, srcName: String, t: Token,
-                                     cause: Throwable, arg: java.lang.Object);
-    public  constructor(error: ErrorType, srcName: String,
-                                     t: Token, cause: Throwable, arg: java.lang.Object, arg2: java.lang.Object);
+    public  constructor(error: ErrorType, srcName: string, t: Token, cause: java.lang.Throwable);
+    public  constructor(error: ErrorType, srcName: string, t: Token,
+                                     cause: java.lang.Throwable, arg: Object);
+    public  constructor(error: ErrorType, srcName: string,
+                                     t: Token, cause: java.lang.Throwable, arg: Object, arg2: Object);
     public constructor(...args: unknown[]) {
 		switch (args.length) {
 			case 4: {
-				const [error, srcName, t, cause] = args as [ErrorType, String, Token, Throwable];
+				const [error, srcName, t, cause] = args as [ErrorType, string, Token, java.lang.Throwable];
 
 
         this(error, srcName, t, cause, null);
@@ -64,7 +59,7 @@ export  class STGroupCompiletimeMessage extends STMessage {
 			}
 
 			case 5: {
-				const [error, srcName, t, cause, arg] = args as [ErrorType, String, Token, Throwable, java.lang.Object];
+				const [error, srcName, t, cause, arg] = args as [ErrorType, string, Token, java.lang.Throwable, Object];
 
 
         this(error, srcName, t, cause, arg, null);
@@ -74,7 +69,7 @@ export  class STGroupCompiletimeMessage extends STMessage {
 			}
 
 			case 6: {
-				const [error, srcName, t, cause, arg, arg2] = args as [ErrorType, String, Token, Throwable, java.lang.Object, java.lang.Object];
+				const [error, srcName, t, cause, arg, arg2] = args as [ErrorType, string, Token, java.lang.Throwable, Object, Object];
 
 
         super(error, null, cause, arg, arg2);
@@ -92,8 +87,7 @@ export  class STGroupCompiletimeMessage extends STMessage {
 	}
 
 
-    @Override
-public override  toString():  String {
+    public override  toString():  string {
         let  re = this.cause as RecognitionException;
         let  line = 0;
         let  charPos = -1;
@@ -110,8 +104,8 @@ public override  toString():  String {
 
         let  filepos = line+":"+charPos;
         if ( this.srcName!==null ) {
-            return this.srcName+" "+filepos+": "+String.format(this.error.message, this.arg, this.arg2);
+            return this.srcName+" "+filepos+": "+string.format(this.error.message, this.arg, this.arg2);
         }
-        return filepos+": "+String.format(this.error.message, this.arg, this.arg2);
+        return filepos+": "+string.format(this.error.message, this.arg, this.arg2);
     }
 }
