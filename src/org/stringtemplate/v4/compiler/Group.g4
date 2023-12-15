@@ -42,6 +42,7 @@ import { basename } from "path";
 import { STGroup } from "../../STGroup.js";
 import { ErrorType } from "../../misc/ErrorType.js";
 import { Misc } from "../../misc/Misc.js";
+import { STLexer } from "../STLexer.js";
 }
 
 @parser::members {
@@ -64,8 +65,8 @@ public error(msg: string): void {
     this.errorHandler.recover(this, e);
 }
 
-public addArgument(args: FormalArgument[] , t: Token, defaultValueToken: Token): void {
-    const name = t.text;
+public addArgument(args: FormalArgument[] , t: Token, defaultValueToken?: Token | null): void {
+    const name = t.text!;
     for (const arg of args) {
         if (arg.name === name) {
             this.currentGroup.errMgr.compileTimeError(ErrorType.PARAMETER_REDEFINITION, null, t, name);
@@ -109,7 +110,7 @@ this.currentGroup = lexer.currentGroup = $aGroup;
         | 'import' // common error: name not in string
         {
 const e = new antlr.NoViableAltException(this, this.inputStream);
-this.errorHandler.reportError(e);
+this.errorHandler.reportError(this, e);
         } ID ('.' ID)* // might be a.b.c.d
     )* def[prefix]* EOF
 ;
@@ -160,7 +161,7 @@ def[prefix: string]:
 catch[re] {
 // pretend we already saw an error here
 // this.state.lastErrorIndex = this.inputStream.index;
-this.error("garbled template definition starting at '" + this.inputStream.LT(1).text + "'");
+this.error("garbled template definition starting at '" + this.inputStream.LT(1)!.text + "'");
 }
 
 templateDef[prefix: string]
@@ -168,14 +169,14 @@ templateDef[prefix: string]
     let template = "";
     let n = 0; // num char to strip from left, right of template def
 }:
-    ('@' enclosing = ID '.' name = ID '(' ')' | name = ID '(' formalArgs ')') '::=' {const templateToken = this.inputStream.LT(1);
+    ('@' enclosing = ID '.' name = ID '(' ')' | name = ID '(' formalArgs ')') '::=' {const templateToken = this.inputStream.LT(1)!;
         } (
         STRING {template = $STRING.text; n=1;}
         | BIGSTRING {template = $BIGSTRING.text; n=2;}
         | BIGSTRING_NO_NL {template = $BIGSTRING_NO_NL.text; n=2;}
         | {
 template = "";
-const msg = "missing template at '" + this.inputStream.LT(1).text + "'";
+const msg = "missing template at '" + this.inputStream.LT(1)!.text + "'";
 const e = new antlr.NoViableAltException(this, this.inputStream);
 this.currentGroup.errMgr.groupSyntaxError(ErrorType.SYNTAX_ERROR, this.getSourceName(), e, msg);
 }
@@ -192,8 +193,10 @@ if ($name.index >= 0) { // if ID missing
         enclosingTemplateName = prefix + enclosingTemplateName;
     }
 
+    // @ts-ignore, because ANTLR4 doesn't allow a non-null assertion with attribute references.
+    const formalArgs = $formalArgs.args;
     this.currentGroup.defineTemplateOrRegion(templateName, enclosingTemplateName, templateToken,
-                                    template, $name, $formalArgs.args);
+                                    template, $name, formalArgs);
 }
 }
     | alias = ID '::=' target = ID {this.currentGroup.defineTemplateAlias($alias, $target);}
@@ -244,7 +247,7 @@ dictPairs[mapping: Map<string, unknown>]:
     | defaultValuePair[mapping]
 ;
 catch[re] {
-    this.error("missing dictionary entry at '" + this.inputStream.LT(1).text + "'");
+    this.error("missing dictionary entry at '" + this.inputStream.LT(1)!.text + "'");
 
 }
 
@@ -252,7 +255,7 @@ defaultValuePair[mapping: Map<string, unknown>]:
     'default' ':' keyValue {mapping.set(STGroup.DEFAULT_KEY, $keyValue.value);}
 ;
 
-keyValuePair[Map<String,Object> mapping]:
+keyValuePair[Map<string, unknown> mapping]:
     STRING ':' keyValue {mapping.set(Misc.replaceEscapes(Misc.strip($STRING.text, 1)), $keyValue.value);}
 ;
 
@@ -268,7 +271,7 @@ keyValue
     | ID {$value = STGroup.DICT_KEY;}
 ;
 catch[re] {
-this.error("missing value for key at '" + this.inputStream.LT(1).text + "'");
+this.error("missing value for key at '" + this.inputStream.LT(1)!.text + "'");
 }
 
 // $antlr-format reset
@@ -325,7 +328,7 @@ const lexer = new STLexer(this.currentGroup.errMgr, this.inputStream, templateTo
 lexer.subtemplateDepth = 1;
 let t = lexer.nextToken();
 while (lexer.subtemplateDepth >= 1 || t.type !== STLexer.RCURLY) {
-    if (t.type === STLexer.EOF_TYPE) {
+    if (t.type === Token.EOF) {
         const e = new antlr.LexerNoViableAltException(this, this.inputStream, 0, new antlr.ATNConfigSet());
         const msg = "missing final '}' in {...} anonymous template";
         this.currentGroup.errMgr.groupLexerError(ErrorType.SYNTAX_ERROR, this.getSourceName(), e, msg);

@@ -53,8 +53,9 @@ export class ErrorManager {
         this.listener = listener ?? ErrorManager.DEFAULT_ERROR_LISTENER;
     }
 
-    public compileTimeError(error: ErrorType, templateToken: Token, t: Token, arg?: string, arg2?: string): void {
-        const srcName = this.sourceName(t);
+    public compileTimeError(error: ErrorType, templateToken: Token | null, t: Token, arg?: string,
+        arg2?: string): void {
+        const srcName = this.sourceName(t) ?? "<unknown>";
 
         if (!arg) {
             this.listener.compileTimeError(
@@ -71,7 +72,7 @@ export class ErrorManager {
         }
     }
 
-    public lexerError(srcName: string, msg: string, templateToken: Token, e: RecognitionException): void {
+    public lexerError(srcName: string, msg: string, templateToken: Token | null, e: RecognitionException): void {
         if (srcName !== null) {
             srcName = Misc.getFileName(srcName);
         }
@@ -83,7 +84,7 @@ export class ErrorManager {
 
     public groupSyntaxError(error: ErrorType, srcName: string, e: RecognitionException, msg: string): void {
         this.listener.compileTimeError(
-            new STGroupCompiletimeMessage(error, srcName, t, e.offendingToken, msg),
+            new STGroupCompiletimeMessage(error, srcName, e.offendingToken, msg),
         );
     }
 

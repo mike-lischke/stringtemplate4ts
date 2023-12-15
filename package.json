@@ -15,7 +15,8 @@
     "author": "Mike Lischke",
     "license": "MIT",
     "scripts": {
-        "test": "test"
+        "test": "test",
+        "generate-parsers": "antlr4ng -no-visitor -no-listener -Dlanguage=TypeScript -o src/org/stringtemplate/v4/compiler/generated -package parser -encoding utf8 -Xexact-output-dir src/org/stringtemplate/v4/compiler/*.g4"
     },
     "devDependencies": {
         "@types/node": "20.10.4",

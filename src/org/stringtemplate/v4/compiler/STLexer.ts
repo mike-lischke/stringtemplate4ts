@@ -1,38 +1,21 @@
+/* java2ts: keep */
+
 /*
- * [The "BSD license"]
- *  Copyright (c) 2011 Terence Parr
- *  All rights reserved.
- *
- *  Redistribution and use in source and binary forms, with or without
- *  modification, are permitted provided that the following conditions
- *  are met:
- *  1. Redistributions of source code must retain the above copyright
- *     notice, this list of conditions and the following disclaimer.
- *  2. Redistributions in binary form must reproduce the above copyright
- *     notice, this list of conditions and the following disclaimer in the
- *     documentation and/or other materials provided with the distribution.
- *  3. The name of the author may not be used to endorse or promote products
- *     derived from this software without specific prior written permission.
- *
- *  THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
- *  IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
- *  OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
- *  IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
- *  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
- *  NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- *  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- *  THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- *  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
- *  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Copyright (c) Terence Parr. All rights reserved.
+ * Licensed under the BSD-3 License. See License.txt in the project root for license information.
  */
 
+/* eslint-disable jsdoc/require-param */
 
+import {
+    ATNConfigSet, CharStream, CommonToken, CommonTokenFactory, Lexer, LexerNoViableAltException, Token, TokenFactory,
+    TokenSource,
+} from "antlr4ng";
 
-import { java, JavaObject, type char, type int, S } from "jree";
 import { STGroup } from "../STGroup.js";
 import { Misc } from "../misc/Misc.js";
-
-
+import { ErrorManager } from "../misc/ErrorManager.js";
+import { STParser } from "./generated/STParser.js";
 
 /**
  * This class represents the tokenizer for templates. It operates in two modes:
@@ -49,74 +32,67 @@ import { Misc } from "../misc/Misc.js";
  * consistent).</p>
  */
 export class STLexer implements TokenSource {
-    public static readonly EOF = -1 as char;            // EOF char
-    public static readonly EOF_TYPE = CharStream.EOF;  // EOF token type
-
-    /** We build {@code STToken} tokens instead of relying on {@link CommonToken}
+    /**
+     * We build {@code STToken} tokens instead of relying on {@link CommonToken}
      *  so we can override {@link #toString()}. It just converts token types to
      *  token names like 23 to {@code "LDELIM"}.
      */
     public static STToken = class STToken extends CommonToken {
-        public constructor(type: int, text: string);
-        public constructor(input: CharStream, type: int, start: int, stop: int);
+        public constructor(type: number, text: string);
+        public constructor(input: CharStream, type: number, start: number, stop: number);
         public constructor(...args: unknown[]) {
             switch (args.length) {
                 case 2: {
-                    const [type, text] = args as [int, string];
+                    const [type, text] = args as [number, string];
 
-                    super(type, text);
+                    super([null, null], type, Token.DEFAULT_CHANNEL, -1, -1);
+                    this.text = text;
 
                     break;
                 }
 
                 case 4: {
-                    const [input, type, start, stop] = args as [CharStream, int, int, int];
+                    const [input, type, start, stop] = args as [CharStream, number, number, number];
 
-
-                    super(input, type, DEFAULT_CHANNEL, start, stop);
-
+                    super([null, input], type, Token.DEFAULT_CHANNEL, start, stop);
 
                     break;
                 }
 
                 default: {
-                    throw new java.lang.IllegalArgumentException(S`Invalid number of arguments`);
+                    throw new Error("Invalid number of arguments");
                 }
             }
         }
 
-
-        public toString(): string {
+        public override toString(): string {
             let channelStr = "";
-            if (java.nio.channels.FileLock.channel > 0) {
-                channelStr = ",channel=" + java.nio.channels.FileLock.channel;
+            if (this.channel > 0) {
+                channelStr = ",channel=" + this.channel;
             }
-            let txt = java.text.BreakIterator.getText();
+
+            let txt = this.text;
             if (txt !== null) {
                 txt = Misc.replaceEscapes(txt);
-            }
-
-            else {
+            } else {
                 txt = "<no text>";
             }
 
             let tokenName: string;
-            if (java.lang.invoke.CallSite.type === STLexer.EOF_TYPE) {
+            if (this.type === Token.EOF) {
                 tokenName = "EOF";
+            } else {
+                tokenName = STParser.symbolicNames[this.type] ?? "Unknown";
             }
 
-            else {
-                tokenName = STParser.tokenNames[java.lang.invoke.CallSite.type];
-            }
-
-            return "[@" + getTokenIndex() + "," + java.lang.ProcessBuilder.start + ":" + java.lang.Thread.stop + "='" + txt + "',<" + tokenName + ">" + channelStr + "," + Misc.getLineCharPosition.#block#.line + ":" + getCharPositionInLine() + "]";
+            return "[@" + this.tokenIndex + "," + this.start + ":" + this.stop + "='" + txt + "',<" + tokenName + ">"
+                + channelStr + "," + this.line + ":" + this.column + "]";
         }
     };
 
-
     public static readonly SKIP = new STLexer.STToken(-1, "<skip>");
 
-    // must follow STLexer.tokens file that STParser.g loads
+    // must follow STLexer.tokens file that STParser.g4 loads
     public static readonly RBRACK = 17;
     public static readonly LBRACK = 16;
     public static readonly ELSE = 5;
@@ -152,18 +128,29 @@ export class STLexer implements TokenSource {
     public static readonly COMMENT = 37;
     public static readonly SLASH = 38;
 
-    /** To be able to properly track the inside/outside mode, we need to
+    /**
+     * To be able to properly track the inside/outside mode, we need to
      *  track how deeply nested we are in some templates. Otherwise, we
      *  know whether a <code>'}'</code> and the outermost subtemplate to send this
      *  back to outside mode.
      */
     public subtemplateDepth = 0;
 
+    public line = 1;
+    public _tokenStartColumn = 0;
+
+    public sourceName = "";
+
+    // Not used yet.
+    public tokenFactory: TokenFactory<Token> = CommonTokenFactory.DEFAULT;
+
+    public inputStream: CharStream;
 
     /** The char which delimits the start of an expression. */
-    protected delimiterStartChar = '<';
+    protected delimiterStartChar = "<".codePointAt(0)!;
+
     /** The char which delimits the end of an expression. */
-    protected delimiterStopChar = '>';
+    protected delimiterStopChar = ">".codePointAt(0)!;
 
     /**
      * This keeps track of the current mode of the lexer. Are we inside or
@@ -171,132 +158,82 @@ export class STLexer implements TokenSource {
      */
     protected scanningInsideExpr = false; // start out *not* in a {...} subtemplate
 
-    protected errMgr: java.util.logging.ErrorManager;
+    protected errMgr: ErrorManager;
 
     /** template embedded in a group file? this is the template */
-    protected templateToken: Token;
+    protected templateToken: Token | null;
 
-    protected input: CharStream;
     /** current character */
-    protected c: char;
+    protected c: number;
 
-    /** When we started token, track initial coordinates so we can properly
-     *  build token objects.
+    /**
+     * When we started token, track initial coordinates so we can properly
+     * build token objects.
      */
-    protected startCharIndex: int;
-    protected startLine: int;
-    protected startCharPositionInLine: int;
+    protected startCharIndex = -1;
 
-    /** Our lexer routines might have to emit more than a single token. We
+    /**
+     * Our lexer routines might have to emit more than a single token. We
      *  buffer everything through this list.
      */
     protected tokens = new Array<Token>();
 
-    public constructor(input: CharStream);
+    public constructor(inputOrErrMgr: ErrorManager | CharStream, input?: CharStream, templateToken?: Token,
+        delimiterStartChar?: string, delimiterStopChar?: string) {
+        this.inputStream = inputOrErrMgr instanceof ErrorManager ? input! : inputOrErrMgr;
+        this.errMgr = inputOrErrMgr instanceof ErrorManager ? inputOrErrMgr : STGroup.DEFAULT_ERR_MGR;
 
-    public constructor(errMgr: java.util.logging.ErrorManager, input: CharStream, templateToken: Token);
+        this.sourceName = this.inputStream.getSourceName();
+        this.c = this.inputStream.LA(1); // prime lookahead
+        this.templateToken = templateToken ?? null;
 
-    public constructor(errMgr: java.util.logging.ErrorManager,
-        input: CharStream,
-        templateToken: Token,
-        delimiterStartChar: char,
-        delimiterStopChar: char);
-    public constructor(...args: unknown[]) {
-        switch (args.length) {
-            case 1: {
-                const [input] = args as [CharStream];
-
-                this(STGroup.DEFAULT_ERR_MGR, input, null, '<', '>');
-
-                break;
-            }
-
-            case 3: {
-                const [errMgr, input, templateToken] = args as [java.util.logging.ErrorManager, CharStream, Token];
-
-
-                this(errMgr, input, templateToken, '<', '>');
-
-
-                break;
-            }
-
-            case 5: {
-                const [errMgr, input, templateToken, delimiterStartChar, delimiterStopChar] = args as [java.util.logging.ErrorManager, CharStream, Token, char, char];
-
-
-                super();
-                this.errMgr = errMgr;
-                this.input = input;
-                this.c = input.LA(1) as char; // prime lookahead
-                this.templateToken = templateToken;
-                this.delimiterStartChar = delimiterStartChar;
-                this.delimiterStopChar = delimiterStopChar;
-
-
-                break;
-            }
-
-            default: {
-                throw new java.lang.IllegalArgumentException(S`Invalid number of arguments`);
-            }
-        }
-    }
-
-
-    public static isIDStartLetter(c: char): boolean { return STLexer.isIDLetter(c); }
-    public static isIDLetter(c: char): boolean { return c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' || c >= '0' && c <= '9' || c === '-' || c === '_'; }
-    public static isWS(c: char): boolean { return c === ' ' || c === '\t' || c === '\n' || c === '\r'; }
-    public static isUnicodeLetter(c: char): boolean { return c >= 'a' && c <= 'f' || c >= 'A' && c <= 'F' || c >= '0' && c <= '9'; }
-
-    public static str(c: int): string {
-        if (c === STLexer.EOF) {
-            return "<EOF>";
+        if (delimiterStartChar) {
+            this.delimiterStartChar = delimiterStartChar.codePointAt(0)!;
         }
 
-        return string.valueOf(c as char);
+        if (delimiterStopChar) {
+            this.delimiterStopChar = delimiterStopChar.codePointAt(0)!;
+        }
     }
 
     public nextToken(): Token {
         let t: Token;
-        if (this.tokens.size() > 0) { t = this.tokens.remove(0); }
-        else {
+        if (this.tokens.length > 0) {
+            t = this.tokens.shift()!;
+        } else {
             t = this._nextToken();
         }
 
-        //      System.out.println(t);
         return t;
     }
 
-    /** Consume if {@code x} is next character on the input stream.
+    /**
+      Consume if {@code x} is next character on the input stream.
      */
-    public match(x: char): void {
-        if (this.c !== x) {
-            let e = new NoViableAltException("", 0, 0, this.input);
-            this.errMgr.lexerError(this.input.getSourceName(), "expecting '" + x + "', found '" + STLexer.str(this.c) + "'", this.templateToken, e);
+    public match(x: number | string): void {
+        const code = (typeof x === "string") ? x.codePointAt(0)! : x;
+        if (this.c !== code) {
+            this.lexerError("expecting '" + x + "', found '" + this.currentCharToString() + "'");
         }
         this.consume();
     }
 
-    public emit(token: Token): void { this.tokens.add(token); }
+    public emit(token: Token): void {
+        this.tokens.push(token);
+    }
 
     public _nextToken(): Token {
-        //System.out.println("nextToken: c="+(char)c+"@"+input.index());
         while (true) { // lets us avoid recursion when skipping stuff
-            this.startCharIndex = this.input.index();
-            this.startLine = this.input.getLine();
-            this.startCharPositionInLine = this.input.getCharPositionInLine();
+            this.startCharIndex = this.inputStream.index;
 
-            if (this.c === STLexer.EOF) {
-                return this.newToken(STLexer.EOF_TYPE);
+            if (this.c === Token.EOF) {
+                return this.newToken(Token.EOF);
             }
 
             let t: Token;
             if (this.scanningInsideExpr) {
                 t = this.inside();
-            }
-
-            else {
+            } else {
                 t = this.outside();
             }
 
@@ -307,180 +244,194 @@ export class STLexer implements TokenSource {
         }
     }
 
-    public newToken(ttype: int): Token;
+    public newToken(tokenType: number, text?: string, pos?: number): Token {
+        let t;
 
-    public newToken(ttype: int, text: string): Token;
-
-    public newToken(ttype: int, text: string, pos: int): Token;
-    public newToken(...args: unknown[]): Token {
-        switch (args.length) {
-            case 1: {
-                const [ttype] = args as [int];
-
-
-                let t = new STLexer.STToken(this.input, ttype, this.startCharIndex, this.input.index() - 1);
-                t.setLine(this.startLine);
-                t.setCharPositionInLine(this.startCharPositionInLine);
-                return t;
-
-
-                break;
-            }
-
-            case 2: {
-                const [ttype, text] = args as [int, string];
-
-
-                let t = new STLexer.STToken(ttype, text);
-                t.setStartIndex(this.startCharIndex);
-                t.setStopIndex(this.input.index() - 1);
-                t.setLine(this.startLine);
-                t.setCharPositionInLine(this.startCharPositionInLine);
-                return t;
-
-
-                break;
-            }
-
-            case 3: {
-                const [ttype, text, pos] = args as [int, string, int];
-
-
-                let t = new STLexer.STToken(ttype, text);
-                t.setStartIndex(this.startCharIndex);
-                t.setStopIndex(this.input.index() - 1);
-                t.setLine(this.input.getLine());
-                t.setCharPositionInLine(pos);
-                return t;
-
-
-                break;
-            }
-
-            default: {
-                throw new java.lang.IllegalArgumentException(S`Invalid number of arguments`);
+        if (!text) {
+            t = new STLexer.STToken(this.inputStream, tokenType, this.startCharIndex, this.inputStream.index - 1);
+            t.line = this.line;
+            t.setCharPositionInLine(this._tokenStartColumn);
+        } else {
+            t = new STLexer.STToken(tokenType, text);
+            if (pos !== undefined) {
+                t.column = pos;
             }
         }
-    }
 
+        t.start = this.startCharIndex;
+        t.stop = this.inputStream.index - 1;
+        t.line = this.line;
 
-    public newTokenFromPreviousChar(ttype: int): Token {
-        let t = new STLexer.STToken(this.input, ttype, this.input.index() - 1, this.input.index() - 1);
-        t.setLine(this.input.getLine());
-        t.setCharPositionInLine(this.input.getCharPositionInLine() - 1);
         return t;
     }
 
-    //    public String getErrorHeader() {
-    //        return startLine+":"+startCharPositionInLine;
-    //    }
-    //
-    public getSourceName(): string {
-        return "no idea";
+    public newTokenFromPreviousChar(tokenType: number): Token {
+        const t = new STLexer.STToken(this.inputStream, tokenType, this.inputStream.index - 1,
+            this.inputStream.index - 1);
+        t.line = this.line;
+        t.column = this._tokenStartColumn - 1;
+
+        return t;
     }
 
     protected consume(): void {
-        this.input.consume();
-        this.c = this.input.LA(1) as char;
+        if (this.c === "\n".codePointAt(0)) {
+            this.line += 1;
+            this._tokenStartColumn = 0;
+        } else {
+            this._tokenStartColumn += 1;
+        }
+
+        this.inputStream.consume();
+        this.c = this.inputStream.LA(1);
     }
 
     protected outside(): Token {
-        if (this.input.getCharPositionInLine() === 0 && (this.c === ' ' || this.c === '\t')) {
-            while (this.c === ' ' || this.c === '\t') this.consume(); // scarf indent
-            if (this.c !== STLexer.EOF) {
+        if (this._tokenStartColumn === 0 && this.currentCharMatchesOneOf(" ", "\t")) {
+            while (this.currentCharMatchesOneOf(" ", "\t")) {
+                this.consume();
+            } // scarf indent
+
+            if (this.c !== Token.EOF) {
                 return this.newToken(STLexer.INDENT);
             }
 
             return this.newToken(STLexer.TEXT);
         }
+
         if (this.c === this.delimiterStartChar) {
             this.consume();
-            if (this.c === '!') {
-                return STLexer.COMMENT();
+            if (this.currentCharMatchesOneOf("!")) {
+                return this.matchCOMMENT();
             }
 
-            if (this.c === '\\') {
-                return this.ESCAPE();
-            }
-            // <\\> <\uFFFF> <\n> etc...
+            if (this.currentCharMatchesOneOf("\\")) {
+                return this.matchESCAPE();
+            } // <\\> <\uFFFF> <\n> etc...
+
             this.scanningInsideExpr = true;
+
             return this.newToken(STLexer.LDELIM);
         }
-        if (this.c === '\r') { this.consume(); this.consume(); return this.newToken(STLexer.NEWLINE); } // \r\n -> \n
-        if (this.c === '\n') { this.consume(); return this.newToken(STLexer.NEWLINE); }
-        if (this.c === '}' && this.subtemplateDepth > 0) {
+
+        if (this.currentCharMatchesOneOf("\r")) {
+            this.consume();
+            this.consume();
+
+            return this.newToken(STLexer.NEWLINE);
+        } // \r\n -> \n
+
+        if (this.currentCharMatchesOneOf("\n")) {
+            this.consume();
+
+            return this.newToken(STLexer.NEWLINE);
+        }
+        if (this.currentCharMatchesOneOf("}") && this.subtemplateDepth > 0) {
             this.scanningInsideExpr = true;
             this.subtemplateDepth--;
             this.consume();
+
             return this.newTokenFromPreviousChar(STLexer.RCURLY);
         }
-        return this.mTEXT();
+
+        return this.matchTEXT();
     }
 
     protected inside(): Token {
         while (true) {
-            switch (this.c) {
-                case ' ': case '\t': case '\n': case '\r': {
+            switch (String.fromCodePoint(this.c)) {
+                case " ": case "\t": case "\n": case "\r": {
                     this.consume();
+
                     return STLexer.SKIP;
                 }
 
-                case '.': {
+                case ".": {
+                    const dot = this.c;
                     this.consume();
-                    if (this.input.LA(1) === '.' && this.input.LA(2) === '.') {
+
+                    if (this.inputStream.LA(1) === dot && this.inputStream.LA(2) === dot) {
                         this.consume();
-                        this.match('.');
+                        this.match(".");
+
                         return this.newToken(STLexer.ELLIPSIS);
                     }
+
                     return this.newToken(STLexer.DOT);
                 }
 
-                case ',': {
-                    this.consume(); return this.newToken(STLexer.COMMA);
-                }
-
-                case ':': {
-                    this.consume(); return this.newToken(STLexer.COLON);
-                }
-
-                case ';': {
-                    this.consume(); return this.newToken(STLexer.SEMI);
-                }
-
-                case '(': {
-                    this.consume(); return this.newToken(STLexer.LPAREN);
-                }
-
-                case ')': {
-                    this.consume(); return this.newToken(STLexer.RPAREN);
-                }
-
-                case '[': {
-                    this.consume(); return this.newToken(STLexer.LBRACK);
-                }
-
-                case ']': {
-                    this.consume(); return this.newToken(STLexer.RBRACK);
-                }
-
-                case '=': {
-                    this.consume(); return this.newToken(STLexer.EQUALS);
-                }
-
-                case '!': {
-                    this.consume(); return this.newToken(STLexer.BANG);
-                }
-
-                case '/': {
-                    this.consume(); return this.newToken(STLexer.SLASH);
-                }
-
-                case '@': {
+                case ",": {
                     this.consume();
-                    if (this.c === 'e' && this.input.LA(2) === 'n' && this.input.LA(3) === 'd') {
-                        this.consume(); this.consume(); this.consume();
+
+                    return this.newToken(STLexer.COMMA);
+                }
+
+                case ":": {
+                    this.consume();
+
+                    return this.newToken(STLexer.COLON);
+                }
+
+                case ";": {
+                    this.consume();
+
+                    return this.newToken(STLexer.SEMI);
+                }
+
+                case "(": {
+                    this.consume();
+
+                    return this.newToken(STLexer.LPAREN);
+                }
+
+                case ")": {
+                    this.consume();
+
+                    return this.newToken(STLexer.RPAREN);
+                }
+
+                case "[": {
+                    this.consume();
+
+                    return this.newToken(STLexer.LBRACK);
+                }
+
+                case "]": {
+                    this.consume();
+
+                    return this.newToken(STLexer.RBRACK);
+                }
+
+                case "=": {
+                    this.consume();
+
+                    return this.newToken(STLexer.EQUALS);
+                }
+
+                case "!": {
+                    this.consume();
+
+                    return this.newToken(STLexer.BANG);
+                }
+
+                case "/": {
+                    this.consume();
+
+                    return this.newToken(STLexer.SLASH);
+                }
+
+                case "@": {
+                    this.consume();
+                    if (this.c === "e".codePointAt(0)
+                        && this.inputStream.LA(2) === "n".codePointAt(0)
+                        && this.inputStream.LA(3) === "d".codePointAt(0)) {
+                        this.consume();
+                        this.consume();
+                        this.consume();
+
                         return this.newToken(STLexer.REGION_END);
                     }
+
                     return this.newToken(STLexer.AT);
                 }
 
@@ -488,15 +439,23 @@ export class STLexer implements TokenSource {
                     return this.mSTRING();
                 }
 
-                case '&': {
-                    this.consume(); this.match('&'); return this.newToken(STLexer.AND);
+                case "&": {
+                    this.consume();
+                    this.match("&");
+
+                    return this.newToken(STLexer.AND);
                 }
+
                 // &&
-                case '|': {
-                    this.consume(); this.match('|'); return this.newToken(STLexer.OR);
+                case "|": {
+                    this.consume();
+                    this.match("|");
+
+                    return this.newToken(STLexer.OR);
                 }
+
                 // ||
-                case '{': {
+                case "{": {
                     return this.subTemplate();
                 }
 
@@ -504,70 +463,54 @@ export class STLexer implements TokenSource {
                     if (this.c === this.delimiterStopChar) {
                         this.consume();
                         this.scanningInsideExpr = false;
+
                         return this.newToken(STLexer.RDELIM);
                     }
-                    if (STLexer.isIDStartLetter(this.c)) {
-                        let id = this.mID();
-                        let name = id.getText();
-                        if (name.equals("if")) {
-                            return this.newToken(STLexer.IF);
-                        }
 
-                        else {
-                            if (name.equals("endif")) {
+                    if (this.currentCharIsIDStartLetter()) {
+                        const id = this.mID();
+                        const name = id.text!;
+                        switch (name) {
+                            case "if": {
+                                return this.newToken(STLexer.IF);
+                            }
+
+                            case "endif": {
                                 return this.newToken(STLexer.ENDIF);
                             }
 
-                            else {
-                                if (name.equals("else")) {
-                                    return this.newToken(STLexer.ELSE);
-                                }
-
-                                else {
-                                    if (name.equals("elseif")) {
-                                        return this.newToken(STLexer.ELSEIF);
-                                    }
-
-                                    else {
-                                        if (name.equals("super")) {
-                                            return this.newToken(STLexer.SUPER);
-                                        }
-
-                                        else {
-                                            if (name.equals("true")) {
-                                                return this.newToken(STLexer.TRUE);
-                                            }
-
-                                            else {
-                                                if (name.equals("false")) {
-                                                    return this.newToken(STLexer.FALSE);
-                                                }
-
-                                            }
-
-                                        }
-
-                                    }
-
-                                }
-
+                            case "else": {
+                                return this.newToken(STLexer.ELSE);
                             }
 
-                        }
+                            case "elseif": {
+                                return this.newToken(STLexer.ELSEIF);
+                            }
 
-                        return id;
+                            case "super": {
+                                return this.newToken(STLexer.SUPER);
+                            }
+
+                            case "true": {
+                                return this.newToken(STLexer.TRUE);
+                            }
+
+                            case "false": {
+                                return this.newToken(STLexer.FALSE);
+                            }
+
+                            default: {
+                                return id;
+                            }
+                        }
                     }
-                    let re =
-                        new NoViableAltException("", 0, 0, this.input);
-                    re.line = this.startLine;
-                    re.charPositionInLine = this.startCharPositionInLine;
-                    this.errMgr.lexerError(this.input.getSourceName(), "invalid character '" + STLexer.str(this.c) + "'", this.templateToken, re);
-                    if (this.c === STLexer.EOF) {
-                        return this.newToken(STLexer.EOF_TYPE);
+
+                    this.lexerError("invalid character '" + this.currentCharToString() + "'");
+                    if (this.c === Token.EOF) {
+                        return this.newToken(Token.EOF);
                     }
                     this.consume();
                 }
-
             }
         }
     }
@@ -575,189 +518,232 @@ export class STLexer implements TokenSource {
     protected subTemplate(): Token {
         // look for "{ args ID (',' ID)* '|' ..."
         this.subtemplateDepth++;
-        let m = this.input.mark();
-        let curlyStartChar = this.startCharIndex;
-        let curlyLine = this.startLine;
-        let curlyPos = this.startCharPositionInLine;
-        let argTokens = new Array<Token>();
+        const m = this.inputStream.mark();
+        const curlyStartChar = this.startCharIndex;
+        const curlyLine = this.line;
+        const curlyPos = this._tokenStartColumn;
+        const argTokens = new Array<Token>();
         this.consume();
-        let curly = this.newTokenFromPreviousChar(STLexer.LCURLY);
-        this.WS();
-        argTokens.add(this.mID());
-        this.WS();
-        while (this.c === ',') {
+
+        const curly = this.newTokenFromPreviousChar(STLexer.LCURLY);
+
+        this.matchWS();
+        argTokens.push(this.mID());
+        this.matchWS();
+        while (this.c === ",".codePointAt(0)) {
             this.consume();
-            argTokens.add(this.newTokenFromPreviousChar(STLexer.COMMA));
-            this.WS();
-            argTokens.add(this.mID());
-            this.WS();
+            argTokens.push(this.newTokenFromPreviousChar(STLexer.COMMA));
+            this.matchWS();
+            argTokens.push(this.mID());
+            this.matchWS();
         }
-        this.WS();
-        if (this.c === '|') {
+
+        this.matchWS();
+        if (this.currentCharMatchesOneOf("|")) {
             this.consume();
-            argTokens.add(this.newTokenFromPreviousChar(STLexer.PIPE));
-            if (STLexer.isWS(this.c)) {
+            argTokens.push(this.newTokenFromPreviousChar(STLexer.PIPE));
+            if (this.currentCharMatchesOneOf(" ", "\t", "\n", "\r")) {
                 this.consume();
             }
+
             // ignore a single whitespace after |
             //System.out.println("matched args: "+argTokens);
-            for (let t of argTokens) {
+            for (const t of argTokens) {
                 this.emit(t);
             }
 
-            this.input.release(m);
+            this.inputStream.release(m);
             this.scanningInsideExpr = false;
             this.startCharIndex = curlyStartChar; // reset state
-            this.startLine = curlyLine;
-            this.startCharPositionInLine = curlyPos;
+            this.line = curlyLine;
+            this._tokenStartColumn = curlyPos;
+
             return curly;
         }
-        this.input.rewind(m);
+
+        this.inputStream.release(m);
         this.startCharIndex = curlyStartChar; // reset state
-        this.startLine = curlyLine;
-        this.startCharPositionInLine = curlyPos;
+        this.line = curlyLine;
+        this._tokenStartColumn = curlyPos;
         this.consume();
         this.scanningInsideExpr = false;
+
         return curly;
     }
 
-    protected ESCAPE(): Token {
-        this.startCharIndex = this.input.index();
-        this.startCharPositionInLine = this.input.getCharPositionInLine();
-        this.consume(); // kill \\
-        if (this.c === 'u') {
-            return this.UNICODE();
+    protected matchESCAPE(): Token {
+        this.startCharIndex = this.inputStream.index;
+        this.consume(); // jump over \
+        if (this.currentCharMatchesOneOf("u")) {
+            return this.matchHexNumber();
         }
 
         let text: string;
-        switch (this.c) {
-            case '\\': {
-                this.LINEBREAK(); return STLexer.SKIP;
+        switch (String.fromCodePoint(this.c)) {
+            case "\\": {
+                this.matchLINEBREAK();
+
+                return STLexer.SKIP;
             }
 
-            case 'n': {
-                text = "\n"; break;
+            case "n": {
+                text = "\n";
+                break;
             }
 
-            case 't': {
-                text = "\t"; break;
+            case "t": {
+                text = "\t";
+                break;
             }
 
-            case ' ': {
-                text = " "; break;
+            case " ": {
+                text = " ";
+                break;
             }
 
             default: {
-                let e = new NoViableAltException("", 0, 0, this.input);
-                this.errMgr.lexerError(this.input.getSourceName(), "invalid escaped char: '" + STLexer.str(this.c) + "'", this.templateToken, e);
+                this.lexerError("invalid escaped char: '" + this.currentCharToString() + "'");
                 this.consume();
                 this.match(this.delimiterStopChar);
+
                 return STLexer.SKIP;
             }
 
         }
+
         this.consume();
-        let t = this.newToken(STLexer.TEXT, text, this.input.getCharPositionInLine() - 2);
+        const t = this.newToken(STLexer.TEXT, text, this._tokenStartColumn - 2);
         this.match(this.delimiterStopChar);
+
         return t;
     }
 
-    protected UNICODE(): Token {
+    protected matchHexNumber(): Token {
         this.consume();
-        let chars = new Uint16Array(4);
-        if (!STLexer.isUnicodeLetter(this.c)) {
-            let e = new NoViableAltException("", 0, 0, this.input);
-            this.errMgr.lexerError(this.input.getSourceName(), "invalid unicode char: '" + STLexer.str(this.c) + "'", this.templateToken, e);
+
+        const convertCharCodeToNumber = (): number => {
+            if (this.c >= 0x30 && this.c <= 0x39) {
+                return this.c - 0x30;
+            }
+
+            if (this.c >= 0x41 && this.c <= 0x46) {
+                return this.c - 0x37;
+            }
+
+            if (this.c >= 0x61 && this.c <= 0x66) {
+                return this.c - 0x57;
+            }
+
+            return -1;
+        };
+
+        let codePoint = 0;
+        if (!this.currentCharIsHexDigit()) {
+            this.lexerError("invalid hex digit: '" + this.currentCharToString() + "'");
         }
-        chars[0] = this.c;
+
+        codePoint = convertCharCodeToNumber();
+
         this.consume();
-        if (!STLexer.isUnicodeLetter(this.c)) {
-            let e = new NoViableAltException("", 0, 0, this.input);
-            this.errMgr.lexerError(this.input.getSourceName(), "invalid unicode char: '" + STLexer.str(this.c) + "'", this.templateToken, e);
+        if (!this.currentCharIsHexDigit()) {
+            this.lexerError("invalid hex digit: '" + this.currentCharToString() + "'");
         }
-        chars[1] = this.c;
+
+        codePoint = codePoint << 4 + convertCharCodeToNumber();
+
         this.consume();
-        if (!STLexer.isUnicodeLetter(this.c)) {
-            let e = new NoViableAltException("", 0, 0, this.input);
-            this.errMgr.lexerError(this.input.getSourceName(), "invalid unicode char: '" + STLexer.str(this.c) + "'", this.templateToken, e);
+        if (!this.currentCharIsHexDigit()) {
+            this.lexerError("invalid hex digit: '" + this.currentCharToString() + "'");
         }
-        chars[2] = this.c;
+
+        codePoint = codePoint << 4 + convertCharCodeToNumber();
+
         this.consume();
-        if (!STLexer.isUnicodeLetter(this.c)) {
-            let e = new NoViableAltException("", 0, 0, this.input);
-            this.errMgr.lexerError(this.input.getSourceName(), "invalid unicode char: '" + STLexer.str(this.c) + "'", this.templateToken, e);
+        if (!this.currentCharIsHexDigit()) {
+            this.lexerError("invalid hex digit: '" + this.currentCharToString() + "'");
         }
-        chars[3] = this.c;
+
+        codePoint = codePoint << 4 + convertCharCodeToNumber();
+
         // ESCAPE kills >
-        let uc = number.parseInt(new string(chars), 16) as char;
-        let t = this.newToken(STLexer.TEXT, string.valueOf(uc), this.input.getCharPositionInLine() - 6);
+        const uc = String.fromCodePoint(codePoint);
+        const t = this.newToken(STLexer.TEXT, uc, this._tokenStartColumn - 6);
+
         this.consume();
         this.match(this.delimiterStopChar);
+
         return t;
     }
 
-    protected mTEXT(): Token {
+    protected matchTEXT(): Token {
         let modifiedText = false;
-        let buf = new java.lang.StringBuilder();
-        while (this.c !== STLexer.EOF && this.c !== this.delimiterStartChar) {
-            if (this.c === '\r' || this.c === '\n') {
+        let buf = "";
+        while (this.c !== Token.EOF && this.c !== this.delimiterStartChar) {
+            if (this.currentCharMatchesOneOf("\r", "\n")) {
                 break;
             }
 
-            if (this.c === '}' && this.subtemplateDepth > 0) {
+            if (this.currentCharMatchesOneOf("}") && this.subtemplateDepth > 0) {
                 break;
             }
 
-            if (this.c === '\\') {
-                if (this.input.LA(2) === '\\') { // convert \\ to \
-                    this.consume(); this.consume(); buf.append('\\');
+            if (this.currentCharMatchesOneOf("\\")) {
+                if (this.inputStream.LA(2) === "\\".codePointAt(0)) { // convert \\ to \
+                    this.consume();
+                    this.consume();
+                    buf += "\\";
                     modifiedText = true;
                     continue;
                 }
-                if (this.input.LA(2) === this.delimiterStartChar ||
-                    this.input.LA(2) === '}') {
+
+                if (this.inputStream.LA(2) === this.delimiterStartChar ||
+                    this.inputStream.LA(2) === "}".codePointAt(0)) {
                     modifiedText = true;
                     this.consume(); // toss out \ char
-                    buf.append(this.c); this.consume();
-                }
-                else {
-                    buf.append(this.c);
+                    buf += this.currentCharToString();
+                    this.consume();
+                } else {
+                    buf += this.currentCharToString();
                     this.consume();
                 }
                 continue;
             }
-            buf.append(this.c);
+
+            buf += this.currentCharToString();
             this.consume();
         }
+
         if (modifiedText) {
             return this.newToken(STLexer.TEXT, buf.toString());
-        }
-
-        else {
+        } else {
             return this.newToken(STLexer.TEXT);
         }
 
     }
 
-    /** <pre>
+    /**
+     * <pre>
      *  ID  : ('a'..'z'|'A'..'Z'|'_'|'/')
      *        ('a'..'z'|'A'..'Z'|'0'..'9'|'_'|'/')*
      *      ;
      *  </pre>
+     *
+     * @returns A token representing the matched ID.
      */
     protected mID(): Token {
         // called from subTemplate; so keep resetting position during speculation
-        this.startCharIndex = this.input.index();
-        this.startLine = this.input.getLine();
-        this.startCharPositionInLine = this.input.getCharPositionInLine();
+        this.startCharIndex = this.inputStream.index;
         this.consume();
-        while (STLexer.isIDLetter(this.c)) {
+
+        while (this.currentCharIsIDLetter()) {
             this.consume();
         }
+
         return this.newToken(STLexer.ID);
     }
 
-    /** <pre>
+    /**
+     * <pre>
      *  STRING : '"'
      *           (   '\\' '"'
      *           |   '\\' ~'"'
@@ -766,105 +752,163 @@ export class STLexer implements TokenSource {
      *           '"'
      *         ;
      * </pre>
+     *
+     * @returns A token representing the matched string.
      */
     protected mSTRING(): Token {
-        //{setText(getText().substring(1, getText().length()-1));}
         let sawEscape = false;
-        let buf = new java.lang.StringBuilder();
-        buf.append(this.c); this.consume();
-        while (this.c !== '"') {
-            if (this.c === '\\') {
+        let buf = this.currentCharToString();
+        this.consume();
+
+        while (!this.currentCharMatchesOneOf('"')) {
+            if (this.currentCharMatchesOneOf("\\")) {
                 sawEscape = true;
                 this.consume();
-                switch (this.c) {
-                    case 'n': {
-                        buf.append('\n'); break;
+
+                switch (String.fromCodePoint(this.c)) {
+                    case "n": {
+                        buf += "\n";
+                        break;
                     }
 
-                    case 'r': {
-                        buf.append('\r'); break;
+                    case "r": {
+                        buf += "\r";
+                        break;
                     }
 
-                    case 't': {
-                        buf.append('\t'); break;
+                    case "t": {
+                        buf += "\t";
+                        break;
                     }
 
                     default: {
-                        buf.append(this.c); break;
+                        buf += this.currentCharToString(); break;
                     }
 
                 }
                 this.consume();
                 continue;
             }
-            buf.append(this.c);
+
+            buf += this.currentCharToString();
             this.consume();
-            if (this.c === STLexer.EOF) {
-                let re =
-                    new MismatchedTokenException('"' as int, this.input);
-                re.line = this.input.getLine();
-                re.charPositionInLine = this.input.getCharPositionInLine();
-                this.errMgr.lexerError(this.input.getSourceName(), "EOF in string", this.templateToken, re);
+
+            if (this.c === Token.EOF) {
+                this.lexerError("EOF in string");
                 break;
             }
         }
-        buf.append(this.c);
-        this.consume();
-        if (sawEscape) {
-            return this.newToken(STLexer.STRING, buf.toString());
-        }
 
-        else {
+        buf += this.currentCharToString();
+        this.consume();
+
+        if (sawEscape) {
+            return this.newToken(STLexer.STRING, buf);
+        } else {
             return this.newToken(STLexer.STRING);
         }
 
     }
 
-    protected WS(): void {
-        while (this.c === ' ' || this.c === '\t' || this.c === '\n' || this.c === '\r') this.consume();
+    protected matchWS(): void {
+        while (this.currentCharMatchesOneOf(" ", "\t", "\n", "\r")) {
+            this.consume();
+        }
     }
 
-    protected COMMENT(): Token {
-        this.match('!');
-        while (!(this.c === '!' && this.input.LA(2) === this.delimiterStopChar)) {
-            if (this.c === STLexer.EOF) {
-                let re =
-                    new MismatchedTokenException('!' as int, this.input);
-                re.line = this.input.getLine();
-                re.charPositionInLine = this.input.getCharPositionInLine();
-                this.errMgr.lexerError(this.input.getSourceName(), "Nonterminated comment starting at " +
-                    this.startLine + ":" + this.startCharPositionInLine + ": '!" +
-                    this.delimiterStopChar + "' missing", this.templateToken, re);
+    protected matchCOMMENT(): Token {
+        this.match("!");
+        while (!(this.currentCharMatchesOneOf("!") && this.inputStream.LA(2) === this.delimiterStopChar)) {
+            if (this.c === Token.EOF) {
+                this.lexerError("Non-terminated comment starting at " + this.line + ":" + this._tokenStartColumn +
+                    ": '!" + this.delimiterStopChar + "' missing");
                 break;
             }
             this.consume();
         }
-        this.consume(); this.consume(); // grab !>
+
+        // grab !>
+        this.consume();
+        this.consume();
+
         return this.newToken(STLexer.COMMENT);
     }
 
-    protected LINEBREAK(): void {
-        this.match('\\'); // only kill 2nd \ as ESCAPE() kills first one
+    protected matchLINEBREAK(): void {
+        this.match("\\"); // only kill 2nd \ as ESCAPE() kills first one
         this.match(this.delimiterStopChar);
-        while (this.c === ' ' || this.c === '\t') this.consume(); // scarf WS after <\\>
-        if (this.c === STLexer.EOF) {
-            let re = new RecognitionException(this.input);
-            re.line = this.input.getLine();
-            re.charPositionInLine = this.input.getCharPositionInLine();
-            this.errMgr.lexerError(this.input.getSourceName(), "Missing newline after newline escape <\\\\>",
-                this.templateToken, re);
+        while (this.currentCharMatchesOneOf(" ", "\t")) {
+            this.consume();
+        } // scarf WS after <\\>
+
+        if (this.c === Token.EOF) {
+            this.lexerError("Missing newline after newline escape <\\\\>");
+
             return;
         }
-        if (this.c === '\r') {
+
+        if (this.currentCharMatchesOneOf("\r")) {
             this.consume();
         }
 
-        this.match('\n');
-        while (this.c === ' ' || this.c === '\t') this.consume(); // scarf any indent
+        this.match("\n");
+        while (this.currentCharMatchesOneOf(" ", "\t")) {
+            this.consume();
+        } // scarf any indent
     }
-}
 
-// eslint-disable-next-line @typescript-eslint/no-namespace, no-redeclare
-export namespace STLexer {
-    export type STToken = InstanceType<typeof STLexer.STToken>;
+    /**
+     * @returns `true` if the current char matches any of the given alternatives
+     */
+    private currentCharMatchesOneOf(...alts: string[]): boolean {
+        for (const alt of alts) {
+            if (this.c === alt.codePointAt(0)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * @returns `true` if the current char is a hex digit
+     */
+    private currentCharIsHexDigit(): boolean {
+        return (this.c >= 0x30 && this.c <= 0x39) // 0-9
+            || (this.c >= 0x41 && this.c <= 0x46) // A-F
+            || (this.c >= 0x61 && this.c <= 0x66); // a-f
+    }
+
+    /**
+     * @returns `true` if the current char can be used as first letter for an identifier.
+     */
+    private currentCharIsIDStartLetter(): boolean {
+        return (this.c >= 0x30 && this.c <= 0x39) // 0-9
+            || (this.c >= 0x41 && this.c <= 0x5a) // A-Z
+            || (this.c >= 0x61 && this.c <= 0x7a) // a-z
+            || this.c === 0x5f; // underscore
+    }
+
+    /**
+     * @returns `true` if the current char can be used in an identifier.
+     */
+    private currentCharIsIDLetter(): boolean {
+        return this.currentCharIsIDStartLetter() || this.c === 0x2d; // minus
+    }
+
+    /**
+     * @returns A string representation of the current char.
+     */
+    private currentCharToString(): string {
+        if (this.c === Token.EOF) {
+            return "<EOF>";
+        }
+
+        return String.fromCodePoint(this.c);
+    }
+
+    private lexerError(message: string): void {
+        const e = new LexerNoViableAltException(null as unknown as Lexer, this.inputStream, 0, new ATNConfigSet());
+        this.errMgr.lexerError(this.sourceName, message, this.templateToken, e);
+    }
 }

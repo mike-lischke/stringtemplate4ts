@@ -1,34 +1,10 @@
+/* java2ts: keep */
+
 /*
- * [The "BSD license"]
- *  Copyright (c) 2011 Terence Parr
- *  All rights reserved.
- *
- *  Redistribution and use in source and binary forms, with or without
- *  modification, are permitted provided that the following conditions
- *  are met:
- *  1. Redistributions of source code must retain the above copyright
- *     notice, this list of conditions and the following disclaimer.
- *  2. Redistributions in binary form must reproduce the above copyright
- *     notice, this list of conditions and the following disclaimer in the
- *     documentation and/or other materials provided with the distribution.
- *  3. The name of the author may not be used to endorse or promote products
- *     derived from this software without specific prior written permission.
- *
- *  THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
- *  IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
- *  OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
- *  IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
- *  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
- *  NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- *  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- *  THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- *  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
- *  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Copyright (c) Terence Parr. All rights reserved.
+ * Licensed under the BSD-3 License. See License.txt in the project root for license information.
  */
 
-
-
-import { java, JavaObject, type char, type int, S } from "jree";
 import { STGroupFile } from "./STGroupFile.js";
 import { STGroupDir } from "./STGroupDir.js";
 import { STErrorListener } from "./STErrorListener.js";
@@ -49,6 +25,7 @@ import { ObjectModelAdaptor } from "./misc/ObjectModelAdaptor.js";
 import { STModelAdaptor } from "./misc/STModelAdaptor.js";
 import { TypeRegistry } from "./misc/TypeRegistry.js";
 import { Token } from "antlr4ng";
+import { ErrorManager } from "./misc/ErrorManager.js";
 
 
 
@@ -66,7 +43,7 @@ export class STGroup {
     public static readonly DICT_KEY = "key";
     public static readonly DEFAULT_KEY = "default";
 
-    public static readonly DEFAULT_ERR_MGR = new java.util.logging.ErrorManager();
+    public static readonly DEFAULT_ERR_MGR = new ErrorManager();
 
     /** Watch loading of groups and templates. */
     public static verbose = false;
@@ -119,7 +96,7 @@ export class STGroup {
      *  defined by the user like {@code typeInitMap ::= ["int":"0"]}.
      */
     protected dictionaries =
-        java.util.Collections.synchronizedMap(new Map<string, Map<string, Object>>());
+        java.util.Collections.synchronizedMap(new Map<string, Map<string, unknown>>());
 
     /** A dictionary that allows people to register a renderer for
      *  a particular kind of object for any template evaluated relative to this
@@ -516,7 +493,7 @@ export class STGroup {
         templateToken: Token,
         template: string,
         nameToken: Token,
-        args: java.util.List<FormalArgument>): void {
+        args?: FormalArgument[]): void {
         try {
             if (regionSurroundingTemplateName !== null) {
                 this.defineRegion(regionSurroundingTemplateName, nameToken, template, templateToken);
@@ -588,7 +565,7 @@ export class STGroup {
      * <p>
      * Not thread safe...do not keep adding these while you reference them.</p>
      */
-    public defineDictionary(name: string, mapping: Map<string, Object>): void {
+    public defineDictionary(name: string, mapping: Map<string, unknown>): void {
         this.dictionaries.put(name, mapping);
     }
 

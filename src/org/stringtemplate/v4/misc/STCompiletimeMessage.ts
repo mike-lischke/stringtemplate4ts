@@ -9,6 +9,8 @@ import { Token } from "antlr4ng";
 
 import { STMessage } from "./STMessage.js";
 import { ErrorType } from "./ErrorType.js";
+import { GroupParser } from "../compiler/generated/GroupParser.js";
+import { printf } from "fast-printf";
 
 /**
  * Used for semantic errors that occur at compile time not during
@@ -16,14 +18,14 @@ import { ErrorType } from "./ErrorType.js";
  */
 export class STCompiletimeMessage extends STMessage {
     /** overall token pulled from group file */
-    public templateToken: Token;
+    public templateToken: Token | null;
 
     /** token inside template */
     public token: Token;
     public srcName: string;
 
-    public constructor(error: ErrorType, srcName: string, templateToken: Token, t: Token, cause?: Error, arg?: string,
-        arg2?: string) {
+    public constructor(error: ErrorType, srcName: string, templateToken: Token | null, t: Token, cause?: Error | null,
+        arg?: string | null, arg2?: string) {
         if (!cause) {
             super(error);
             this.templateToken = templateToken;
@@ -62,15 +64,15 @@ export class STCompiletimeMessage extends STMessage {
                     || this.templateToken.type === GroupParser.BIGSTRING_NO_NL) {
                     templateDelimiterSize = 2;
                 }
-                line += this.templateToken.getLine() - 1;
-                charPos += this.templateToken.getCharPositionInLine() + templateDelimiterSize;
+                line += this.templateToken.line - 1;
+                charPos += this.templateToken.column + templateDelimiterSize;
             }
         }
-        const filepos = line + ":" + charPos;
-        if (this.srcName !== null) {
-            return this.srcName + " " + filepos + ": " + string.format(this.error.message, this.arg, this.arg2);
+        const filePosition = line + ":" + charPos;
+        if (this.srcName) {
+            return this.srcName + " " + filePosition + ": " + printf(this.error.message, this.arg, this.arg2);
         }
 
-        return filepos + ": " + string.format(this.error.message, this.arg, this.arg2);
+        return filePosition + ": " + printf(this.error.message, this.arg, this.arg2);
     }
 }
