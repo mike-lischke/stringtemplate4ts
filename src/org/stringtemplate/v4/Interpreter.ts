@@ -621,13 +621,13 @@ export class Interpreter {
                 case Bytecode.INSTR_LOAD_STR: {
                     // just testing...
                     this.load_str(self, ip);
-                    ip += Bytecode.OPND_SIZE_IN_BYTES;
+                    ip += Bytecode.OPERAND_SIZE_IN_BYTES;
                     break;
                 }
 
                 case Bytecode.INSTR_LOAD_ATTR: {
                     nameIndex = Interpreter.getShort(code, ip);
-                    ip += Bytecode.OPND_SIZE_IN_BYTES;
+                    ip += Bytecode.OPERAND_SIZE_IN_BYTES;
                     name = self.impl.strings[nameIndex];
                     try {
                         o = this.getAttribute(scope, name);
@@ -649,7 +649,7 @@ export class Interpreter {
 
                 case Bytecode.INSTR_LOAD_LOCAL: {
                     const valueIndex = Interpreter.getShort(code, ip);
-                    ip += Bytecode.OPND_SIZE_IN_BYTES;
+                    ip += Bytecode.OPERAND_SIZE_IN_BYTES;
                     o = self.locals[valueIndex];
                     if (o === ST.EMPTY_ATTR) {
                         o = null;
@@ -661,7 +661,7 @@ export class Interpreter {
 
                 case Bytecode.INSTR_LOAD_PROP: {
                     nameIndex = Interpreter.getShort(code, ip);
-                    ip += Bytecode.OPND_SIZE_IN_BYTES;
+                    ip += Bytecode.OPERAND_SIZE_IN_BYTES;
                     o = this.operands[this.sp--];
                     name = self.impl.strings[nameIndex];
                     this.operands[++this.sp] = this.getObjectProperty(out, scope, o, name);
@@ -677,10 +677,10 @@ export class Interpreter {
 
                 case Bytecode.INSTR_NEW: {
                     nameIndex = Interpreter.getShort(code, ip);
-                    ip += Bytecode.OPND_SIZE_IN_BYTES;
+                    ip += Bytecode.OPERAND_SIZE_IN_BYTES;
                     name = self.impl.strings[nameIndex];
                     nargs = Interpreter.getShort(code, ip);
-                    ip += Bytecode.OPND_SIZE_IN_BYTES;
+                    ip += Bytecode.OPERAND_SIZE_IN_BYTES;
                     // look up in original hierarchy not enclosing template (variable group)
                     // see TestSubtemplates.testEvalSTFromAnotherGroup()
                     st = self.groupThatCreatedThisInstance.getEmbeddedInstanceOf(this, scope, name);
@@ -693,7 +693,7 @@ export class Interpreter {
 
                 case Bytecode.INSTR_NEW_IND: {
                     nargs = Interpreter.getShort(code, ip);
-                    ip += Bytecode.OPND_SIZE_IN_BYTES;
+                    ip += Bytecode.OPERAND_SIZE_IN_BYTES;
                     name = String(this.operands[this.sp - nargs]);
                     st = self.groupThatCreatedThisInstance.getEmbeddedInstanceOf(this, scope, name);
                     this.storeArgs(scope, nargs, st);
@@ -705,7 +705,7 @@ export class Interpreter {
 
                 case Bytecode.INSTR_NEW_BOX_ARGS: {
                     nameIndex = Interpreter.getShort(code, ip);
-                    ip += Bytecode.OPND_SIZE_IN_BYTES;
+                    ip += Bytecode.OPERAND_SIZE_IN_BYTES;
                     name = self.impl.strings[nameIndex];
                     const attrs = this.operands[this.sp--] as Map<string, Object>;
                     // look up in original hierarchy not enclosing template (variable group)
@@ -719,17 +719,17 @@ export class Interpreter {
 
                 case Bytecode.INSTR_SUPER_NEW: {
                     nameIndex = Interpreter.getShort(code, ip);
-                    ip += Bytecode.OPND_SIZE_IN_BYTES;
+                    ip += Bytecode.OPERAND_SIZE_IN_BYTES;
                     name = self.impl.strings[nameIndex];
                     nargs = Interpreter.getShort(code, ip);
-                    ip += Bytecode.OPND_SIZE_IN_BYTES;
+                    ip += Bytecode.OPERAND_SIZE_IN_BYTES;
                     this.super_new(scope, name, nargs);
                     break;
                 }
 
                 case Bytecode.INSTR_SUPER_NEW_BOX_ARGS: {
                     nameIndex = Interpreter.getShort(code, ip);
-                    ip += Bytecode.OPND_SIZE_IN_BYTES;
+                    ip += Bytecode.OPERAND_SIZE_IN_BYTES;
                     name = self.impl.strings[nameIndex];
                     attrs = this.operands[this.sp--] as Map<string, Object>;
                     this.super_new(scope, name, attrs);
@@ -738,7 +738,7 @@ export class Interpreter {
 
                 case Bytecode.INSTR_STORE_OPTION: {
                     const optionIndex = Interpreter.getShort(code, ip);
-                    ip += Bytecode.OPND_SIZE_IN_BYTES;
+                    ip += Bytecode.OPERAND_SIZE_IN_BYTES;
                     o = this.operands[this.sp--];    // value to store
                     options = this.operands[this.sp] as Object[]; // get options
                     options[optionIndex] = o; // store value into options on stack
@@ -748,7 +748,7 @@ export class Interpreter {
                 case Bytecode.INSTR_STORE_ARG: {
                     nameIndex = Interpreter.getShort(code, ip);
                     name = self.impl.strings[nameIndex];
-                    ip += Bytecode.OPND_SIZE_IN_BYTES;
+                    ip += Bytecode.OPERAND_SIZE_IN_BYTES;
                     o = this.operands[this.sp--];
                     attrs = this.operands[this.sp] as Map<string, Object>;
                     attrs.put(name, o); // leave attrs on stack
@@ -781,7 +781,7 @@ export class Interpreter {
 
                 case Bytecode.INSTR_ROT_MAP: {
                     const nmaps = Interpreter.getShort(code, ip);
-                    ip += Bytecode.OPND_SIZE_IN_BYTES;
+                    ip += Bytecode.OPERAND_SIZE_IN_BYTES;
                     const templates = new Array<ST>();
                     for (let i = nmaps - 1; i >= 0; i--) {
                         templates.add(this.operands[this.sp - i] as ST);
@@ -799,7 +799,7 @@ export class Interpreter {
                 case Bytecode.INSTR_ZIP_MAP: {
                     st = this.operands[this.sp--] as ST;
                     nmaps = Interpreter.getShort(code, ip);
-                    ip += Bytecode.OPND_SIZE_IN_BYTES;
+                    ip += Bytecode.OPERAND_SIZE_IN_BYTES;
                     const exprs = new Array<Object>();
                     for (let i = nmaps - 1; i >= 0; i--) {
                         exprs.add(this.operands[this.sp - i]);
@@ -817,7 +817,7 @@ export class Interpreter {
 
                 case Bytecode.INSTR_BRF: {
                     addr = Interpreter.getShort(code, ip);
-                    ip += Bytecode.OPND_SIZE_IN_BYTES;
+                    ip += Bytecode.OPERAND_SIZE_IN_BYTES;
                     o = this.operands[this.sp--]; // <if(expr)>...<endif>
                     if (!this.testAttributeTrue(o)) {
                         ip = addr;
@@ -838,7 +838,7 @@ export class Interpreter {
 
                 case Bytecode.INSTR_PASSTHRU: {
                     nameIndex = Interpreter.getShort(code, ip);
-                    ip += Bytecode.OPND_SIZE_IN_BYTES;
+                    ip += Bytecode.OPERAND_SIZE_IN_BYTES;
                     name = self.impl.strings[nameIndex];
                     attrs = this.operands[this.sp] as Map<string, Object>;
                     this.passthru(scope, name, attrs);
@@ -943,7 +943,7 @@ export class Interpreter {
 
                 case Bytecode.INSTR_INDENT: {
                     const strIndex = Interpreter.getShort(code, ip);
-                    ip += Bytecode.OPND_SIZE_IN_BYTES;
+                    ip += Bytecode.OPERAND_SIZE_IN_BYTES;
                     this.indent(out, scope, strIndex);
                     break;
                 }
@@ -998,7 +998,7 @@ export class Interpreter {
 
                 case Bytecode.INSTR_WRITE_STR: {
                     strIndex = Interpreter.getShort(code, ip);
-                    ip += Bytecode.OPND_SIZE_IN_BYTES;
+                    ip += Bytecode.OPERAND_SIZE_IN_BYTES;
                     o = self.impl.strings[strIndex];
                     n1 = this.writeObjectNoOptions(out, scope, o);
                     n += n1;
@@ -1035,7 +1035,7 @@ export class Interpreter {
 
     protected load_str(self: ST, ip: int): void {
         const strIndex = Interpreter.getShort(self.impl.instrs, ip);
-        ip += Bytecode.OPND_SIZE_IN_BYTES;
+        ip += Bytecode.OPERAND_SIZE_IN_BYTES;
         this.operands[++this.sp] = self.impl.strings[strIndex];
     };
 
@@ -1848,11 +1848,11 @@ export class Interpreter {
 
 export namespace Interpreter {
     export enum Option {
-        ANCHOR,
-        FORMAT,
-        NULL,
-        SEPARATOR,
-        WRAP
+        ANCHOR = 0,
+        FORMAT = 1,
+        NULL = 2,
+        SEPARATOR = 3,
+        WRAP = 4
     };
 
 }

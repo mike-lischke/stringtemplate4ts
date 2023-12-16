@@ -29,7 +29,7 @@
 
 
 
-import { type int } from "jree";
+import { java, type int } from "jree";
 import { InterpEvent } from "./InterpEvent.js";
 import { EvalExprEvent } from "./EvalExprEvent.js";
 import { InstanceScope } from "../InstanceScope.js";

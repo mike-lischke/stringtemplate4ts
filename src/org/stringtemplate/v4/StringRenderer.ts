@@ -42,43 +42,43 @@ import { AttributeRenderer } from "./AttributeRenderer.js";
  *  <li>{@code xml-encode}:</li>
  * </ul>
  */
-export class StringRenderer implements AttributeRenderer<Object> {
+export  class StringRenderer extends JavaObject implements AttributeRenderer<Object> {
 
-    public static escapeHTML(s: string): string {
-        if (s === null) {
+    public static  escapeHTML(s: string):  string {
+        if ( s===null ) {
             return null;
         }
-        let buf = new java.lang.StringBuilder(s.length());
-        let len = s.length();
-        for (let i = 0; i < len;) {
-            let c = s.codePointAt(i);
-            switch (c) {
-                case '&': {
+        let  buf = new  java.lang.StringBuilder( s.length() );
+        let  len = s.length();
+        for (let  i=0; i<len;) {
+            let  c = s.codePointAt(i);
+            switch ( c ) {
+                case '&' :{
                     buf.append("&amp;");
                     break;
-                }
+}
 
-                case '<': {
+                case '<' :{
                     buf.append("&lt;");
                     break;
-                }
+}
 
-                case '>': {
+                case '>' :{
                     buf.append("&gt;");
                     break;
-                }
+}
 
                 case '\r':
                 case '\n':
-                case '\t': {
+                case '\t':{
                     buf.append(c as char);
                     break;
-                }
+}
 
-                default: {
-                    let control = c < ' '; // 32
-                    let aboveASCII = c > 126;
-                    if (control || aboveASCII) {
+                default:{
+                    let  control = c < ' '; // 32
+                    let  aboveASCII = c > 126;
+                    if ( control || aboveASCII ) {
                         buf.append("&#");
                         buf.append(c);
                         buf.append(";");
@@ -86,7 +86,7 @@ export class StringRenderer implements AttributeRenderer<Object> {
                     else {
                         buf.append(c as char);
                     }
-                }
+}
 
             }
             i += java.lang.Character.charCount(c);
@@ -96,65 +96,65 @@ export class StringRenderer implements AttributeRenderer<Object> {
     // accepts Object for backward compatibility,
     // but fails when value is not a String at runtime
 
-    public override  toString(value: Object, formatString: string, locale: Intl.Locale): string;
+    public override  toString(value: Object, formatString: string, locale: Intl.Locale):  string;
 
     // trim(s) and strlen(s) built-in funcs; these are format options
-    public override  toString(value: string, formatString: string, locale: Intl.Locale): string;
-    public override toString(...args: unknown[]): string {
-        switch (args.length) {
-            case 3: {
-                const [value, formatString, locale] = args as [Object, string, Intl.Locale];
+    public override  toString(value: string, formatString: string, locale: Intl.Locale):  string;
+public override toString(...args: unknown[]):  string {
+		switch (args.length) {
+			case 3: {
+				const [value, formatString, locale] = args as [Object, string, Intl.Locale];
 
 
-                return this.toString(String(value), formatString, locale);
+        return this.toString(String( value), formatString, locale);
+    
+
+				break;
+			}
+
+			case 3: {
+				const [value, formatString, locale] = args as [string, string, Intl.Locale];
 
 
-                break;
-            }
+        if ( formatString===null ) {
+ return value;
+}
 
-            case 3: {
-                const [value, formatString, locale] = args as [string, string, Intl.Locale];
+        if ( formatString.equals("upper") ) {
+ return value.toUpperCase(locale);
+}
 
+        if ( formatString.equals("lower") ) {
+ return value.toLowerCase(locale);
+}
 
-                if (formatString === null) {
-                    return value;
-                }
-
-                if (formatString.equals("upper")) {
-                    return value.toUpperCase(locale);
-                }
-
-                if (formatString.equals("lower")) {
-                    return value.toLowerCase(locale);
-                }
-
-                if (formatString.equals("cap")) {
-                    return (value.length() > 0) ? java.lang.Character.toUpperCase(value.charAt(0)) + value.substring(1) : value;
-                }
-                if (formatString.equals("url-encode")) {
-                    try {
-                        return java.net.URLEncoder.encode(value, "UTF-8");
-                    } catch (ex) {
-                        if (ex instanceof java.io.UnsupportedEncodingException) {
-                            // UTF-8 is standard, should always be available
-                        } else {
-                            throw ex;
-                        }
-                    }
-                }
-                if (formatString.equals("xml-encode")) {
-                    return StringRenderer.escapeHTML(value);
-                }
-                return string.format(locale, formatString, value);
-
-
-                break;
-            }
-
-            default: {
-                throw new java.lang.IllegalArgumentException(S`Invalid number of arguments`);
-            }
+        if ( formatString.equals("cap") ) {
+            return (value.length() > 0) ? java.lang.Character.toUpperCase(value.charAt(0))+value.substring(1) : value;
         }
-    }
+        if ( formatString.equals("url-encode") ) {
+            try {
+                return java.net.URLEncoder.encode(value, "UTF-8");
+            } catch (ex) {
+if (ex instanceof java.io.UnsupportedEncodingException) {
+                // UTF-8 is standard, should always be available
+            } else {
+	throw ex;
+	}
+}
+        }
+        if ( formatString.equals("xml-encode") ) {
+            return StringRenderer.escapeHTML(value);
+        }
+        return string.format(locale, formatString, value);
+    
+
+				break;
+			}
+
+			default: {
+				throw new java.lang.IllegalArgumentException(S`Invalid number of arguments`);
+			}
+		}
+	}
 
 }

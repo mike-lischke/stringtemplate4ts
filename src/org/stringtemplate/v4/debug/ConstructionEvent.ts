@@ -31,23 +31,21 @@ import { JavaObject, java, type int } from "jree";
 
 
 /** An event that happens when building ST trees, adding attributes etc... */
-export class ConstructionEvent {
-    public stack: java.lang.Throwable;
-    public constructor() {
-        super();
-        this.stack = new java.lang.Throwable();
-    }
+export  class ConstructionEvent extends JavaObject {
+    public  stack:  java.lang.Throwable;
+    public  constructor() { super();
+this.stack = new  java.lang.Throwable(); }
 
-    public getFileName(): string { return this.getSTEntryPoint().getFileName(); }
-    public getLine(): int { return this.getSTEntryPoint().getLineNumber(); }
-
-    public getSTEntryPoint(): java.lang.StackTraceElement {
-        let trace = this.stack.getStackTrace();
+    public  getFileName():  string { return this.getSTEntryPoint().getFileName(); }
+    public  getLine():  int { return this.getSTEntryPoint().getLineNumber(); }
+    
+    public  getSTEntryPoint():  java.lang.StackTraceElement {
+        let  trace = this.stack.getStackTrace();
         for (let e of trace) {
-            let name = e.toString();
-            if (!name.startsWith("org.stringtemplate.v4")) {
-                return e;
-            }
+            let  name = e.toString();
+            if ( !name.startsWith("org.stringtemplate.v4") ) {
+ return e;
+}
 
         }
         return trace[0];

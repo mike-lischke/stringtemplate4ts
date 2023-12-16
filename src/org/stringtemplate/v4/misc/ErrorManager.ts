@@ -53,7 +53,7 @@ export class ErrorManager {
         this.listener = listener ?? ErrorManager.DEFAULT_ERROR_LISTENER;
     }
 
-    public compileTimeError(error: ErrorType, templateToken: Token | null, t: Token, arg?: string,
+    public compileTimeError(error: ErrorType, templateToken: Token | undefined, t: Token, arg?: string,
         arg2?: string): void {
         const srcName = this.sourceName(t) ?? "<unknown>";
 

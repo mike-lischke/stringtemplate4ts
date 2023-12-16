@@ -37,30 +37,30 @@ import { STErrorListener } from "../STErrorListener.js";
 
 
 /** Used during tests to track all errors. */
-export class ErrorBuffer implements STErrorListener {
-    public errors = new Array<STMessage>();
+export  class ErrorBuffer extends JavaObject implements STErrorListener {
+    public  errors = new  Array<STMessage>();
 
-    public compileTimeError(msg: STMessage): void {
+    public  compileTimeError(msg: STMessage):  void {
         this.errors.add(msg);
     }
 
-    public runTimeError(msg: STMessage): void {
-        if (msg.error !== ErrorType.NO_SUCH_PROPERTY) { // ignore these
+    public  runTimeError(msg: STMessage):  void {
+        if ( msg.error !== ErrorType.NO_SUCH_PROPERTY ) { // ignore these
             this.errors.add(msg);
         }
     }
 
-    public iOError(msg: STMessage): void {
+    public  IOError(msg: STMessage):  void {
         this.errors.add(msg);
     }
 
-    public internalError(msg: STMessage): void {
+    public  internalError(msg: STMessage):  void {
         this.errors.add(msg);
     }
-    public override  toString(): string {
-        let buf = new java.lang.StringBuilder();
+    public override  toString():  string {
+        let  buf = new  java.lang.StringBuilder();
         for (let m of this.errors) {
-            buf.append(m.toString() + Misc.newline);
+            buf.append(m.toString()+Misc.newline);
         }
         return buf.toString();
     }

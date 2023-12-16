@@ -47,12 +47,13 @@ import { ErrorType } from "../../misc/ErrorType.js";
 private errMgr: ErrorManager;
 private templateToken: Token;
 
-/*
-public constructor(input: antlr.TokenStream, errMgr: ErrorManager, templateToken: antlr.Token) {
-	super(input);
-	this.errMgr = errMgr;
-	this.templateToken = templateToken;
-}*/
+public static create(input: antlr.TokenStream, errMgr: ErrorManager, templateToken: antlr.Token): STParser {
+    const result = new STParser(input);
+    result.errMgr = errMgr;
+    result.templateToken = templateToken;
+
+    return result;
+}
 
 /*
 protected recoverFromMismatchedToken(input: antlr.IntStream, ttype: number, follow: antlr.BitSet): void {

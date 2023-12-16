@@ -35,8 +35,9 @@ import { ST } from "../ST.js";
 
 
 
-export class STModelAdaptor implements ModelAdaptor<ST> {
-    public getProperty(interp: Interpreter, self: ST, model: ST, property: Object, propertyName: string): Object {
+export  class STModelAdaptor extends JavaObject implements ModelAdaptor<ST> {
+    public  getProperty(interp: Interpreter, self: ST, model: ST, property: Object, propertyName: string):  Object
+    {
         return model.getAttribute(propertyName);
     }
 }

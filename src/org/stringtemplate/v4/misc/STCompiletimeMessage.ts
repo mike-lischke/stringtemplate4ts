@@ -18,14 +18,14 @@ import { printf } from "fast-printf";
  */
 export class STCompiletimeMessage extends STMessage {
     /** overall token pulled from group file */
-    public templateToken: Token | null;
+    public templateToken?: Token;
 
     /** token inside template */
     public token: Token;
     public srcName: string;
 
-    public constructor(error: ErrorType, srcName: string, templateToken: Token | null, t: Token, cause?: Error | null,
-        arg?: string | null, arg2?: string) {
+    public constructor(error: ErrorType, srcName: string, templateToken: Token | undefined, t: Token,
+        cause?: Error | null, arg?: string | null, arg2?: string) {
         if (!cause) {
             super(error);
             this.templateToken = templateToken;

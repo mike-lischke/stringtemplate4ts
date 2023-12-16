@@ -1,192 +1,171 @@
+/* java2ts: keep */
+
 /*
- * [The "BSD license"]
- *  Copyright (c) 2011 Terence Parr
- *  All rights reserved.
- *
- *  Redistribution and use in source and binary forms, with or without
- *  modification, are permitted provided that the following conditions
- *  are met:
- *  1. Redistributions of source code must retain the above copyright
- *     notice, this list of conditions and the following disclaimer.
- *  2. Redistributions in binary form must reproduce the above copyright
- *     notice, this list of conditions and the following disclaimer in the
- *     documentation and/or other materials provided with the distribution.
- *  3. The name of the author may not be used to endorse or promote products
- *     derived from this software without specific prior written permission.
- *
- *  THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
- *  IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
- *  OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
- *  IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
- *  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
- *  NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- *  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- *  THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- *  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
- *  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Copyright (c) Terence Parr. All rights reserved.
+ * Licensed under the BSD-3 License. See License.txt in the project root for license information.
  */
 
-
-
-import { java, JavaObject, type int } from "jree";
-import { STLexer } from "./STLexer.js";
 import { CompiledST } from "./CompiledST.js";
 import { Bytecode } from "./Bytecode.js";
-import { Interval } from "../misc/Interval.js";
 import { Misc } from "../misc/Misc.js";
-
-
+import { printf } from "fast-printf";
 
 export class BytecodeDisassembler {
     protected code: CompiledST;
 
     public constructor(code: CompiledST) {
-        super();
         this.code = code;
     }
 
-    public static getShort(memory: Int8Array, index: int): int {
-        let b1 = memory[index] & 0xFF; // mask off sign-extended bits
-        let b2 = memory[index + 1] & 0xFF;
-        let word = b1 << (8 * 1) | b2;
+    public static getShort(memory: Int8Array, index: number): number {
+        const b1 = memory[index] & 0xFF; // mask off sign-extended bits
+        const b2 = memory[index + 1] & 0xFF;
+        const word = (b1 << 8) | b2;
+
         return word;
     }
 
     public instrs(): string {
-        let buf = new java.lang.StringBuilder();
+        let buf = "";
         let ip = 0;
         while (ip < this.code.codeSize) {
             if (ip > 0) {
-                buf.append(", ");
+                buf += ", ";
             }
 
-            let opcode = this.code.instrs[ip];
-            let I = Bytecode.instructions[opcode];
-            buf.append(I.name);
-            ip++;
-            for (let opnd = 0; opnd < I.nopnds; opnd++) {
-                buf.append(' ');
-                buf.append(BytecodeDisassembler.getShort(this.code.instrs, ip));
-                ip += Bytecode.OPND_SIZE_IN_BYTES;
+            const opcode = this.code.instrs[ip];
+            const instruction = Bytecode.instructions[opcode];
+            if (instruction) {
+                buf += instruction.name;
+                ip++;
+                for (let operand = 0; operand < instruction.operandCount; operand++) {
+                    buf += " ";
+                    buf += BytecodeDisassembler.getShort(this.code.instrs, ip);
+                    ip += Bytecode.OPERAND_SIZE_IN_BYTES;
+                }
             }
         }
-        return buf.toString();
+
+        return buf;
     }
 
     public disassemble(): string {
-        let buf = new java.lang.StringBuilder();
+        let buf = "";
         let i = 0;
         while (i < this.code.codeSize) {
-            i = this.disassembleInstruction(buf, i);
-            buf.append('\n');
+            i = this.disassembleInstruction({ buf, ip: i });
+            buf += "\n";
         }
-        return buf.toString();
+
+        return buf;
     }
 
-    public disassembleInstruction(buf: java.lang.StringBuilder, ip: int): int {
-        let opcode = this.code.instrs[ip];
-        if (ip >= this.code.codeSize) {
-            throw new java.lang.IllegalArgumentException("ip out of range: " + ip);
+    public disassembleInstruction(values: { buf: string, ip: number; }): number {
+        const opcode = this.code.instrs[values.ip];
+        if (values.ip >= this.code.codeSize) {
+            throw new Error("ip out of range: " + values.ip);
         }
-        let I =
-            Bytecode.instructions[opcode];
-        if (I === null) {
-            throw new java.lang.IllegalArgumentException("no such instruction " + opcode +
-                " at address " + ip);
+
+        const instruction = Bytecode.instructions[opcode];
+        if (instruction === null) {
+            throw new Error("no such instruction " + opcode + " at address " + values.ip);
         }
-        let instrName = I.name;
-        buf.append(string.format("%04d:\t%-14s", ip, instrName));
-        ip++;
-        if (I.nopnds === 0) {
-            buf.append("  ");
-            return ip;
+
+        const instrName = instruction.name;
+        values.buf += printf("%04d:\t%-14s", values.ip, instrName);
+        values.ip++;
+        if (instruction.operandCount === 0) {
+            values.buf += "  ";
+
+            return values.ip;
         }
-        let operands = new Array<string>();
-        for (let i = 0; i < I.nopnds; i++) {
-            let opnd = BytecodeDisassembler.getShort(this.code.instrs, ip);
-            ip += Bytecode.OPND_SIZE_IN_BYTES;
-            switch (I.type[i]) {
-                case STLexer.STRING: {
-                    operands.add(this.showConstPoolOperand(opnd));
+
+        const operands: string[] = [];
+        for (let i = 0; i < instruction.operandCount; i++) {
+            const operand = BytecodeDisassembler.getShort(this.code.instrs, values.ip);
+            values.ip += Bytecode.OPERAND_SIZE_IN_BYTES;
+            switch (instruction.type[i]) {
+                case Bytecode.OperandType.STRING: {
+                    operands.push(this.showConstPoolOperand(operand));
                     break;
                 }
 
                 case Bytecode.OperandType.ADDR:
                 case Bytecode.OperandType.INT: {
-                    operands.add(string.valueOf(opnd));
+                    operands.push(operand.toString());
                     break;
                 }
 
                 default: {
-                    operands.add(string.valueOf(opnd));
+                    operands.push(operand.toString());
                     break;
                 }
 
             }
         }
-        for (let i = 0; i < operands.size(); i++) {
-            let s = operands.get(i);
+
+        for (let i = 0; i < operands.length; i++) {
+            const s = operands[i];
             if (i > 0) {
-                buf.append(", ");
+                values.buf += ", ";
             }
 
-            buf.append(s);
+            values.buf += s;
         }
-        return ip;
+
+        return values.ip;
     }
 
     public strings(): string {
-        let buf = new java.lang.StringBuilder();
+        let buf = "";
         let addr = 0;
         if (this.code.strings !== null) {
-            for (let o of this.code.strings) {
-                if (o instanceof string) {
-                    let s = String(o);
-                    s = Misc.replaceEscapes(s);
-                    buf.append(string.format("%04d: \"%s\"\n", addr, s));
-                }
-                else {
-                    buf.append(string.format("%04d: %s\n", addr, o));
+            for (const o of this.code.strings) {
+                if (typeof o === "string") {
+                    const s = Misc.replaceEscapes(o);
+                    buf += printf("%04d: \"%s\"\n", addr, s);
+                } else {
+                    buf += printf("%04d: %s\n", addr, o);
                 }
                 addr++;
             }
         }
-        return buf.toString();
+
+        return buf;
     }
 
     public sourceMap(): string {
-        let buf = new java.lang.StringBuilder();
+        let buf = "";
         let addr = 0;
-        for (let I of this.code.sourceMap) {
-            if (I !== null) {
-                let chunk = this.code.template.substring(I.a, I.b + 1);
-                buf.append(string.format("%04d: %s\t\"%s\"\n", addr, I, chunk));
+        for (const interval of this.code.sourceMap) {
+            if (interval !== null) {
+                const chunk = this.code.template.substring(interval.a, interval.b + 1);
+                buf += printf("%04d: %s\t\"%s\"\n", addr, interval, chunk);
             }
             addr++;
         }
+
         return buf.toString();
     }
 
-    private showConstPoolOperand(poolIndex: int): string {
-        let buf = new java.lang.StringBuilder();
-        buf.append("#");
-        buf.append(poolIndex);
+    private showConstPoolOperand(poolIndex: number): string {
+        let buf = "#" + poolIndex;
         let s = "<bad string index>";
         if (poolIndex < this.code.strings.length) {
-            if (this.code.strings[poolIndex] === null) {
+            if (this.code.strings[poolIndex] === null || this.code.strings[poolIndex] === undefined) {
                 s = "null";
-            }
-
-            else {
+            } else {
                 s = this.code.strings[poolIndex];
-                if (this.code.strings[poolIndex] !== null) {
+                if (s !== null) {
                     s = Misc.replaceEscapes(s);
                     s = '"' + s + '"';
                 }
             }
         }
-        buf.append(":");
-        buf.append(s);
-        return buf.toString();
+
+        buf += ":";
+        buf += s;
+
+        return buf;
     }
 }

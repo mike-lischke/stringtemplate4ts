@@ -33,12 +33,10 @@ import { JavaObject, type int } from "jree";
 /** A line number and char position within a line.  Used by the source
  *  mapping stuff to map address to range within a template.
  */
-export class Coordinate {
-    public line: int;
-    public charPosition: int;
-    public constructor(a: int, b: int) {
-        super();
-        this.line = a; this.charPosition = b;
-    }
-    public override  toString(): string { return this.line + ":" + this.charPosition; }
+export  class Coordinate extends JavaObject {
+    public  line:  int;
+    public  charPosition:  int;
+    public  constructor(a: int, b: int) { super();
+this.line=a; this.charPosition=b; }
+    public override  toString():  string { return this.line+":"+this.charPosition; }        
 }

@@ -39,10 +39,11 @@ import { ST } from "../ST.js";
 
 
 /** Deal with structs created via {@link ST#addAggr}{@code ("structname.{prop1, prop2}", ...);}. */
-export class AggregateModelAdaptor implements ModelAdaptor<Aggregate> {
-    private readonly mapAdaptor = new MapModelAdaptor();
+export  class AggregateModelAdaptor extends JavaObject implements ModelAdaptor<Aggregate> {
+    private readonly  mapAdaptor = new  MapModelAdaptor();
 
-    public getProperty(interp: Interpreter, self: ST, o: Aggregate, property: Object, propertyName: string): Object {
+    public  getProperty(interp: Interpreter, self: ST, o: Aggregate, property: Object, propertyName: string):  Object
+    {
         return this.mapAdaptor.getProperty(interp, self, o.properties, property, propertyName);
     }
 }

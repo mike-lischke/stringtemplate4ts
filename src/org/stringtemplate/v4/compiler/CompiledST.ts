@@ -1,49 +1,27 @@
+/* java2ts: keep */
+
 /*
- * [The "BSD license"]
- *  Copyright (c) 2011 Terence Parr
- *  All rights reserved.
- *
- *  Redistribution and use in source and binary forms, with or without
- *  modification, are permitted provided that the following conditions
- *  are met:
- *  1. Redistributions of source code must retain the above copyright
- *     notice, this list of conditions and the following disclaimer.
- *  2. Redistributions in binary form must reproduce the above copyright
- *     notice, this list of conditions and the following disclaimer in the
- *     documentation and/or other materials provided with the distribution.
- *  3. The name of the author may not be used to endorse or promote products
- *     derived from this software without specific prior written permission.
- *
- *  THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
- *  IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
- *  OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
- *  IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
- *  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
- *  NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- *  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- *  THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- *  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
- *  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Copyright (c) Terence Parr. All rights reserved.
+ * Licensed under the BSD-3 License. See License.txt in the project root for license information.
  */
 
+import { Token, TokenStream } from "antlr4ng";
 
-
-import { java, JavaObject, type int } from "jree";
 import { FormalArgument } from "./FormalArgument.js";
 import { BytecodeDisassembler } from "./BytecodeDisassembler.js";
 import { STGroup } from "../STGroup.js";
 import { ST } from "../ST.js";
 import { Misc } from "../misc/Misc.js";
 import { Interval } from "../misc/Interval.js";
+import { GroupParser } from "./generated/GroupParser.js";
 
-
-
-/** The result of compiling an {@link ST}.  Contains all the bytecode instructions,
+/**
+ * The result of compiling an {@link ST}.  Contains all the bytecode instructions,
  *  string table, bytecode address to source code map, and other bookkeeping
  *  info.  It's the implementation of an ST you might say.  All instances
  *  of the same template share a single implementation ({@link ST#impl} field).
  */
-export class CompiledST implements java.lang.Cloneable {
+export class CompiledST {
     public name: string;
 
     /**
@@ -64,9 +42,10 @@ export class CompiledST implements java.lang.Cloneable {
      */
     public prefix = "/";
 
-    /** The original, immutable pattern (not really used again after
+    /**
+     * The original, immutable pattern (not really used again after
      *  initial "compilation"). Useful for debugging.  Even for
-     *  subtemplates, this is entire overall template.
+     *  sub templates, this is entire overall template.
      */
     public template: string;
 
@@ -83,10 +62,10 @@ export class CompiledST implements java.lang.Cloneable {
 
     public hasFormalArgs: boolean;
 
-    public numberOfArgsWithDefaultValues: int;
+    public numberOfArgsWithDefaultValues: number;
 
-    /** A list of all regions and subtemplates. */
-    public implicitlyDefinedTemplates: java.util.List<CompiledST>;
+    /** A list of all regions and sub templates. */
+    public implicitlyDefinedTemplates: CompiledST[];
 
     /**
      * The group that physically defines this {@link ST} definition. We use it
@@ -96,7 +75,8 @@ export class CompiledST implements java.lang.Cloneable {
      */
     public nativeGroup = STGroup.defaultGroup;
 
-    /** Does this template come from a {@code <@region>...<@end>} embedded in
+    /**
+     * Does this template come from a {@code <@region>...<@end>} embedded in
      *  another template?
      */
     public isRegion: boolean;
@@ -117,7 +97,7 @@ export class CompiledST implements java.lang.Cloneable {
 
     public strings: string[];     // string operands of instructions
     public instrs: Int8Array;        // byte-addressable code memory.
-    public codeSize: int;
+    public codeSize: number;
     public sourceMap: Interval[]; // maps IP to range in template pattern
 
     public constructor() {
@@ -132,15 +112,15 @@ export class CompiledST implements java.lang.Cloneable {
      * {@link ST#add} to be called safely during interpretation for templates
      * that do not contain formal arguments.
      *
-     * @return A copy of the current {@link CompiledST} instance. The copy is a
+     * @returns A copy of the current {@link CompiledST} instance. The copy is a
      * shallow copy, with the exception of the {@link #formalArguments} field
      * which is also cloned.
      *
-     * @exception CloneNotSupportedException If the current instance cannot be
+     * @throws CloneNotSupportedException If the current instance cannot be
      * cloned.
      */
     public override  clone(): CompiledST {
-        let clone = super.clone() as CompiledST;
+        const clone = super.clone() as CompiledST;
         if (this.formalArguments !== null) {
             this.formalArguments = java.util.Collections.synchronizedMap(new java.util.LinkedHashMap<string, FormalArgument>(this.formalArguments));
         }
@@ -150,7 +130,7 @@ export class CompiledST implements java.lang.Cloneable {
 
     public addImplicitlyDefinedTemplate(sub: CompiledST): void {
         sub.prefix = this.prefix;
-        if (sub.name.charAt(0) !== '/') {
+        if (sub.name.charAt(0) !== "/") {
             sub.name = sub.prefix + sub.name;
         }
 
@@ -165,15 +145,15 @@ export class CompiledST implements java.lang.Cloneable {
             return;
         }
 
-        for (let a of this.formalArguments.keySet()) {
-            let fa = this.formalArguments.get(a);
+        for (const a of this.formalArguments.keySet()) {
+            const fa = this.formalArguments.get(a);
             if (fa.defaultValueToken !== null) {
                 this.numberOfArgsWithDefaultValues++;
                 switch (fa.defaultValueToken.getType()) {
                     case GroupParser.ANONYMOUS_TEMPLATE: {
-                        let argSTname = fa.name + "_default_value";
-                        let c2 = new java.lang.Compiler(group);
-                        let defArgTemplate =
+                        const argSTname = fa.name + "_default_value";
+                        const c2 = new java.lang.Compiler(group);
+                        const defArgTemplate =
                             Misc.strip(fa.defaultValueToken.getText(), 1);
                         fa.compiledDefaultValue =
                             c2.compile(group.getFileName(), argSTname, null,
@@ -183,25 +163,21 @@ export class CompiledST implements java.lang.Cloneable {
                         break;
                     }
 
-
                     case GroupParser.STRING: {
                         fa.defaultValue = Misc.strip(fa.defaultValueToken.getText(), 1);
                         break;
                     }
-
 
                     case GroupParser.LBRACK: {
                         fa.defaultValue = java.util.Collections.emptyList();
                         break;
                     }
 
-
                     case GroupParser.TRUE:
                     case GroupParser.FALSE: {
                         fa.defaultValue = fa.defaultValueToken.getType() === GroupParser.TRUE;
                         break;
                     }
-
 
                     default: {
                         throw new java.lang.UnsupportedOperationException("Unexpected default value token type.");
@@ -219,7 +195,7 @@ export class CompiledST implements java.lang.Cloneable {
         }
 
         else {
-            for (let a of args) {
+            for (const a of args) {
                 this.addArg(a);
             }
 
@@ -227,7 +203,10 @@ export class CompiledST implements java.lang.Cloneable {
 
     }
 
-    /** Used by {@link ST#add} to add args one by one without turning on full formal args definition signal. */
+    /**
+     * Used by {@link ST#add} to add args one by one without turning on full formal args definition signal.
+     * @param a
+     */
     public addArg(a: FormalArgument): void {
         if (this.formalArguments === null) {
             this.formalArguments = java.util.Collections.synchronizedMap(new java.util.LinkedHashMap<string, FormalArgument>());
@@ -238,14 +217,13 @@ export class CompiledST implements java.lang.Cloneable {
             }
         }
 
-
         a.index = this.formalArguments.size();
         this.formalArguments.put(a.name, a);
     }
 
     public defineImplicitlyDefinedTemplates(group: STGroup): void {
         if (this.implicitlyDefinedTemplates !== null) {
-            for (let sub of this.implicitlyDefinedTemplates) {
+            for (const sub of this.implicitlyDefinedTemplates) {
                 group.rawDefineTemplate(sub.name, sub, sub.templateDefStartToken);
                 sub.defineImplicitlyDefinedTemplates(group);
             }
@@ -253,7 +231,8 @@ export class CompiledST implements java.lang.Cloneable {
     }
 
     public getTemplateSource(): string {
-        let r = this.getTemplateRange();
+        const r = this.getTemplateRange();
+
         return this.template.substring(r.a, r.b + 1);
     }
 
@@ -261,7 +240,7 @@ export class CompiledST implements java.lang.Cloneable {
         if (this.isAnonSubtemplate) {
             let start = number.MAX_VALUE;
             let stop = number.MIN_VALUE;
-            for (let interval of this.sourceMap) {
+            for (const interval of this.sourceMap) {
                 if (interval === null) {
                     continue;
                 }
@@ -274,16 +253,18 @@ export class CompiledST implements java.lang.Cloneable {
                 return new Interval(start, stop);
             }
         }
+
         return new Interval(0, this.template.length() - 1);
     }
 
     public instrs(): string {
-        let dis = new BytecodeDisassembler(this);
+        const dis = new BytecodeDisassembler(this);
+
         return dis.instrs();
     }
 
     public dump(): void {
-        let dis = new BytecodeDisassembler(this);
+        const dis = new BytecodeDisassembler(this);
         java.lang.System.out.println(this.name + ":");
         java.lang.System.out.println(dis.disassemble());
         java.lang.System.out.println("Strings:");
@@ -293,15 +274,16 @@ export class CompiledST implements java.lang.Cloneable {
     }
 
     public disasm(): string {
-        let dis = new BytecodeDisassembler(this);
-        let sw = new java.io.StringWriter();
-        let pw = new java.io.PrintWriter(sw);
+        const dis = new BytecodeDisassembler(this);
+        const sw = new java.io.StringWriter();
+        const pw = new java.io.PrintWriter(sw);
         pw.println(dis.disassemble());
         pw.println("Strings:");
         pw.println(dis.strings());
         pw.println("Bytecode to template map:");
         pw.println(dis.sourceMap());
         pw.close();
+
         return sw.toString();
     }
 }

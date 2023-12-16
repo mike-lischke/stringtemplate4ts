@@ -1,42 +1,17 @@
+/* java2ts: keep */
+
 /*
- * [The "BSD license"]
- *  Copyright (c) 2011 Terence Parr
- *  All rights reserved.
- *
- *  Redistribution and use in source and binary forms, with or without
- *  modification, are permitted provided that the following conditions
- *  are met:
- *  1. Redistributions of source code must retain the above copyright
- *     notice, this list of conditions and the following disclaimer.
- *  2. Redistributions in binary form must reproduce the above copyright
- *     notice, this list of conditions and the following disclaimer in the
- *     documentation and/or other materials provided with the distribution.
- *  3. The name of the author may not be used to endorse or promote products
- *     derived from this software without specific prior written permission.
- *
- *  THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
- *  IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
- *  OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
- *  IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
- *  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
- *  NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- *  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- *  THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- *  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
- *  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Copyright (c) Terence Parr. All rights reserved.
+ * Licensed under the BSD-3 License. See License.txt in the project root for license information.
  */
 
-
-
-import { JavaObject, type int, S } from "jree";
+import { HashCode, Token } from "antlr4ng";
 import { CompiledST } from "./CompiledST.js";
-
-
 
 /**
  * Represents the name of a formal argument defined in a template:
  * <pre>
- *  test(a,b,x=defaultvalue) ::= "&lt;a&gt; &lt;n&gt; &lt;x&gt;"
+ *  test(a,b,x=defaultValue) ::= "<a> <n> <x>"
  * </pre> Each template has a set of these formal arguments or sets
  * {@link CompiledST#hasFormalArgs} to {@code false} (indicating that no
  * arguments were specified such as when we create a template with
@@ -48,100 +23,40 @@ import { CompiledST } from "./CompiledST.js";
  * Currently, though, cardinality is not used.</p>
  */
 export class FormalArgument {
-    /*
-        // the following represent bit positions emulating a cardinality bitset.
-        public static final int OPTIONAL = 1;     // a?
-        public static final int REQUIRED = 2;     // a
-        public static final int ZERO_OR_MORE = 4; // a*
-        public static final int ONE_OR_MORE = 8;  // a+
-        public static final String[] suffixes = {
-            null,
-            "?",
-            "",
-            null,
-            "*",
-            null,
-            null,
-            null,
-            "+"
-        };
-        protected int cardinality = REQUIRED;
-         */
-
     public name: string;
 
-    public index: int; // which argument is it? from 0..n-1
+    public index: number; // which argument is it? from 0..n-1
 
     /** If they specified default value {@code x=y}, store the token here */
-    public defaultValueToken: Token;
-    public defaultValue: Object; // x="str", x=true, x=false
+    public defaultValueToken?: Token;
+    public defaultValue: unknown; // x="str", x=true, x=false
     public compiledDefaultValue: CompiledST; // x={...}
 
-    public constructor(name: string);
-
-    public constructor(name: string, defaultValueToken: Token);
-    public constructor(...args: unknown[]) {
-        switch (args.length) {
-            case 1: {
-                const [name] = args as [string];
-
-                super();
-                this.name = name;
-
-                break;
-            }
-
-            case 2: {
-                const [name, defaultValueToken] = args as [string, Token];
-
-
-                super();
-                this.name = name;
-                this.defaultValueToken = defaultValueToken;
-
-
-                break;
-            }
-
-            default: {
-                throw new java.lang.IllegalArgumentException(S`Invalid number of arguments`);
-            }
-        }
+    public constructor(name: string, defaultValueToken?: Token) {
+        this.name = name;
+        this.defaultValueToken = defaultValueToken;
     }
 
-
-    /*
-    public static String getCardinalityName(int cardinality) {
-        switch (cardinality) {
-            case OPTIONAL : return "optional";
-            case REQUIRED : return "exactly one";
-            case ZERO_OR_MORE : return "zero-or-more";
-            case ONE_OR_MORE : return "one-or-more";
-            default : return "unknown";
-        }
-    }
-    */
-
-    public override  hashCode(): int {
-        return this.name.hashCode() + this.defaultValueToken.hashCode();
+    public hashCode(): number {
+        return HashCode.hashStuff(this.name, this.defaultValueToken ? 1 : 0);
     }
 
-    public override  equals(o: Object): boolean {
-        if (o === null || !(o instanceof FormalArgument)) {
+    public equals(o: unknown): boolean {
+        if (!(o instanceof FormalArgument)) {
             return false;
         }
-        let other = o as FormalArgument;
-        if (!this.name.equals(other.name)) {
+
+        if (this.name !== o.name) {
             return false;
         }
-        // only check if there is a default value; that's all
-        return !((this.defaultValueToken !== null && other.defaultValueToken === null) ||
-            (this.defaultValueToken === null && other.defaultValueToken !== null));
+
+        // Only check if there is a default value; that's all.
+        return (this.defaultValueToken === undefined) === (o.defaultValueToken === undefined);
     }
 
-    public override  toString(): string {
-        if (this.defaultValueToken !== null) {
-            return this.name + "=" + this.defaultValueToken.getText();
+    public toString(): string {
+        if (this.defaultValueToken) {
+            return this.name + "=" + this.defaultValueToken.text;
         }
 
         return this.name;
