@@ -11,9 +11,11 @@ import { InterpEvent } from "./debug/InterpEvent.js";
 
 export class InstanceScope {
     /** Template that invoked us. */
-    public readonly parent: InstanceScope;
+    public readonly parent?: InstanceScope;
+
     /** Template we're executing. */
-    public readonly st: ST;
+    public readonly st?: ST;
+
     /** Current instruction pointer. */
     public ip: number;
 
@@ -36,16 +38,15 @@ export class InstanceScope {
 
     /**
      * All templates evaluated and embedded in this {@link ST}. Used
-     *  for tree view in {@link STViz}.
+     *  for tree view in STViz.
      */
-    public childEvalTemplateEvents =
-        new Array<EvalTemplateEvent>();
+    public childEvalTemplateEvents = new Array<EvalTemplateEvent>();
 
     public earlyEval: boolean;
 
-    public constructor(parent: InstanceScope, st: ST) {
+    public constructor(parent?: InstanceScope, st?: ST) {
         this.parent = parent;
         this.st = st;
-        this.earlyEval = parent !== null && parent.earlyEval;
+        this.earlyEval = parent?.earlyEval ?? false;
     }
 }

@@ -65,11 +65,11 @@ public error(msg: string): void {
     this.errorHandler.recover(this, e);
 }
 
-public addArgument(args: FormalArgument[] , t: Token, defaultValueToken?: Token | null): void {
+public addArgument(args: FormalArgument[] , t: Token, defaultValueToken?: Token): void {
     const name = t.text!;
     for (const arg of args) {
         if (arg.name === name) {
-            this.currentGroup.errMgr.compileTimeError(ErrorType.PARAMETER_REDEFINITION, null, t, name);
+            this.currentGroup.errMgr.compileTimeError(ErrorType.PARAMETER_REDEFINITION, undefined, t, name);
 
             return;
         }
@@ -130,21 +130,23 @@ let buf = "";
 delimiters:
     'delimiters' a = STRING ',' b = STRING {
         let supported = true;
-        const startCharacter = $a.text.charAt(1);
+        const textA = $a.text;
+        const startCharacter = textA.length === 0 ? ">" : textA[1];
         if (STGroup.isReservedCharacter(startCharacter)) {
-            this.currentGroup.errMgr.compileTimeError(ErrorType.UNSUPPORTED_DELIMITER, null, $a, startCharacter);
+            this.currentGroup.errMgr.compileTimeError(ErrorType.UNSUPPORTED_DELIMITER, undefined, $a, startCharacter);
             supported = false;
         }
 
-        const stopCharacter = $b.text.charAt(1);
+        const textB = $b.text;
+        const stopCharacter = textB.length === 0 ? ">" : textB[1];
         if (STGroup.isReservedCharacter(stopCharacter)) {
-            this.currentGroup.errMgr.compileTimeError(ErrorType.UNSUPPORTED_DELIMITER, null, $b, stopCharacter);
+            this.currentGroup.errMgr.compileTimeError(ErrorType.UNSUPPORTED_DELIMITER, undefined, $b, stopCharacter);
             supported = false;
         }
 
         if (supported) {
-            this.currentGroup.delimiterStartChar=$a.text.charAt(1);
-            this.currentGroup.delimiterStopChar=$b.text.charAt(1);
+            this.currentGroup.delimiterStartChar = startCharacter;
+            this.currentGroup.delimiterStopChar = stopCharacter;
         }
     }
 ;
@@ -182,7 +184,7 @@ this.currentGroup.errMgr.groupSyntaxError(ErrorType.SYNTAX_ERROR, this.getSource
 }
     ) {
 if ($name.index >= 0) { // if ID missing
-    template = Misc.strip(template, n);
+    template = template.substring(n);
     let templateName = $name.text;
     if (prefix.length > 0 ) {
         templateName = prefix+$name.text;
@@ -216,18 +218,18 @@ formalArg[args: FormalArgument[]]:
         | '=' a = '[' ']' {$formalArgs::hasOptionalParameter = true;}
         | {
     if ($formalArgs::hasOptionalParameter) {
-        this.currentGroup.errMgr.compileTimeError(ErrorType.REQUIRED_PARAMETER_AFTER_OPTIONAL, null, $ID);
+            this.currentGroup.errMgr.compileTimeError(ErrorType.REQUIRED_PARAMETER_AFTER_OPTIONAL, undefined, $ID);
     }
 }
-    ) {this.addArgument($args, $ID, $a);}
+    ) {this.addArgument($args, $ID, $a ?? undefined);}
 ;
 
 dictDef:
     ID '::=' dict {
 if ( this.currentGroup.rawGetDictionary($ID.text)!=null ) {
-    this.currentGroup.errMgr.compileTimeError(ErrorType.MAP_REDEFINITION, null, $ID);
+    this.currentGroup.errMgr.compileTimeError(ErrorType.MAP_REDEFINITION, undefined, $ID);
 } else if ( this.currentGroup.rawGetTemplate($ID.text)!=null ) {
-    this.currentGroup.errMgr.compileTimeError(ErrorType.TEMPLATE_REDEFINITION_AS_MAP, null, $ID);
+    this.currentGroup.errMgr.compileTimeError(ErrorType.TEMPLATE_REDEFINITION_AS_MAP, undefined, $ID);
 } else {
     this.currentGroup.defineDictionary($ID.text, $dict.mapping);
 }
@@ -256,7 +258,7 @@ defaultValuePair[mapping: Map<string, unknown>]:
 ;
 
 keyValuePair[Map<string, unknown> mapping]:
-    STRING ':' keyValue {mapping.set(Misc.replaceEscapes(Misc.strip($STRING.text, 1)), $keyValue.value);}
+    STRING ':' keyValue {mapping.set(Misc.replaceEscapes($STRING.text.substring(1)), $keyValue.value);}
 ;
 
 keyValue
@@ -264,7 +266,7 @@ keyValue
     BIGSTRING {$value = this.currentGroup.createSingleton($BIGSTRING);}
     | BIGSTRING_NO_NL {$value = this.currentGroup.createSingleton($BIGSTRING_NO_NL);}
     | ANONYMOUS_TEMPLATE {$value = this.currentGroup.createSingleton($ANONYMOUS_TEMPLATE);}
-    | STRING {$value = Misc.replaceEscapes(Misc.strip($STRING.text, 1));}
+    | STRING {$value = Misc.replaceEscapes($STRING.text.substring(1));}
     | TRUE {$value = true;}
     | FALSE {$value = false;}
     | '[' ']' {$value = [];}

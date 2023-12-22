@@ -1,168 +1,135 @@
+/* java2ts: keep */
+
 /*
- * [The "BSD license"]
- *  Copyright (c) 2011 Terence Parr
- *  All rights reserved.
- *
- *  Redistribution and use in source and binary forms, with or without
- *  modification, are permitted provided that the following conditions
- *  are met:
- *  1. Redistributions of source code must retain the above copyright
- *     notice, this list of conditions and the following disclaimer.
- *  2. Redistributions in binary form must reproduce the above copyright
- *     notice, this list of conditions and the following disclaimer in the
- *     documentation and/or other materials provided with the distribution.
- *  3. The name of the author may not be used to endorse or promote products
- *     derived from this software without specific prior written permission.
- *
- *  THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
- *  IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
- *  OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
- *  IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
- *  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
- *  NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- *  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- *  THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- *  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
- *  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Copyright (c) Terence Parr. All rights reserved.
+ * Licensed under the BSD-3 License. See License.txt in the project root for license information.
  */
 
+/* eslint-disable jsdoc/require-returns */
 
-
-import { type int, java, S } from "jree";
 import { STMessage } from "./STMessage.js";
 import { Misc } from "./Misc.js";
-import { Interval } from "./Interval.js";
 import { ErrorType } from "./ErrorType.js";
-import { Coordinate } from "./Coordinate.js";
 import { InstanceScope } from "../InstanceScope.js";
 import { Interpreter } from "../Interpreter.js";
 
-
-
 /** Used to track errors that occur in the ST interpreter. */
-export  class STRuntimeMessage extends STMessage {
+export class STRuntimeMessage extends STMessage {
     /** Where error occurred in bytecode memory. */
-    public readonly  ip:  int;
-    public readonly  scope:  InstanceScope;
-    /** Which interpreter was executing?  If {@code null}, can be IO error or
+    public readonly ip: number;
+    public readonly scope?: InstanceScope;
+
+    /**
+     * Which interpreter was executing?  If {@code null}, can be IO error or
      *  bad URL etc...
      */
-    protected readonly  interp:  Interpreter;
-    //List<ST> enclosingStack;
+    protected readonly interp: Interpreter;
 
-    public  constructor(interp: Interpreter, error: ErrorType, ip: int);
-    public  constructor(interp: Interpreter, error: ErrorType, ip: int, scope: InstanceScope);
-    public  constructor(interp: Interpreter, error: ErrorType, ip: int, scope: InstanceScope, arg: Object);
-    public  constructor(interp: Interpreter, error: ErrorType, ip: int, scope: InstanceScope, e: java.lang.Throwable, arg: Object);
-    public  constructor(interp: Interpreter, error: ErrorType, ip: int, scope: InstanceScope, e: java.lang.Throwable, arg: Object, arg2: Object);
-    public  constructor(interp: Interpreter, error: ErrorType, ip: int, scope: InstanceScope, e: java.lang.Throwable, arg: Object, arg2: Object, arg3: Object);
+    public constructor(interp: Interpreter, error: ErrorType, ip: number);
+    public constructor(interp: Interpreter, error: ErrorType, ip: number, scope: InstanceScope);
+    public constructor(interp: Interpreter, error: ErrorType, ip: number, scope: InstanceScope, arg: unknown);
+    public constructor(interp: Interpreter, error: ErrorType, ip: number, scope: InstanceScope, e: Error, arg: unknown);
+    public constructor(interp: Interpreter, error: ErrorType, ip: number, scope: InstanceScope, e: Error | undefined,
+        arg: unknown, arg2: unknown);
+    public constructor(interp: Interpreter, error: ErrorType, ip: number, scope: InstanceScope, e: Error | undefined,
+        arg: unknown, arg2: unknown, arg3: unknown);
     public constructor(...args: unknown[]) {
-		switch (args.length) {
-			case 3: {
-				const [interp, error, ip] = args as [Interpreter, ErrorType, int];
+        const [interp, error, ip] = args as [Interpreter, ErrorType, number];
 
+        let scope;
+        let e;
+        let arg;
+        let arg2;
+        let arg3;
 
-        this(interp, error, ip, null);
-    
+        switch (args.length) {
+            case 4: {
+                scope = args[3] as InstanceScope;
 
-				break;
-			}
+                break;
+            }
 
-			case 4: {
-				const [interp, error, ip, scope] = args as [Interpreter, ErrorType, int, InstanceScope];
+            case 5: {
+                scope = args[3] as InstanceScope;
+                arg = args[4] as Error;
 
+                break;
+            }
 
-        this(interp, error,ip,scope,null);
-    
+            case 6: {
+                scope = args[3] as InstanceScope;
+                e = args[4] as Error;
+                arg = args[5];
 
-				break;
-			}
+                break;
+            }
 
-			case 5: {
-				const [interp, error, ip, scope, arg] = args as [Interpreter, ErrorType, int, InstanceScope, Object];
+            case 7: {
+                scope = args[3] as InstanceScope;
+                e = args[4] as Error;
+                arg = args[5];
+                arg2 = args[6];
 
+                break;
+            }
 
-        this(interp, error, ip, scope, null, arg, null);
-    
+            case 8: {
+                scope = args[3] as InstanceScope;
+                e = args[4] as Error;
+                arg = args[5];
+                arg2 = args[6];
+                arg3 = args[7];
 
-				break;
-			}
+                break;
+            }
 
-			case 6: {
-				const [interp, error, ip, scope, e, arg] = args as [Interpreter, ErrorType, int, InstanceScope, java.lang.Throwable, Object];
+            default:
+        }
 
+        super(error, scope?.st, e, arg, arg2, arg3);
 
-        this(interp, error, ip, scope, e, arg, null);
-    
-
-				break;
-			}
-
-			case 7: {
-				const [interp, error, ip, scope, e, arg, arg2] = args as [Interpreter, ErrorType, int, InstanceScope, java.lang.Throwable, Object, Object];
-
-
-        this(interp, error, ip, scope, e, arg, arg2, null);
-    
-
-				break;
-			}
-
-			case 8: {
-				const [interp, error, ip, scope, e, arg, arg2, arg3] = args as [Interpreter, ErrorType, int, InstanceScope, java.lang.Throwable, Object, Object, Object];
-
-
-        super(error, scope !== null ? scope.st : null, e, arg, arg2, arg3);
         this.interp = interp;
         this.ip = ip;
         this.scope = scope;
-    
+    }
 
-				break;
-			}
-
-			default: {
-				throw new java.lang.IllegalArgumentException(S`Invalid number of arguments`);
-			}
-		}
-	}
-
-
-    /** Given an IP (code location), get it's range in source template then
+    /**
+     * Given an IP (code location), get it's range in source template then
      *  return it's template line:col.
      */
-    public  getSourceLocation():  string {
-        if ( this.ip<0 || this.self===null || this.self.impl===null ) {
- return null;
-}
+    public getSourceLocation(): string | undefined {
+        if (this.ip < 0 || !this.self || !this.self.impl) {
+            return undefined;
+        }
 
-        let  I = this.self.impl.sourceMap[this.ip];
-        if ( I===null ) {
- return null;
-}
+        const interval = this.self?.impl.sourceMap[this.ip];
+        if (!interval) {
+            return undefined;
+        }
 
         // get left edge and get line/col
-        let  i = I.a;
-        let  loc = Misc.getLineCharPosition(this.self.impl.template, i);
+        const i = interval.a;
+        const loc = Misc.getLineCharPosition(this.self.impl.template, i);
+
         return loc.toString();
     }
 
-    public override  toString():  string {
-        let  buf = new  java.lang.StringBuilder();
-        let  loc = null;
-        if ( this.self!==null ) {
+    public override toString(): string {
+        let buf = "";
+        let loc;
+        if (this.self) {
             loc = this.getSourceLocation();
-            buf.append("context [");
-            if ( this.interp!==null ) {
-                buf.append( Interpreter.getEnclosingInstanceStackString(this.scope) );
+            buf += "context [";
+            if (this.interp !== null) {
+                buf += Interpreter.getEnclosingInstanceStackString(this.scope);
             }
-            buf.append("]");
+            buf += "]";
         }
-        if ( loc!==null ) {
- buf.append(" "+loc);
-}
 
-        buf.append(" "+super.toString());
-        return buf.toString();
+        if (loc) {
+            buf += " " + loc;
+        }
+
+        return buf + " " + super.toString();
     }
 }

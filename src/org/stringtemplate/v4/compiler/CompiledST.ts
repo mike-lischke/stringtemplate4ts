@@ -5,15 +5,19 @@
  * Licensed under the BSD-3 License. See License.txt in the project root for license information.
  */
 
-import { Token, TokenStream } from "antlr4ng";
+/* eslint-disable jsdoc/require-param */
+
+import { Token } from "antlr4ng";
 
 import { FormalArgument } from "./FormalArgument.js";
 import { BytecodeDisassembler } from "./BytecodeDisassembler.js";
 import { STGroup } from "../STGroup.js";
 import { ST } from "../ST.js";
-import { Misc } from "../misc/Misc.js";
 import { Interval } from "../misc/Interval.js";
 import { GroupParser } from "./generated/GroupParser.js";
+import { CommonTree } from "../support/CommonTree.js";
+import { TokenStreamV3 } from "../support/TokenStreamV3.js";
+import { Compiler } from "./Compiler.js";
 
 /**
  * The result of compiling an {@link ST}.  Contains all the bytecode instructions,
@@ -50,10 +54,10 @@ export class CompiledST {
     public template: string;
 
     /** The token that begins template definition; could be {@code <@r>} of region. */
-    public templateDefStartToken: Token;
+    public templateDefStartToken?: Token;
 
     /** Overall token stream for template (debug only). */
-    public tokens: TokenStream;
+    public tokens: TokenStreamV3;
 
     /** How do we interpret syntax of template? (debug only) */
     public ast: CommonTree;
@@ -65,7 +69,7 @@ export class CompiledST {
     public numberOfArgsWithDefaultValues: number;
 
     /** A list of all regions and sub templates. */
-    public implicitlyDefinedTemplates: CompiledST[];
+    public implicitlyDefinedTemplates: CompiledST[] = [];
 
     /**
      * The group that physically defines this {@link ST} definition. We use it
@@ -96,14 +100,14 @@ export class CompiledST {
     public isAnonSubtemplate: boolean; // {...}
 
     public strings: string[];     // string operands of instructions
-    public instrs: Int8Array;        // byte-addressable code memory.
     public codeSize: number;
     public sourceMap: Interval[]; // maps IP to range in template pattern
 
+    public instructions: Int8Array;        // byte-addressable code memory.
+
     public constructor() {
-        super();
-        this.instrs = new Int8Array(java.lang.Compiler.TEMPLATE_INITIAL_CODE_SIZE);
-        this.sourceMap = new Array<Interval>(java.lang.Compiler.TEMPLATE_INITIAL_CODE_SIZE);
+        this.instructions = new Int8Array(Compiler.TEMPLATE_INITIAL_CODE_SIZE);
+        this.sourceMap = new Array<Interval>(Compiler.TEMPLATE_INITIAL_CODE_SIZE);
         this.template = "";
     }
 
@@ -119,11 +123,26 @@ export class CompiledST {
      * @throws CloneNotSupportedException If the current instance cannot be
      * cloned.
      */
-    public override  clone(): CompiledST {
-        const clone = super.clone() as CompiledST;
-        if (this.formalArguments !== null) {
-            this.formalArguments = java.util.Collections.synchronizedMap(new java.util.LinkedHashMap<string, FormalArgument>(this.formalArguments));
-        }
+    public clone(): CompiledST {
+        const clone = new CompiledST();
+        clone.name = this.name;
+        clone.prefix = this.prefix;
+        clone.template = this.template;
+        clone.templateDefStartToken = this.templateDefStartToken;
+        clone.tokens = this.tokens;
+        clone.ast = this.ast;
+        clone.formalArguments = new Map([...this.formalArguments]);
+        clone.hasFormalArgs = this.hasFormalArgs;
+        clone.numberOfArgsWithDefaultValues = this.numberOfArgsWithDefaultValues;
+        clone.implicitlyDefinedTemplates = [...this.implicitlyDefinedTemplates];
+        clone.nativeGroup = this.nativeGroup;
+        clone.isRegion = this.isRegion;
+        clone.regionDefType = this.regionDefType;
+        clone.isAnonSubtemplate = this.isAnonSubtemplate;
+        clone.strings = [...this.strings];
+        clone.codeSize = this.codeSize;
+        clone.sourceMap = [...this.sourceMap];
+        clone.instructions = new Int8Array(this.instructions);
 
         return clone;
     }
@@ -134,53 +153,58 @@ export class CompiledST {
             sub.name = sub.prefix + sub.name;
         }
 
-        if (this.implicitlyDefinedTemplates === null) {
-            this.implicitlyDefinedTemplates = new Array<CompiledST>();
-        }
-        this.implicitlyDefinedTemplates.add(sub);
+        this.implicitlyDefinedTemplates.push(sub);
     }
 
     public defineArgDefaultValueTemplates(group: STGroup): void {
-        if (this.formalArguments === null) {
+        if (!this.formalArguments) {
             return;
         }
 
-        for (const a of this.formalArguments.keySet()) {
-            const fa = this.formalArguments.get(a);
-            if (fa.defaultValueToken !== null) {
+        for (const [, fa] of this.formalArguments) {
+            if (fa.defaultValueToken) {
                 this.numberOfArgsWithDefaultValues++;
-                switch (fa.defaultValueToken.getType()) {
+                switch (fa.defaultValueToken?.type) {
                     case GroupParser.ANONYMOUS_TEMPLATE: {
                         const argSTname = fa.name + "_default_value";
-                        const c2 = new java.lang.Compiler(group);
-                        const defArgTemplate =
-                            Misc.strip(fa.defaultValueToken.getText(), 1);
-                        fa.compiledDefaultValue =
-                            c2.compile(group.getFileName(), argSTname, null,
-                                defArgTemplate, fa.defaultValueToken);
-                        fa.compiledDefaultValue.name = argSTname;
-                        fa.compiledDefaultValue.defineImplicitlyDefinedTemplates(group);
+                        const c2 = new Compiler(group);
+                        const defArgTemplate = fa.defaultValueToken?.text!.substring(1);
+                        fa.compiledDefaultValue = c2.compile({
+                            srcName: group.getFileName(),
+                            name: argSTname,
+                            template: defArgTemplate,
+                            templateToken: fa.defaultValueToken,
+                        });
+
+                        if (fa.compiledDefaultValue != null) {
+                            fa.compiledDefaultValue.name = argSTname;
+                            fa.compiledDefaultValue.defineImplicitlyDefinedTemplates(group);
+                        }
+
                         break;
                     }
 
                     case GroupParser.STRING: {
-                        fa.defaultValue = Misc.strip(fa.defaultValueToken.getText(), 1);
+                        fa.defaultValue = fa.defaultValueToken?.text!.substring(1);
+
                         break;
                     }
 
                     case GroupParser.LBRACK: {
-                        fa.defaultValue = java.util.Collections.emptyList();
+                        fa.defaultValue = [];
+
                         break;
                     }
 
                     case GroupParser.TRUE:
                     case GroupParser.FALSE: {
-                        fa.defaultValue = fa.defaultValueToken.getType() === GroupParser.TRUE;
+                        fa.defaultValue = fa.defaultValueToken?.type === GroupParser.TRUE;
+
                         break;
                     }
 
                     default: {
-                        throw new java.lang.UnsupportedOperationException("Unexpected default value token type.");
+                        throw new Error("Unexpected default value token type.");
                     }
 
                 }
@@ -188,37 +212,24 @@ export class CompiledST {
         }
     }
 
-    public defineFormalArgs(args: java.util.List<FormalArgument>): void {
+    public defineFormalArgs(args: FormalArgument[]): void {
         this.hasFormalArgs = true; // even if no args; it's formally defined
-        if (args === null) {
-            this.formalArguments = null;
+        this.formalArguments = new Map();
+        for (const a of args) {
+            this.addArg(a);
         }
-
-        else {
-            for (const a of args) {
-                this.addArg(a);
-            }
-
-        }
-
     }
 
     /**
      * Used by {@link ST#add} to add args one by one without turning on full formal args definition signal.
-     * @param a
      */
     public addArg(a: FormalArgument): void {
-        if (this.formalArguments === null) {
-            this.formalArguments = java.util.Collections.synchronizedMap(new java.util.LinkedHashMap<string, FormalArgument>());
-        }
-        else {
-            if (this.formalArguments.containsKey(a.name)) {
-                throw new java.lang.IllegalArgumentException(string.format("Formal argument %s already exists.", a.name));
-            }
+        if (this.formalArguments.has(a.name)) {
+            throw new Error(`Formal argument ${a.name} already exists.`);
         }
 
-        a.index = this.formalArguments.size();
-        this.formalArguments.put(a.name, a);
+        a.index = this.formalArguments.size;
+        this.formalArguments.set(a.name, a);
     }
 
     public defineImplicitlyDefinedTemplates(group: STGroup): void {
@@ -238,15 +249,15 @@ export class CompiledST {
 
     public getTemplateRange(): Interval {
         if (this.isAnonSubtemplate) {
-            let start = number.MAX_VALUE;
-            let stop = number.MIN_VALUE;
+            let start = Number.MAX_VALUE;
+            let stop = Number.MIN_VALUE;
             for (const interval of this.sourceMap) {
                 if (interval === null) {
                     continue;
                 }
 
-                start = java.lang.Math.min(start, interval.a);
-                stop = java.lang.Math.max(stop, interval.b);
+                start = Math.min(start, interval.a);
+                stop = Math.max(stop, interval.b);
             }
 
             if (start <= stop + 1) {
@@ -254,7 +265,7 @@ export class CompiledST {
             }
         }
 
-        return new Interval(0, this.template.length() - 1);
+        return new Interval(0, this.template.length - 1);
     }
 
     public instrs(): string {
@@ -265,25 +276,23 @@ export class CompiledST {
 
     public dump(): void {
         const dis = new BytecodeDisassembler(this);
-        java.lang.System.out.println(this.name + ":");
-        java.lang.System.out.println(dis.disassemble());
-        java.lang.System.out.println("Strings:");
-        java.lang.System.out.println(dis.strings());
-        java.lang.System.out.println("Bytecode to template map:");
-        java.lang.System.out.println(dis.sourceMap());
+        console.log(this.name + ":");
+        console.log(dis.disassemble());
+        console.log("Strings:");
+        console.log(dis.strings());
+        console.log("Bytecode to template map:");
+        console.log(dis.sourceMap());
     }
 
-    public disasm(): string {
+    public disassembled(): string {
         const dis = new BytecodeDisassembler(this);
-        const sw = new java.io.StringWriter();
-        const pw = new java.io.PrintWriter(sw);
-        pw.println(dis.disassemble());
-        pw.println("Strings:");
-        pw.println(dis.strings());
-        pw.println("Bytecode to template map:");
-        pw.println(dis.sourceMap());
-        pw.close();
 
-        return sw.toString();
+        let result = dis.disassemble() + "\n";
+        result += "Strings:\n";
+        result += dis.strings() + "\n";
+        result += "Bytecode to template map:\n";
+        result += dis.sourceMap() + "\n";
+
+        return result;
     }
 }

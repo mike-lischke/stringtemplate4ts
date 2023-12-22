@@ -1,34 +1,12 @@
+/* java2ts: keep */
+
 /*
- * [The "BSD license"]
- *  Copyright (c) 2011 Terence Parr
- *  All rights reserved.
- *
- *  Redistribution and use in source and binary forms, with or without
- *  modification, are permitted provided that the following conditions
- *  are met:
- *  1. Redistributions of source code must retain the above copyright
- *     notice, this list of conditions and the following disclaimer.
- *  2. Redistributions in binary form must reproduce the above copyright
- *     notice, this list of conditions and the following disclaimer in the
- *     documentation and/or other materials provided with the distribution.
- *  3. The name of the author may not be used to endorse or promote products
- *     derived from this software without specific prior written permission.
- *
- *  THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
- *  IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
- *  OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
- *  IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
- *  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
- *  NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- *  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- *  THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- *  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
- *  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Copyright (c) Terence Parr. All rights reserved.
+ * Licensed under the BSD-3 License. See License.txt in the project root for license information.
  */
 
+/* eslint-disable jsdoc/require-returns, jsdoc/require-param, jsdoc/no-undefined-types */
 
-
-import { java, JavaObject, S, type int, type char } from "jree";
 import { STWriter } from "./STWriter.js";
 import { STGroup } from "./STGroup.js";
 import { STErrorListener } from "./STErrorListener.js";
@@ -39,18 +17,17 @@ import { CompiledST } from "./compiler/CompiledST.js";
 import { FormalArgument } from "./compiler/FormalArgument.js";
 import { AddAttributeEvent } from "./debug/AddAttributeEvent.js";
 import { ConstructionEvent } from "./debug/ConstructionEvent.js";
-import { EvalTemplateEvent } from "./debug/EvalTemplateEvent.js";
 import { InterpEvent } from "./debug/InterpEvent.js";
-import { STViz } from "./gui/STViz.js";
 import { Aggregate } from "./misc/Aggregate.js";
-import { ErrorBuffer } from "./misc/ErrorBuffer.js";
 import { MultiMap } from "./misc/MultiMap.js";
+import { ErrorManager } from "./misc/ErrorManager.js";
+import { defaultLocale } from "./support/helpers.js";
+import { Writer } from "./support/Writer.js";
 
-
-
-/** An instance of the StringTemplate. It consists primarily of
- *  a {@linkplain ST#impl reference} to its implementation (shared among all
- *  instances) and a hash table of {@linkplain ST#locals attributes}.  Because
+/**
+ * An instance of the StringTemplate. It consists primarily of
+ *  a {@link ST#impl reference} to its implementation (shared among all
+ *  instances) and a hash table of {@link ST#locals attributes}.  Because
  *  of dynamic scoping, we also need a reference to any enclosing instance. For
  *  example, in a deeply nested template for an HTML page body, we could still
  *  reference the title attribute defined in the outermost page template.
@@ -61,67 +38,44 @@ import { MultiMap } from "./misc/MultiMap.js";
  *  TODO: {@link ST#locals} is not actually a hash table like the documentation
  *  says.</p>
  */
-export  class ST extends JavaObject {
-    public static readonly  VERSION = "4.3.4";
+export class ST {
+    public static readonly VERSION = "4.3.4ng";
 
     /** Events during template hierarchy construction (not evaluation) */
-    public static DebugState =  class DebugState extends JavaObject {
+    public static DebugState = class DebugState {
         /** Record who made us? {@link ConstructionEvent} creates {@link Exception} to grab stack */
-        public  newSTEvent:  ConstructionEvent;
+        public newSTEvent: ConstructionEvent | undefined;
 
         /** Track construction-time add attribute "events"; used for ST user-level debugging */
-        public  addAttrEvents = new  MultiMap<string, AddAttributeEvent>();
+        public addAttrEvents = new MultiMap<string, AddAttributeEvent>();
     };
 
+    public static readonly UNKNOWN_NAME = "anonymous";
+    public static readonly EMPTY_ATTR = {};
 
-    public static readonly  UNKNOWN_NAME = "anonymous";
-    public static readonly  EMPTY_ATTR = new  Object();
-
-    /** When there are no formal args for template t and you map t across
+    /**
+     * When there are no formal args for template t and you map t across
      *  some values, t implicitly gets arg "it".  E.g., "<b>$it$</b>"
      */
-    public static readonly  IMPLICIT_ARG_NAME = "it";
+    public static readonly IMPLICIT_ARG_NAME = "it";
 
-    /** Just an alias for {@link ArrayList}, but this way I can track whether a
+    /**
+     * Just an alias for {@link ArrayList}, but this way I can track whether a
      *  list is something ST created or it's an incoming list.
      */
-    public static readonly AttributeList =  class AttributeList extends Array<Object> {
-        public  constructor();
-        public  constructor(size: int);
-    public constructor(...args: unknown[]) {
-		switch (args.length) {
-			case 0: {
- super(); 
-
-				break;
-			}
-
-			case 1: {
-				const [size] = args as [int];
-
- super(size); 
-
-				break;
-			}
-
-			default: {
-				throw new java.lang.IllegalArgumentException(S`Invalid number of arguments`);
-			}
-		}
-	}
-
+    public static readonly AttributeList = class AttributeList extends Array<unknown> {
     };
 
-
     /** The implementation for this template among all instances of same template . */
-    public  impl:  CompiledST;
+    public impl?: CompiledST;
 
-    /** Created as instance of which group? We need this to initialize interpreter
+    /**
+     * Created as instance of which group? We need this to initialize interpreter
      *  via render.  So, we create st and then it needs to know which
      *  group created it for sake of polymorphism:
      *
      *  <pre>
-     *  st = skin1.getInstanceOf("searchbox");
+     *  st = skin1.getInstanceOf("searchBox");
      *  result = st.render(); // knows skin1 created it
      *  </pre>
      *
@@ -138,230 +92,147 @@ export  class ST extends JavaObject {
      *   g2 = {t()}
      *  </pre>
      */
-    public  groupThatCreatedThisInstance:  STGroup;
+    public groupThatCreatedThisInstance: STGroup;
 
-    /** If {@link STGroup#trackCreationEvents}, track creation and add
+    /**
+     * If {@link STGroup#trackCreationEvents}, track creation and add
      *  attribute events for each object. Create this object on first use.
      */
-    public  debugState:  ST.DebugState;
+    public debugState?: ST.DebugState;
 
-    /** Safe to simultaneously write via {@link #add}, which is synchronized.
+    /**
+     * Safe to simultaneously write via {@link #add}, which is synchronized.
      *  Reading during exec is, however, NOT synchronized.  So, not thread safe
      *  to add attributes while it is being evaluated.  Initialized to
      *  {@link #EMPTY_ATTR} to distinguish {@code null} from empty.
      */
-    protected  locals:  Object[];
+    public locals?: unknown[];
 
     /** Used by group creation routine, not by users */
-    protected  constructor();
-
-    /** Used to make templates inline in code for simple things like SQL or log records.
+    public constructor();
+    /**
+     * Used to make templates inline in code for simple things like SQL or log records.
      *  No formal arguments are set and there is no enclosing instance.
      */
-    public  constructor(template: string);
-
-    /** Clone a prototype template.
+    public constructor(template: string);
+    /**
+     * Clone a prototype template.
      *  Copy all fields minus {@link #debugState}; don't delegate to {@link #ST()},
      *  which creates {@link ConstructionEvent}.
      */
-    public  constructor(proto: ST);
-
-    public  constructor(group: STGroup, template: string);
-
-    /** Create ST using non-default delimiters; each one of these will live
+    public constructor(proto: ST);
+    public constructor(group: STGroup, template: string);
+    /**
+     * Create ST using non-default delimiters; each one of these will live
      *  in it's own group since you're overriding a default; don't want to
      *  alter {@link STGroup#defaultGroup}.
      */
-    public  constructor(template: string, delimiterStartChar: char, delimiterStopChar: char);
-    protected constructor(...args: unknown[]) {
-		switch (args.length) {
-			case 0: {
+    public constructor(template: string, delimiterStartChar: string, delimiterStopChar: string);
+    public constructor(...args: unknown[]) {
+        if (args.length === 1 && args[0] instanceof ST) {
+            const [proto] = args as [ST];
 
-        super();
-if ( STGroup.trackCreationEvents ) {
-            if ( this.debugState===null ) {
- this.debugState = new  ST.DebugState();
-}
-
-            this.debugState.newSTEvent = new  ConstructionEvent();
-        }
-    
-
-				break;
-			}
-
-			case 1: {
-				const [template] = args as [string];
-
-
-        this(STGroup.defaultGroup, template);
-    
-
-				break;
-			}
-
-			case 1: {
-				const [proto] = args as [ST];
-
-
-        super();
-try {
             // Because add() can fake a formal arg def, make sure to clone impl
             // entire impl so formalArguments list is cloned as well. Don't want
             // further derivations altering previous arg defs. See
             // testRedefOfKeyInCloneAfterAddingAttribute().
-            this.impl = proto.impl.clone();
-        } catch (e) {
-if (e instanceof java.lang.CloneNotSupportedException) {
-            throw new  java.lang.RuntimeException(e);
+            this.impl = proto.impl!.clone();
+
+            if (proto.locals) {
+                this.locals = [...proto.locals];
+            } else {
+                if (this.impl.formalArguments.size > 0) {
+                    this.locals = new Array<Object>(this.impl.formalArguments.size);
+                    this.locals.fill(ST.EMPTY_ATTR);
+                }
+            }
+
+            this.groupThatCreatedThisInstance = proto.groupThatCreatedThisInstance;
+
+            return;
+        }
+
+        if (STGroup.trackCreationEvents) {
+            if (!this.debugState) {
+                this.debugState = new ST.DebugState();
+            }
+
+            this.debugState.newSTEvent = new ConstructionEvent();
+        }
+
+        let group;
+        let template;
+        if (args.length === 1) {
+            [template] = args as [string];
+            group = STGroup.defaultGroup;
+        } else if (args.length === 3) {
+            const [theTemplate, delimiterStartChar, delimiterStopChar] = args as [string, string, string];
+            group = new STGroup(delimiterStartChar, delimiterStopChar);
+            template = theTemplate;
         } else {
-	throw e;
-	}
-}
-        if ( proto.locals!==null ) {
-            this.locals = new  Array<Object>(proto.locals.length);
-            java.lang.System.arraycopy(proto.locals, 0, this.locals, 0, proto.locals.length);
+            [group, template] = args as [STGroup, string];
         }
-        else {
- if (this.impl.formalArguments !== null && !this.impl.formalArguments.isEmpty()) {
-            this.locals = new  Array<Object>(this.impl.formalArguments.size());
-            java.util.Arrays.fill(this.locals, ST.EMPTY_ATTR);
-        }
-}
 
-        this.groupThatCreatedThisInstance = proto.groupThatCreatedThisInstance;
-    
-
-				break;
-			}
-
-			case 2: {
-				const [group, template] = args as [STGroup, string];
-
-
-        this();
         this.groupThatCreatedThisInstance = group;
-        this.impl = this.groupThatCreatedThisInstance.compile(group.getFileName(), null,
-                                                    null, template, null);
+        this.impl = this.groupThatCreatedThisInstance.compile(group.getFileName(), undefined, undefined, template,
+            undefined)!;
         this.impl.hasFormalArgs = false;
         this.impl.name = ST.UNKNOWN_NAME;
         this.impl.defineImplicitlyDefinedTemplates(this.groupThatCreatedThisInstance);
-    
-
-				break;
-			}
-
-			case 3: {
-				const [template, delimiterStartChar, delimiterStopChar] = args as [string, char, char];
-
-
-        this(new  STGroup(delimiterStartChar, delimiterStopChar), template);
-    
-
-				break;
-			}
-
-			default: {
-				throw new java.lang.IllegalArgumentException(S`Invalid number of arguments`);
-			}
-		}
-	}
-
+    }
 
     /**
      * <pre>
      * ST.format("&lt;%1&gt;:&lt;%2&gt;", n, p);
      * </pre>
      */
-    public static  format(template: string,... attributes: Object[]):  string;
+    public static format(template: string, ...attributes: unknown[]): string;
+    public static format(lineWidth: number, template: string, ...attributes: unknown[]): string;
+    public static format(...args: unknown[]): string {
+        switch (args.length) {
+            case 2: {
+                const [template, attributes] = args as [string, unknown[]];
 
-    public static  format(lineWidth: int, template: string,... attributes: Object[]):  string;
-public static format(...args: unknown[]):  string {
-		switch (args.length) {
-			case 2: {
-				const [template, attributes] = args as [string, Object[]];
+                return ST.format(STWriter.NO_WRAP, template, attributes);
+            }
 
+            case 3: {
+                const [lineWidth, template, attributes] = args as [number, string, unknown[]];
+                const st = new ST(template.replaceAll(/%([0-9]+)/, "arg$1"));
+                let i = 1;
+                for (const a of attributes) {
+                    st.add("arg" + i, a);
+                    i++;
+                }
 
-        return ST.format(STWriter.NO_WRAP, template, attributes);
-    
+                return st.render(lineWidth);
+            }
 
-				break;
-			}
-
-			case 3: {
-				const [lineWidth, template, attributes] = args as [int, string, Object[]];
-
-
-        template = template.replaceAll("%([0-9]+)", "arg$1");
-        let  st = new  ST(template);
-        let  i = 1;
-        for (let a of attributes) {
-            st.add("arg"+i, a);
-            i++;
-        }
-        return st.render(lineWidth);
-    
-
-				break;
-			}
-
-			default: {
-				throw new java.lang.IllegalArgumentException(S`Invalid number of arguments`);
-			}
-		}
-	}
-
-
-    protected static  convertToAttributeList(curvalue: Object):  ST.AttributeList {
-        let  multi: ST.AttributeList;
-        if ( curvalue === null ) {
-            multi = new  ST.AttributeList(); // make list to hold multiple values
-            multi.add(curvalue);                 // add previous single-valued attribute
-        }
-        else {
- if ( curvalue instanceof ST.AttributeList ) { // already a list made by ST
-            multi = curvalue as ST.AttributeList;
-        }
-        else {
- if ( curvalue instanceof java.util.List) { // existing attribute is non-ST List
-            // must copy to an ST-managed list before adding new attribute
-            // (can't alter incoming attributes)
-            let  listAttr = curvalue as java.util.List<unknown>;
-            multi = new  ST.AttributeList(listAttr.size());
-            multi.addAll(listAttr);
-        }
-        else {
- if ( curvalue instanceof Object[] ) { // copy array to list
-            let  a = curvalue as Object[];
-            multi = new  ST.AttributeList(a.length);
-            multi.addAll(java.util.Arrays.asList(a)); // asList doesn't copy as far as I can tell
-        }
-        else {
- if ( curvalue.getClass().isArray() ) { // copy primitive array to list
-            let  length = java.lang.reflect.Array.getLength(curvalue);
-            multi = new  ST.AttributeList(length);
-            for (let  i = 0; i < length; i++) {
-                multi.add(java.lang.reflect.Array.get(curvalue, i));
+            default: {
+                throw new Error("Invalid number of arguments");
             }
         }
-        else {
-            // curvalue nonlist and we want to add an attribute
-            // must convert curvalue existing to list
-            multi = new  ST.AttributeList(); // make list to hold multiple values
-            multi.add(curvalue);                 // add previous single-valued attribute
+    }
+
+    protected static convertToAttributeList(currentValue: unknown): ST.AttributeList {
+        let multi: ST.AttributeList;
+        if (currentValue instanceof ST.AttributeList) { // already a list made by ST
+            multi = currentValue;
+        } else {
+            if (Array.isArray(currentValue)) {
+                multi = new ST.AttributeList();
+                multi.push(...(currentValue as unknown[]));
+            } else {
+                multi = new ST.AttributeList();
+                multi.push(currentValue);
+            }
         }
-}
-
-}
-
-}
-
-}
 
         return multi;
     }
 
-    /** Inject an attribute (name/value pair). If there is already an attribute
+    /**
+     * Inject an attribute (name/value pair). If there is already an attribute
      *  with that name, this method turns the attribute into an
      *  {@link AttributeList} with both the previous and the new attribute as
      *  elements. This method will never alter a {@link List} that you inject.
@@ -373,508 +244,341 @@ public static format(...args: unknown[]):  string {
      *  <p>
      *  {@code t.add("x", 1).add("y", "hi")}</p>
      */
-    public  add(name: string, value: Object):  ST {
-        if ( name===null ) {
-            throw new  java.lang.NullPointerException("null attribute name");
-        }
-        if ( name.indexOf('.')>=0 ) {
-            throw new  java.lang.IllegalArgumentException("cannot have '.' in attribute names");
+    public add(name: string, value: unknown): ST {
+        if (name.indexOf(".") >= 0) {
+            throw new Error("cannot have '.' in attribute names");
         }
 
-        if ( STGroup.trackCreationEvents ) {
-            if ( this.debugState===null ) {
- this.debugState = new  ST.DebugState();
-}
-
-            this.debugState.addAttrEvents.map(name, new  AddAttributeEvent(name, value));
-        }
-
-        let  arg = null;
-        if ( this.impl.hasFormalArgs ) {
-            if ( this.impl.formalArguments!==null ) {
- arg = this.impl.formalArguments.get(name);
-}
-
-            if ( arg===null ) {
-                throw new  java.lang.IllegalArgumentException("no such attribute: "+name);
+        if (STGroup.trackCreationEvents) {
+            if (!this.debugState) {
+                this.debugState = new ST.DebugState();
             }
+
+            this.debugState.addAttrEvents.map(name, new AddAttributeEvent(name, value));
         }
-        else {
-            // define and make room in locals (a hack to make new ST("simple template") work.)
-            if ( this.impl.formalArguments!==null ) {
+
+        let arg;
+        if (this.impl?.hasFormalArgs) {
+            if (this.impl.formalArguments !== null) {
                 arg = this.impl.formalArguments.get(name);
             }
-            if ( arg===null ) { // not defined
-                arg = new  FormalArgument(name);
-                this.impl.addArg(arg);
-                if ( this.locals===null ) {
- this.locals = new  Array<Object>(1);
-}
 
-                else {
-                    let  copy = new  Array<Object>(this.impl.formalArguments.size());
-                    java.lang.System.arraycopy(this.locals, 0, copy, 0,
-                                     java.lang.Math.min(this.locals.length, this.impl.formalArguments.size()));
-                    this.locals = copy;
+            if (!arg) {
+                throw new Error("no such attribute: " + name);
+            }
+        } else {
+            // define and make room in locals (a hack to make new ST("simple template") work.)
+            if (this.impl?.formalArguments) {
+                arg = this.impl.formalArguments.get(name);
+            }
+
+            if (!arg) { // not defined
+                arg = new FormalArgument(name);
+                this.impl!.addArg(arg);
+                if (!this.locals) {
+                    this.locals = [];
+                } else {
+                    this.locals = this.locals.slice(0, Math.min(this.locals.length, this.impl!.formalArguments.size));
                 }
                 this.locals[arg.index] = ST.EMPTY_ATTR;
             }
         }
 
-        let  curvalue = this.locals[arg.index];
-        if ( curvalue===ST.EMPTY_ATTR ) { // new attribute
-            this.locals[arg.index] = value;
+        const currentValue = this.locals![arg.index];
+        if (currentValue === ST.EMPTY_ATTR) { // new attribute
+            this.locals![arg.index] = value;
+
             return this;
         }
 
         // attribute will be multi-valued for sure now
         // convert current attribute to list if not already
         // copy-on-write semantics; copy a list injected by user to add new value
-        let  multi = ST.convertToAttributeList(curvalue);
-        this.locals[arg.index] = multi; // replace with list
+        const multi = ST.convertToAttributeList(currentValue);
+        this.locals![arg.index] = multi; // replace with list
 
         // now, add incoming value to multi-valued attribute
-        if ( value instanceof java.util.List ) {
+        if (Array.isArray(value)) {
             // flatten incoming list into existing list
-            multi.addAll(value as java.util.List<unknown>);
+            multi.push(...(value as unknown[]));
+        } else {
+            multi.push(value);
         }
-        else {
- if ( value!==null && value.getClass().isArray() ) {
-            if (value instanceof Object[]) {
-                multi.addAll(java.util.Arrays.asList(value as Object[]));
-            }
-            else {
-                multi.addAll(ST.convertToAttributeList(value));
-            }
-        }
-        else {
-            multi.add(value);
-        }
-}
 
         return this;
     }
 
-    /** Split {@code aggrName.{propName1,propName2}} into list
+    /**
+     * Split {@code aggrName.{propName1,propName2}} into list
      *  {@code [propName1, propName2]} and the {@code aggrName}. Spaces are
      *  allowed around {@code ','}.
      */
-    public  addAggr(aggrSpec: string,... values: Object[]):  ST {
-        let  dot = aggrSpec.indexOf(".{");
-        if ( java.io.ObjectInputFilter.Status.values===null || java.io.ObjectInputFilter.Status.values.length===0 ) {
-            throw new  java.lang.IllegalArgumentException("missing values for aggregate attribute format: "+
-                                               aggrSpec);
-        }
-        let  finalCurly = aggrSpec.indexOf('}');
-        if ( dot<0 || finalCurly < 0 ) {
-            throw new  java.lang.IllegalArgumentException("invalid aggregate attribute format: "+
-                                               aggrSpec);
-        }
-        let  aggrName = aggrSpec.substring(0, dot);
-        let  propString = aggrSpec.substring(dot+2, aggrSpec.length()-1);
-        propString = propString.trim();
-        let  propNames = propString.split("\\ *,\\ *");
-        if ( propNames===null || propNames.length===0 ) {
-            throw new  java.lang.IllegalArgumentException("invalid aggregate attribute format: "+
-                                               aggrSpec);
-        }
-        if ( java.io.ObjectInputFilter.Status.values.length !== propNames.length ) {
-            throw new  java.lang.IllegalArgumentException(
-                "number of properties and values mismatch for aggregate attribute format: "+
-                aggrSpec);
-        }
-        let  i=0;
-        let  aggr = new  Aggregate();
-        for (let p of propNames) {
-            let  v = java.io.ObjectInputFilter.Status.values[i++];
-            aggr.properties.put(p, v);
+    public addAggr(aggregateSpec: string, ...values: unknown[]): ST {
+        const dot = aggregateSpec.indexOf(".{");
+        if (values === null || values.length === 0) {
+            throw new Error("missing values for aggregate attribute format: " + aggregateSpec);
         }
 
-        this.add(aggrName, aggr); // now add as usual
+        const finalCurly = aggregateSpec.indexOf("}");
+        if (dot < 0 || finalCurly < 0) {
+            throw new Error("invalid aggregate attribute format: " +
+                aggregateSpec);
+        }
+
+        const aggregateName = aggregateSpec.substring(0, dot);
+        let propString = aggregateSpec.substring(dot + 2, aggregateSpec.length - 1);
+        propString = propString.trim();
+        const propNames = propString.split("\\ *,\\ *");
+        if (propNames.length === 0) {
+            throw new Error("invalid aggregate attribute format: " + aggregateSpec);
+        }
+
+        if (values.length !== propNames.length) {
+            throw new Error("number of properties and values mismatch for aggregate attribute format: " +
+                aggregateSpec);
+        }
+
+        let i = 0;
+        const aggregate = new Aggregate();
+        for (const p of propNames) {
+            const v = values[i++];
+            aggregate.properties.set(p, v);
+        }
+
+        this.add(aggregateName, aggregate); // now add as usual
+
         return this;
     }
 
-    /** Remove an attribute value entirely (can't remove attribute definitions). */
-    public  remove(name: string):  void {
-        if ( this.impl.formalArguments===null ) {
-            if ( this.impl.hasFormalArgs ) {
-                throw new  java.lang.IllegalArgumentException("no such attribute: "+name);
+    /**
+     * Remove an attribute value entirely (can't remove attribute definitions).
+     */
+    public remove(name: string): void {
+        if (!this.impl?.formalArguments) {
+            if (this.impl?.hasFormalArgs) {
+                throw new Error("no such attribute: " + name);
             }
+
             return;
         }
-        let  arg = this.impl.formalArguments.get(name);
-        if ( arg===null ) {
-            throw new  java.lang.IllegalArgumentException("no such attribute: "+name);
+
+        const arg = this.impl.formalArguments.get(name);
+        if (!arg) {
+            throw new Error("no such attribute: " + name);
         }
-        this.locals[arg.index] = ST.EMPTY_ATTR; // reset value
+
+        this.locals![arg.index] = ST.EMPTY_ATTR; // reset value
     }
 
-    /** Find an attribute in this template only. */
-    public  getAttribute(name: string):  Object {
-        let  localArg = null;
-        if ( this.impl.formalArguments!==null ) {
- localArg = this.impl.formalArguments.get(name);
-}
+    /**
+     * Find an attribute in this template only.
+     */
+    public getAttribute(name: string): unknown {
+        let localArg;
+        if (this.impl?.formalArguments) {
+            localArg = this.impl.formalArguments.get(name);
+        }
 
-        if ( localArg!==null ) {
-            let  o = this.locals[localArg.index];
-            if ( o===ST.EMPTY_ATTR ) {
- o = null;
-}
+        if (localArg) {
+            let o = this.locals![localArg.index];
+            if (o === ST.EMPTY_ATTR) {
+                o = undefined;
+            }
 
             return o;
         }
-        return null;
+
+        return undefined;
     }
 
-    public  getAttributes():  Map<string, Object> {
-        if ( this.impl.formalArguments===null ) {
- return null;
-}
-
-        let  attributes = new  Map<string, Object>();
-        for (let a of this.impl.formalArguments.values()) {
-            let  o = this.locals[a.index];
-            if ( o===ST.EMPTY_ATTR ) {
- o = null;
-}
-
-            attributes.put(a.name, o);
+    public getAttributes(): Map<string, unknown> | undefined {
+        if (!this.impl?.formalArguments) {
+            return undefined;
         }
+
+        const attributes = new Map<string, unknown>();
+        for (const a of this.impl.formalArguments.values()) {
+            let o = this.locals![a.index];
+            if (o === ST.EMPTY_ATTR) {
+                o = undefined;
+            }
+
+            attributes.set(a.name, o);
+        }
+
         return attributes;
     }
 
-    public  getName():  string { return this.impl.name; }
+    public getName(): string {
+        return this.impl?.name ?? "";
+    }
 
-    public  isAnonSubtemplate():  boolean { return this.impl.isAnonSubtemplate; }
+    public isAnonSubtemplate(): boolean {
+        return this.impl?.isAnonSubtemplate ?? false;
+    }
 
-    public  write(out: STWriter):  int;
+    public write(out: STWriter): number;
+    public write(out: STWriter, locale: Intl.Locale): number;
+    public write(out: STWriter, listener: STErrorListener): number;
+    public write(out: STWriter, locale: Intl.Locale, listener: STErrorListener): number;
+    public write(out: STWriter, locale: Intl.Locale, listener: STErrorListener, lineWidth: number): number;
+    public write(...args: unknown[]): number {
+        switch (args.length) {
+            case 1: {
+                const [out] = args as [STWriter];
 
-    public  write(out: STWriter, locale: Intl.Locale):  int;
+                const interp = new Interpreter(this.groupThatCreatedThisInstance, this.impl!.nativeGroup.errMgr, false);
+                const scope = new InstanceScope(undefined, this);
 
-    public  write(out: STWriter, listener: STErrorListener):  int;
+                return interp.exec(out, scope);
+            }
 
-    public  write(outputFile: java.io.File, listener: STErrorListener):  int;
+            case 2: {
+                if (args[1] instanceof Intl.Locale) {
+                    const [out, locale] = args as [STWriter, Intl.Locale];
 
-    public  write(out: STWriter, locale: Intl.Locale, listener: STErrorListener):  int;
+                    const interp = new Interpreter(this.groupThatCreatedThisInstance, locale,
+                        this.impl!.nativeGroup.errMgr, false);
+                    const scope = new InstanceScope(undefined, this);
 
-    public  write(outputFile: java.io.File, listener: STErrorListener, encoding: string):  int;
+                    return interp.exec(out, scope);
+                } else {
+                    const [out, listener] = args as [STWriter, STErrorListener];
 
-    public  write(outputFile: java.io.File, listener: STErrorListener, encoding: string, lineWidth: int):  int;
+                    const interp = new Interpreter(this.groupThatCreatedThisInstance, new ErrorManager(listener),
+                        false);
+                    const scope = new InstanceScope(undefined, this);
 
-    public  write(outputFile: java.io.File,
-                     listener: STErrorListener,
-                     encoding: string,
-                     locale: Intl.Locale,
-                     lineWidth: int):  int;
-public write(...args: unknown[]):  int {
-		switch (args.length) {
-			case 1: {
-				const [out] = args as [STWriter];
+                    return interp.exec(out, scope);
+                }
+            }
 
+            case 3: {
+                const [out, locale, listener] = args as [STWriter, Intl.Locale, STErrorListener];
 
-        let  interp = new  Interpreter(this.groupThatCreatedThisInstance,
-                                             this.impl.nativeGroup.errMgr,
-                                             false);
-        let  scope = new  InstanceScope(null, this);
-        return interp.exec(out, scope);
-    
+                const interp = new Interpreter(this.groupThatCreatedThisInstance, locale, new ErrorManager(listener),
+                    false);
+                const scope = new InstanceScope(undefined, this);
 
-				break;
-			}
+                return interp.exec(out, scope);
+            }
 
-			case 2: {
-				const [out, locale] = args as [STWriter, Intl.Locale];
+            case 4: {
+                const [out, listener, locale, lineWidth] = args as [STWriter, STErrorListener, Intl.Locale, number];
 
+                const w = new AutoIndentWriter(out);
+                w.setLineWidth(lineWidth);
+                const n = this.write(w, locale, listener);
 
-        let  interp = new  Interpreter(this.groupThatCreatedThisInstance,
-                                             locale,
-                                             this.impl.nativeGroup.errMgr,
-                                             false);
-        let  scope = new  InstanceScope(null, this);
-        return interp.exec(out, scope);
-    
+                return n;
+            }
 
-				break;
-			}
-
-			case 2: {
-				const [out, listener] = args as [STWriter, STErrorListener];
-
-
-        let  interp = new  Interpreter(this.groupThatCreatedThisInstance,
-                                             new  java.util.logging.ErrorManager(listener),
-                                             false);
-        let  scope = new  InstanceScope(null, this);
-        return interp.exec(out, scope);
-    
-
-				break;
-			}
-
-			case 2: {
-				const [outputFile, listener] = args as [java.io.File, STErrorListener];
-
-
-        return this.write(outputFile, listener, "UTF-8", Intl.Locale.getDefault(), STWriter.NO_WRAP);
-    
-
-				break;
-			}
-
-			case 3: {
-				const [out, locale, listener] = args as [STWriter, Intl.Locale, STErrorListener];
-
-
-        let  interp = new  Interpreter(this.groupThatCreatedThisInstance,
-                                             locale,
-                                             new  java.util.logging.ErrorManager(listener),
-                                             false);
-        let  scope = new  InstanceScope(null, this);
-        return interp.exec(out, scope);
-    
-
-				break;
-			}
-
-			case 3: {
-				const [outputFile, listener, encoding] = args as [java.io.File, STErrorListener, string];
-
-
-        return this.write(outputFile, listener, encoding, Intl.Locale.getDefault(), STWriter.NO_WRAP);
-    
-
-				break;
-			}
-
-			case 4: {
-				const [outputFile, listener, encoding, lineWidth] = args as [java.io.File, STErrorListener, string, int];
-
-
-        return this.write(outputFile, listener, encoding, Intl.Locale.getDefault(), lineWidth);
-    
-
-				break;
-			}
-
-			case 5: {
-				const [outputFile, listener, encoding, locale, lineWidth] = args as [java.io.File, STErrorListener, string, Intl.Locale, int];
-
-
-        let  bw = null;
-        try {
-            let  fos = new  java.io.FileOutputStream(outputFile);
-            let  osw = new  java.io.OutputStreamWriter(fos, encoding);
-            bw = new  java.io.BufferedWriter(osw);
-            let  w = new  AutoIndentWriter(bw);
-            w.setLineWidth(lineWidth);
-            let  n = this.write(w, locale, listener);
-            bw.close();
-            bw = null;
-            return n;
+            default: {
+                throw new Error("Invalid number of arguments");
+            }
         }
-        finally {
-            if (bw !== null) {
- bw.close();
-}
+    }
 
+    public render(lineWidth?: number): string;
+    public render(locale: Intl.Locale, lineWidth?: number): string;
+    public render(...args: unknown[]): string {
+        let locale;
+        let lineWidth;
+        switch (args.length) {
+            case 0: {
+                locale = defaultLocale();
+                lineWidth = STWriter.NO_WRAP;
+
+                break;
+            }
+
+            case 1: {
+                if (args[0] instanceof Intl.Locale) {
+                    [locale] = args as [Intl.Locale];
+                    lineWidth = STWriter.NO_WRAP;
+                } else {
+                    locale = defaultLocale();
+                    [lineWidth] = args as [number];
+                }
+
+                break;
+            }
+
+            case 2: {
+                [locale, lineWidth] = args as [Intl.Locale, number];
+
+                break;
+            }
+
+            default: {
+                throw new Error("Invalid number of arguments");
+            }
         }
-    
 
-				break;
-			}
-
-			default: {
-				throw new java.lang.IllegalArgumentException(S`Invalid number of arguments`);
-			}
-		}
-	}
-
-
-    public  render():  string;
-
-    public  render(lineWidth: int):  string;
-
-    public  render(locale: Intl.Locale):  string;
-
-    public  render(locale: Intl.Locale, lineWidth: int):  string;
-public render(...args: unknown[]):  string {
-		switch (args.length) {
-			case 0: {
- return this.render(Intl.Locale.getDefault()); 
-
-				break;
-			}
-
-			case 1: {
-				const [lineWidth] = args as [int];
-
- return this.render(Intl.Locale.getDefault(), lineWidth); 
-
-				break;
-			}
-
-			case 1: {
-				const [locale] = args as [Intl.Locale];
-
- return this.render(locale, STWriter.NO_WRAP); 
-
-				break;
-			}
-
-			case 2: {
-				const [locale, lineWidth] = args as [Intl.Locale, int];
-
-
-        let  out = new  java.io.StringWriter();
-        let  wr = new  AutoIndentWriter(out);
+        const out = new Writer();
+        const wr = new AutoIndentWriter(out);
         wr.setLineWidth(lineWidth);
         this.write(wr, locale);
+
         return out.toString();
-    
-
-				break;
-			}
-
-			default: {
-				throw new java.lang.IllegalArgumentException(S`Invalid number of arguments`);
-			}
-		}
-	}
-
-
-    // LAUNCH A WINDOW TO INSPECT TEMPLATE HIERARCHY
-
-    public  inspect():  STViz;
-
-    public  inspect(lineWidth: int):  STViz;
-
-    public  inspect(locale: Intl.Locale):  STViz;
-
-    public  inspect(errMgr: java.util.logging.ErrorManager, locale: Intl.Locale, lineWidth: int):  STViz;
-public inspect(...args: unknown[]):  STViz {
-		switch (args.length) {
-			case 0: {
- return this.inspect(Intl.Locale.getDefault()); 
-
-				break;
-			}
-
-			case 1: {
-				const [lineWidth] = args as [int];
-
-
-        return this.inspect(this.impl.nativeGroup.errMgr, Intl.Locale.getDefault(), lineWidth);
-    
-
-				break;
-			}
-
-			case 1: {
-				const [locale] = args as [Intl.Locale];
-
-
-        return this.inspect(this.impl.nativeGroup.errMgr, locale, STWriter.NO_WRAP);
-    
-
-				break;
-			}
-
-			case 3: {
-				const [errMgr, locale, lineWidth] = args as [java.util.logging.ErrorManager, Intl.Locale, int];
-
-
-        let  errors = new  ErrorBuffer();
-        this.impl.nativeGroup.setListener(errors);
-        let  out = new  java.io.StringWriter();
-        let  wr = new  AutoIndentWriter(out);
-        wr.setLineWidth(lineWidth);
-        let  interp =
-            new  Interpreter(this.groupThatCreatedThisInstance, locale, true);
-        let  scope = new  InstanceScope(null, this);
-        interp.exec(wr, scope); // render and track events
-        let  events = interp.getEvents();
-        let  overallTemplateEval =
-            events.get(events.size()-1) as EvalTemplateEvent;
-        let  viz = new  STViz(errMgr, overallTemplateEval, out.toString(), interp,
-                              interp.getExecutionTrace(), errors.errors);
-        viz.open();
-        return viz;
-    
-
-				break;
-			}
-
-			default: {
-				throw new java.lang.IllegalArgumentException(S`Invalid number of arguments`);
-			}
-		}
-	}
-
+    }
 
     // TESTING SUPPORT
 
-    public  getEvents():  java.util.List<InterpEvent>;
+    public getEvents(lineWidth?: number): InterpEvent[];
+    public getEvents(locale: Intl.Locale, lineWidth?: number): InterpEvent[];
+    public getEvents(...args: unknown[]): InterpEvent[] {
+        let locale;
+        let lineWidth;
 
-    public  getEvents(lineWidth: int):  java.util.List<InterpEvent>;
+        switch (args.length) {
+            case 0: {
+                locale = defaultLocale();
+                lineWidth = STWriter.NO_WRAP;
 
-    public  getEvents(locale: Intl.Locale):  java.util.List<InterpEvent>;
+                break;
+            }
 
-    public  getEvents(locale: Intl.Locale, lineWidth: int):  java.util.List<InterpEvent>;
-public getEvents(...args: unknown[]):  java.util.List<InterpEvent> {
-		switch (args.length) {
-			case 0: {
- return this.getEvents(Intl.Locale.getDefault()); 
+            case 1: {
+                if (args[0] instanceof Intl.Locale) {
+                    [locale] = args as [Intl.Locale];
+                    lineWidth = STWriter.NO_WRAP;
+                } else {
+                    [lineWidth] = args as [number];
+                    locale = defaultLocale();
+                }
 
-				break;
-			}
+                break;
+            }
 
-			case 1: {
-				const [lineWidth] = args as [int];
+            case 2: {
+                [locale, lineWidth] = args as [Intl.Locale, number];
 
- return this.getEvents(Intl.Locale.getDefault(), lineWidth); 
+                break;
+            }
 
-				break;
-			}
+            default: {
+                throw new Error("Invalid number of arguments");
+            }
+        }
 
-			case 1: {
-				const [locale] = args as [Intl.Locale];
-
- return this.getEvents(locale, STWriter.NO_WRAP); 
-
-				break;
-			}
-
-			case 2: {
-				const [locale, lineWidth] = args as [Intl.Locale, int];
-
-
-        let  out = new  java.io.StringWriter();
-        let  wr = new  AutoIndentWriter(out);
+        const out = new Writer();
+        const wr = new AutoIndentWriter(out);
         wr.setLineWidth(lineWidth);
-        let  interp =
-            new  Interpreter(this.groupThatCreatedThisInstance, locale, true);
-        let  scope = new  InstanceScope(null, this);
+        const interp =
+            new Interpreter(this.groupThatCreatedThisInstance, locale, true);
+        const scope = new InstanceScope(undefined, this);
         interp.exec(wr, scope); // render and track events
+
         return interp.getEvents();
-    
+    }
 
-				break;
-			}
+    public toString(): string {
+        if (!this.impl) {
+            return "bad-template()";
+        }
 
-			default: {
-				throw new java.lang.IllegalArgumentException(S`Invalid number of arguments`);
-			}
-		}
-	}
-
-
-    public override  toString():  string {
-        if ( this.impl===null ) {
- return "bad-template()";
-}
-
-        let  name = this.impl.name+"()";
+        let name = this.impl.name + "()";
         if (this.impl.isRegion) {
             name = "@" + STGroup.getUnMangledTemplateName(name);
         }
@@ -882,41 +586,38 @@ public getEvents(...args: unknown[]):  java.util.List<InterpEvent> {
         return name;
     }
 
-    /** Set {@code locals} attribute value when you only know the name, not the
+    /**
+     * Set {@code locals} attribute value when you only know the name, not the
      *  index. This is ultimately invoked by calling {@code ST#add} from
      *  outside so toss an exception to notify them.
      */
-    protected  rawSetAttribute(name: string, value: Object):  void {
-        if ( this.impl.formalArguments===null ) {
-            throw new  java.lang.IllegalArgumentException("no such attribute: "+name);
+    public rawSetAttribute(name: string, value: unknown): void {
+        if (!this.impl?.formalArguments) {
+            throw new Error("no such attribute: " + name);
         }
-        let  arg = this.impl.formalArguments.get(name);
-        if ( arg===null ) {
-            throw new  java.lang.IllegalArgumentException("no such attribute: "+name);
-        }
-        this.locals[arg.index] = value;
-    }
 
-    /** {@code <@r()>}, {@code <@r>...<@end>}, and {@code @t.r() ::= "..."} defined manually by coder */
-    public static  RegionType =  class RegionType extends java.lang.Enum<RegionType> {
-        /** {@code <@r()>} */
-        public static readonly IMPLICIT: RegionType = new class extends RegionType {
-}(S`IMPLICIT`, 0);
-        /** {@code <@r>...<@end>} */
-        public static readonly EMBEDDED: RegionType = new class extends RegionType {
-}(S`EMBEDDED`, 1);
-        /** {@code @t.r() ::= "..."} */
-        public static readonly EXPLICIT: RegionType = new class extends RegionType {
-}(S`EXPLICIT`, 2)
-    };
+        const arg = this.impl.formalArguments.get(name);
+        if (!arg) {
+            throw new Error("no such attribute: " + name);
+        }
+
+        this.locals![arg.index] = value;
+    }
 
 }
 
 // eslint-disable-next-line @typescript-eslint/no-namespace, no-redeclare
 export namespace ST {
-	export type RegionType = InstanceType<typeof ST.RegionType>;
-	export type DebugState = InstanceType<typeof ST.DebugState>;
-	export type AttributeList = InstanceType<typeof ST.AttributeList>;
+    /** {@code <@r()>}, {@code <@r>...<@end>}, and {@code @t.r() ::= "..."} defined manually by coder */
+    export enum RegionType {
+        /** {@code <@r()>} */
+        IMPLICIT,
+        /** {@code <@r>...<@end>} */
+        EMBEDDED,
+        /** {@code @t.r() ::= "..."} */
+        EXPLICIT,
+    };
+
+    export type DebugState = InstanceType<typeof ST.DebugState>;
+    export type AttributeList = InstanceType<typeof ST.AttributeList>;
 }
-
-

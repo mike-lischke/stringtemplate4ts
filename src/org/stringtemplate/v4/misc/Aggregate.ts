@@ -50,6 +50,7 @@
  */
 export class Aggregate {
     public properties = new Map<string, unknown>();
+
     public get(propName: string): unknown {
         return this.properties.get(propName);
     }

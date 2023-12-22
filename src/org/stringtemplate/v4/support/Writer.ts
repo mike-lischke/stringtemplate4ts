@@ -8,4 +8,8 @@ export class Writer {
     public write(str: string): void {
         // Not implemented.
     }
+
+    public toString(): string {
+        return "";
+    }
 }

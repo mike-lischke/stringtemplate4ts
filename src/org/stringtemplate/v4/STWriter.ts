@@ -5,7 +5,8 @@
  * Licensed under the BSD-3 License. See License.txt in the project root for license information.
  */
 
-/** Generic StringTemplate output writer filter.
+/**
+ * Generic StringTemplate output writer filter.
  * <p>
  *  Literals and the elements of expressions are emitted via {@link #write(String)}.
  *  Separators are emitted via {@link #writeSeparator(String)} because they must be
@@ -19,13 +20,15 @@ export interface STWriter {
     popAnchorPoint(): void;
     setLineWidth(lineWidth: number): void;
 
-    /** Write the string and return how many actual characters were written.
+    /**
+     * Write the string and return how many actual characters were written.
      *  With auto-indentation and wrapping, more chars than {@code str.length()}
      *  can be emitted.  No wrapping is done.
      */
     write(str: string): number;
 
-    /** Same as write, but wrap lines using the indicated string as the
+    /**
+     * Same as write, but wrap lines using the indicated string as the
      *  wrap character (such as {@code "\n"}).
      */
     write(str: string, wrap: string): number;
@@ -44,12 +47,14 @@ export interface STWriter {
      */
     writeWrap(wrap: string): number;
 
-    /** Write a separator.  Same as {@link #write(String)} except that a {@code "\n"}
+    /**
+     * Write a separator.  Same as {@link #write(String)} except that a {@code "\n"}
      *  cannot be inserted before emitting a separator.
      */
     writeSeparator(str: string): number;
 
-    /** Return the absolute char index into the output of the char
+    /**
+     * Return the absolute char index into the output of the char
      *  we're about to write.  Returns 0 if no char written yet.
      */
     index(): number;

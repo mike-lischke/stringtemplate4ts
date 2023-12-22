@@ -114,11 +114,11 @@ export class GroupParser extends antlr.Parser {
         this.errorHandler.recover(this, e);
     }
 
-    public addArgument(args: FormalArgument[] , t: Token, defaultValueToken?: Token | null): void {
+    public addArgument(args: FormalArgument[] , t: Token, defaultValueToken?: Token): void {
         const name = t.text!;
         for (const arg of args) {
             if (arg.name === name) {
-                this.currentGroup.errMgr.compileTimeError(ErrorType.PARAMETER_REDEFINITION, null, t, name);
+                this.currentGroup.errMgr.compileTimeError(ErrorType.PARAMETER_REDEFINITION, undefined, t, name);
 
                 return;
             }
@@ -376,21 +376,23 @@ export class GroupParser extends antlr.Parser {
             localContext._b = this.match(GroupParser.STRING);
 
                     let supported = true;
-                    const startCharacter = (localContext._a?.text ?? '').charAt(1);
+                    const textA = (localContext._a?.text ?? '');
+                    const startCharacter = textA.length === 0 ? ">" : textA[1];
                     if (STGroup.isReservedCharacter(startCharacter)) {
-                        this.currentGroup.errMgr.compileTimeError(ErrorType.UNSUPPORTED_DELIMITER, null, localContext?._a, startCharacter);
+                        this.currentGroup.errMgr.compileTimeError(ErrorType.UNSUPPORTED_DELIMITER, undefined, localContext?._a, startCharacter);
                         supported = false;
                     }
 
-                    const stopCharacter = (localContext._b?.text ?? '').charAt(1);
+                    const textB = (localContext._b?.text ?? '');
+                    const stopCharacter = textB.length === 0 ? ">" : textB[1];
                     if (STGroup.isReservedCharacter(stopCharacter)) {
-                        this.currentGroup.errMgr.compileTimeError(ErrorType.UNSUPPORTED_DELIMITER, null, localContext?._b, stopCharacter);
+                        this.currentGroup.errMgr.compileTimeError(ErrorType.UNSUPPORTED_DELIMITER, undefined, localContext?._b, stopCharacter);
                         supported = false;
                     }
 
                     if (supported) {
-                        this.currentGroup.delimiterStartChar=(localContext._a?.text ?? '').charAt(1);
-                        this.currentGroup.delimiterStopChar=(localContext._b?.text ?? '').charAt(1);
+                        this.currentGroup.delimiterStartChar = startCharacter;
+                        this.currentGroup.delimiterStopChar = stopCharacter;
                     }
                 
             }
@@ -537,7 +539,7 @@ export class GroupParser extends antlr.Parser {
                 }
 
                 if ((localContext._name?.tokenIndex ?? 0) >= 0) { // if ID missing
-                    template = Misc.strip(template, n);
+                    template = template.substring(n);
                     let templateName = (localContext._name?.text ?? '');
                     if (prefix.length > 0 ) {
                         templateName = prefix+(localContext._name?.text ?? '');
@@ -684,13 +686,13 @@ export class GroupParser extends antlr.Parser {
                 {
 
                     if ((this.getInvokingContext(6) as FormalArgsContext).hasOptionalParameter) {
-                        this.currentGroup.errMgr.compileTimeError(ErrorType.REQUIRED_PARAMETER_AFTER_OPTIONAL, null, localContext?._ID);
+                            this.currentGroup.errMgr.compileTimeError(ErrorType.REQUIRED_PARAMETER_AFTER_OPTIONAL, undefined, localContext?._ID);
                     }
 
                 }
                 break;
             }
-            this.addArgument(localContext.args, localContext?._ID, localContext?._a);
+            this.addArgument(localContext.args, localContext?._ID, localContext?._a ?? undefined);
             }
         }
         catch (re) {
@@ -721,9 +723,9 @@ export class GroupParser extends antlr.Parser {
             localContext._dict = this.dict();
 
             if ( this.currentGroup.rawGetDictionary((localContext._ID?.text ?? ''))!=null ) {
-                this.currentGroup.errMgr.compileTimeError(ErrorType.MAP_REDEFINITION, null, localContext?._ID);
+                this.currentGroup.errMgr.compileTimeError(ErrorType.MAP_REDEFINITION, undefined, localContext?._ID);
             } else if ( this.currentGroup.rawGetTemplate((localContext._ID?.text ?? ''))!=null ) {
-                this.currentGroup.errMgr.compileTimeError(ErrorType.TEMPLATE_REDEFINITION_AS_MAP, null, localContext?._ID);
+                this.currentGroup.errMgr.compileTimeError(ErrorType.TEMPLATE_REDEFINITION_AS_MAP, undefined, localContext?._ID);
             } else {
                 this.currentGroup.defineDictionary((localContext._ID?.text ?? ''), localContext._dict.mapping);
             }
@@ -882,7 +884,7 @@ export class GroupParser extends antlr.Parser {
             this.match(GroupParser.T__3);
             this.state = 185;
             localContext._keyValue = this.keyValue();
-            mapping.set(Misc.replaceEscapes(Misc.strip((localContext._STRING?.text ?? ''), 1)), localContext._keyValue.value);
+            mapping.set(Misc.replaceEscapes((localContext._STRING?.text ?? '').substring(1)), localContext._keyValue.value);
             }
         }
         catch (re) {
@@ -935,7 +937,7 @@ export class GroupParser extends antlr.Parser {
                 {
                 this.state = 194;
                 localContext._STRING = this.match(GroupParser.STRING);
-                localContext!.value =  Misc.replaceEscapes(Misc.strip((localContext._STRING?.text ?? ''), 1));
+                localContext!.value =  Misc.replaceEscapes((localContext._STRING?.text ?? '').substring(1));
                 }
                 break;
             case GroupParser.TRUE:

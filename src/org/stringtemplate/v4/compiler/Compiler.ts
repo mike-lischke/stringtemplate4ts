@@ -5,9 +5,11 @@
  * Licensed under the BSD-3 License. See License.txt in the project root for license information.
  */
 
-/* eslint-disable jsdoc/require-returns */
+/* eslint-disable jsdoc/require-returns, jsdoc/require-param */
 
-import { CharStreams, CommonTokenStream, NoViableAltException, Parser, RecognitionException, Token, TokenStream } from "antlr4ng";
+import {
+    CharStreams, CommonTokenStream, NoViableAltException, Parser, RecognitionException, Token, TokenStream,
+} from "antlr4ng";
 
 import { STLexer } from "./STLexer.js";
 import { STException } from "./STException.js";
@@ -21,6 +23,7 @@ import { ErrorType } from "../misc/ErrorType.js";
 import { GroupParser } from "./generated/GroupParser.js";
 import { STParser } from "./generated/STParser.js";
 import { CommonTreeNodeStream } from "../support/CommonTreeNodeStream.js";
+import { CodeGenerator } from "./CodeGenerator.js";
 
 /** A compiler for a single template. */
 export class Compiler {
@@ -64,9 +67,9 @@ export class Compiler {
         this.group = group ?? STGroup.defaultGroup;
     }
 
-    public static defineBlankRegion(outermostImpl: CompiledST, nameToken: Token): CompiledST {
+    public static defineBlankRegion(outermostImpl: CompiledST, nameToken?: Token): CompiledST {
         const outermostTemplateName = outermostImpl.name;
-        const mangled = STGroup.getMangledRegionName(outermostTemplateName, nameToken.text!);
+        const mangled = STGroup.getMangledRegionName(outermostTemplateName, nameToken?.text ?? "");
 
         const blank = new CompiledST();
         blank.isRegion = true;
@@ -84,12 +87,7 @@ export class Compiler {
         return Compiler.SUBTEMPLATE_PREFIX + count;
     }
 
-    public compile(template: string): CompiledST;
-    /** Compile full template with unknown formal arguments. */
-    public compile(name: string, template: string): CompiledST;
-    /** Compile full template with respect to a list of formal arguments. */
-    public compile(srcName: string, name: string, args: FormalArgument[], template: string,
-        templateToken: Token): CompiledST;
+    /** Compile full template with known or unknown formal arguments. */
     public compile(values: {
         srcName?: string,
         name?: string,
@@ -126,8 +124,6 @@ export class Compiler {
         } catch (re) {
             if (re instanceof RecognitionException) {
                 this.reportMessageAndThrowSTException(tokens, values.templateToken, p, re);
-
-                return undefined;
             } else {
                 throw re;
             }
@@ -135,32 +131,34 @@ export class Compiler {
 
         if (p.numberOfSyntaxErrors > 0) {
             const impl = new CompiledST();
-            impl.defineFormalArgs(values.args);
+            impl.defineFormalArgs(values.args ?? []);
 
             return impl;
         }
 
         const nodes = new CommonTreeNodeStream(r);
         nodes.setTokenStream(tokens);
-        const gen = new CodeGenerator(nodes, this.group.errMgr, name, template, templateToken);
+        const gen = new CodeGenerator(nodes, this.group.errMgr, values.name, values.template, values.templateToken);
 
-        let impl = null;
+        let impl;
         try {
-            impl = gen.template(name, args);
+            impl = gen.template(values.name!, values.args!);
             impl.nativeGroup = this.group;
-            impl.template = template;
-            impl.ast = r.getTree();
+            impl.template = values.template;
+
+            // XXX: This is the interface between the ANTLRv4 parse tree and the ANTLRv3 AST node.
+            ///impl.ast = r.getTree();
             impl.ast.setUnknownTokenBoundaries();
             impl.tokens = tokens;
         } catch (re) {
             if (re instanceof RecognitionException) {
-                this.group.errMgr.internalError(null, "bad tree structure", re);
+                this.group.errMgr.internalError(undefined, "bad tree structure", re);
             } else {
                 throw re;
             }
         }
 
-        if (!values.srcName) {
+        if (!values.srcName && impl) {
             impl.hasFormalArgs = false;
         }
 
@@ -168,27 +166,29 @@ export class Compiler {
     }
 
     protected reportMessageAndThrowSTException(tokens: TokenStream, templateToken: Token | undefined,
-        parser: Parser, re: RecognitionException): void {
+        parser: Parser, re: RecognitionException): never {
         if (re.offendingToken?.type === Token.EOF) {
             const msg = "premature EOF";
             this.group.errMgr.compileTimeError(ErrorType.SYNTAX_ERROR, templateToken, re.offendingToken, msg);
         } else {
             if (re instanceof NoViableAltException) {
                 const msg = "'" + re.offendingToken?.text + "' came as a complete surprise to me";
-                this.group.errMgr.compileTimeError(ErrorType.SYNTAX_ERROR, templateToken, re.offendingToken!, msg);
+                this.group.errMgr.compileTimeError(ErrorType.SYNTAX_ERROR, templateToken,
+                    re.offendingToken ?? undefined, msg);
             } else {
                 if (tokens.index === 0) { // couldn't parse anything
                     const msg = "this doesn't look like a template";
-                    this.group.errMgr.compileTimeError(ErrorType.SYNTAX_ERROR, templateToken, re.offendingToken!, msg);
+                    this.group.errMgr.compileTimeError(ErrorType.SYNTAX_ERROR, templateToken,
+                        re.offendingToken ?? undefined, msg);
                 } else {
                     if (tokens.LA(1) === STLexer.LDELIM) { // couldn't parse expr
                         const msg = "doesn't look like an expression";
                         this.group.errMgr.compileTimeError(ErrorType.SYNTAX_ERROR, templateToken,
-                            re.offendingToken!, msg);
+                            re.offendingToken ?? undefined, msg);
                     } else {
                         const msg = re.message;
-                        this.group.errMgr.compileTimeError(ErrorType.SYNTAX_ERROR, templateToken, re.offendingToken!,
-                            msg);
+                        this.group.errMgr.compileTimeError(ErrorType.SYNTAX_ERROR, templateToken,
+                            re.offendingToken ?? undefined, msg);
                     }
                 }
 

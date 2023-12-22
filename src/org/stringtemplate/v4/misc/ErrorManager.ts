@@ -53,21 +53,21 @@ export class ErrorManager {
         this.listener = listener ?? ErrorManager.DEFAULT_ERROR_LISTENER;
     }
 
-    public compileTimeError(error: ErrorType, templateToken: Token | undefined, t: Token, arg?: string,
-        arg2?: string): void {
+    public compileTimeError(error: ErrorType, templateToken?: Token, t?: Token, arg?: string | number,
+        arg2?: string | number): void {
         const srcName = this.sourceName(t) ?? "<unknown>";
 
         if (!arg) {
             this.listener.compileTimeError(
-                new STCompiletimeMessage(error, srcName, templateToken, t, null, t.text),
+                new STCompiletimeMessage(error, srcName, templateToken, t, undefined, t?.text ?? undefined),
             );
         } else if (!arg2) {
             this.listener.compileTimeError(
-                new STCompiletimeMessage(error, srcName, templateToken, t, null, arg),
+                new STCompiletimeMessage(error, srcName, templateToken, t, undefined, arg),
             );
         } else {
             this.listener.compileTimeError(
-                new STCompiletimeMessage(error, srcName, templateToken, t, null, arg, arg2),
+                new STCompiletimeMessage(error, srcName, templateToken, t, undefined, arg, arg2),
             );
         }
     }
@@ -84,22 +84,22 @@ export class ErrorManager {
 
     public groupSyntaxError(error: ErrorType, srcName: string, e: RecognitionException, msg: string): void {
         this.listener.compileTimeError(
-            new STGroupCompiletimeMessage(error, srcName, e.offendingToken, msg),
+            new STGroupCompiletimeMessage(error, srcName, e.offendingToken ?? undefined, undefined, msg),
         );
     }
 
     public groupLexerError(error: ErrorType, srcName: string, e: RecognitionException, msg: string): void {
         this.listener.compileTimeError(
-            new STGroupCompiletimeMessage(error, srcName, e.offendingToken, e, msg),
+            new STGroupCompiletimeMessage(error, srcName, e.offendingToken ?? undefined, e, msg),
         );
     }
 
     public runTimeError(interp: Interpreter, scope: InstanceScope, error: ErrorType): void;
-    public runTimeError(interp: Interpreter, scope: InstanceScope, error: ErrorType, arg: string): void;
-    public runTimeError(interp: Interpreter, scope: InstanceScope, error: ErrorType, e: Error, arg: string): void;
-    public runTimeError(interp: Interpreter, scope: InstanceScope, error: ErrorType, arg: string, arg2: string): void;
-    public runTimeError(interp: Interpreter, scope: InstanceScope, error: ErrorType, arg: string, arg2: string,
-        arg3: string): void;
+    public runTimeError(interp: Interpreter, scope: InstanceScope, error: ErrorType, arg: unknown): void;
+    public runTimeError(interp: Interpreter, scope: InstanceScope, error: ErrorType, e: Error, arg: unknown): void;
+    public runTimeError(interp: Interpreter, scope: InstanceScope, error: ErrorType, arg: unknown, arg2: unknown): void;
+    public runTimeError(interp: Interpreter, scope: InstanceScope, error: ErrorType, arg: unknown, arg2: unknown,
+        arg3: unknown): void;
     public runTimeError(...args: unknown[]): void {
         switch (args.length) {
             case 3: {
@@ -130,7 +130,7 @@ export class ErrorManager {
                         string];
 
                     this.listener.runTimeError(new STRuntimeMessage(interp, error, scope !== null ? scope.ip : 0, scope,
-                        null, arg, arg2));
+                        undefined, arg, arg2));
                 }
 
                 break;
@@ -141,7 +141,7 @@ export class ErrorManager {
                     args as [Interpreter, InstanceScope, ErrorType, string, string, string];
 
                 this.listener.runTimeError(new STRuntimeMessage(interp, error, scope !== null ? scope.ip : 0, scope,
-                    null, arg, arg2, arg3));
+                    undefined, arg, arg2, arg3));
 
                 break;
             }
@@ -152,23 +152,24 @@ export class ErrorManager {
         }
     }
 
-    public iOError(self: ST, error: ErrorType, e: Error, arg?: string): void {
-        if (!arg) {
+    public iOError(self: ST | undefined, error: ErrorType, e: Error, arg?: unknown): void {
+        if (arg != null) {
             this.listener.iOError(new STMessage(error, self, e));
         } else {
             this.listener.iOError(new STMessage(error, self, e, arg));
         }
     }
 
-    public internalError(self: ST, msg: string, e: Error): void {
+    public internalError(self: ST | undefined, msg: string, e?: Error): void {
         this.listener.internalError(new STMessage(ErrorType.INTERNAL_ERROR, self, e, msg));
     }
 
-    private sourceName(t: Token): string | null {
-        const input = t.inputStream;
-        if (input === null) {
+    private sourceName(t?: Token): string | null {
+        const input = t?.inputStream;
+        if (input == null) {
             return null;
         }
+
         let srcName = input.getSourceName();
         if (srcName !== null) {
             srcName = Misc.getFileName(srcName);

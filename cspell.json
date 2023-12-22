@@ -11,6 +11,7 @@
     ],
     "ignoreWords": [
         "ANTLR",
+        "Aggr",
         "BIGSTRING",
         "CLASSPATH",
         "Compiletime",
@@ -26,13 +27,18 @@
         "RCURLY",
         "RDELIM",
         "RPAREN",
+        "Redef",
         "Subtemplate",
+        "Subtemplates",
         "TOSTR",
         "Xexact",
+        "clazz",
         "instrs",
         "messageformat",
         "mvnrepository",
         "stringtemplate",
+        "structname",
+        "subdir",
         "userid"
     ],
     "import": []

@@ -5,6 +5,8 @@
  * Licensed under the BSD-3 License. See License.txt in the project root for license information.
  */
 
+/* eslint-disable jsdoc/no-undefined-types, jsdoc/require-returns , jsdoc/require-param */
+
 import * as os from "os";
 
 import { STWriter } from "./STWriter.js";
@@ -30,12 +32,14 @@ import { Writer } from "./support/Writer.js";
  * {@code String} to the appropriate constructor.</p>
  */
 export class AutoIndentWriter implements STWriter {
-    /** Stack of indents. Use {@link List} as it's much faster than {@link Stack}. Grows
+    /**
+     * Stack of indents. Use {@link List} as it's much faster than {@link Stack}. Grows
      *  from 0..n-1.
      */
     public indents = new Array<string | null>();
 
-    /** Stack of integer anchors (char positions in line); avoid {@link Integer}
+    /**
+     * Stack of integer anchors (char positions in line); avoid {@link Integer}
      *  creation overhead.
      */
     public anchors: number[] = [];
@@ -66,7 +70,6 @@ export class AutoIndentWriter implements STWriter {
         this.indents.push(null);
         this.newline = newline;
     }
-
 
     public setLineWidth(lineWidth: number): void {
         this.lineWidth = lineWidth;
@@ -102,21 +105,22 @@ export class AutoIndentWriter implements STWriter {
      */
     public write(str: string, wrap?: string): number {
         if (wrap) {
-            let n = this.writeWrap(wrap);
+            const n = this.writeWrap(wrap);
+
             return n + this.write(str);
         }
 
         let n = 0;
-        let nll = this.newline.length;
-        let sl = str.length;
+        const nll = this.newline.length;
+        const sl = str.length;
         for (let i = 0; i < sl; i++) {
-            let c = str.charAt(i);
+            const c = str.charAt(i);
             // found \n or \r\n newline?
-            if (c === '\r') {
+            if (c === "\r") {
                 continue;
             }
 
-            if (c === '\n') {
+            if (c === "\n") {
                 this.atStartOfLine = true;
                 this.charPosition = -nll; // set so the write below sets to 0
                 this.out.write(this.newline);
@@ -137,6 +141,7 @@ export class AutoIndentWriter implements STWriter {
             this.charPosition++;
             this.charIndex++;
         }
+
         return n;
     }
 
@@ -155,11 +160,11 @@ export class AutoIndentWriter implements STWriter {
             // then spit indent or anchor, whichever is larger
             // then spit out B.
             for (let i = 0; i < wrap.length; i++) {
-                let c = wrap.charAt(i);
-                if (c === '\r') {
+                const c = wrap.charAt(i);
+                if (c === "\r") {
                     continue;
                 } else {
-                    if (c === '\n') {
+                    if (c === "\n") {
                         this.out.write(this.newline);
                         n += this.newline.length;
                         this.charPosition = 0;
@@ -173,15 +178,15 @@ export class AutoIndentWriter implements STWriter {
                         this.charIndex++;
                     }
                 }
-
             }
         }
+
         return n;
     }
 
     public indent(): number {
         let n = 0;
-        for (let ind of this.indents) {
+        for (const ind of this.indents) {
             if (ind !== null) {
                 n += ind.length;
                 this.out.write(ind);
@@ -190,11 +195,11 @@ export class AutoIndentWriter implements STWriter {
 
         // If current anchor is beyond current indent width, indent to anchor
         // *after* doing indents (might tabs in there or whatever)
-        let indentWidth = n;
+        const indentWidth = n;
         if (this.anchors_sp >= 0 && this.anchors[this.anchors_sp] > indentWidth) {
-            let remainder = this.anchors[this.anchors_sp] - indentWidth;
+            const remainder = this.anchors[this.anchors_sp] - indentWidth;
             for (let i = 1; i <= remainder; i++) {
-                this.out.write(' ');
+                this.out.write(" ");
             }
 
             n += remainder;
@@ -202,6 +207,7 @@ export class AutoIndentWriter implements STWriter {
 
         this.charPosition += n;
         this.charIndex += n;
+
         return n;
     }
 }

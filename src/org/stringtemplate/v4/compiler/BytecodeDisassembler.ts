@@ -33,14 +33,14 @@ export class BytecodeDisassembler {
                 buf += ", ";
             }
 
-            const opcode = this.code.instrs[ip];
+            const opcode = this.code.instructions[ip];
             const instruction = Bytecode.instructions[opcode];
             if (instruction) {
                 buf += instruction.name;
                 ip++;
                 for (let operand = 0; operand < instruction.operandCount; operand++) {
                     buf += " ";
-                    buf += BytecodeDisassembler.getShort(this.code.instrs, ip);
+                    buf += BytecodeDisassembler.getShort(this.code.instructions, ip);
                     ip += Bytecode.OPERAND_SIZE_IN_BYTES;
                 }
             }
@@ -61,7 +61,7 @@ export class BytecodeDisassembler {
     }
 
     public disassembleInstruction(values: { buf: string, ip: number; }): number {
-        const opcode = this.code.instrs[values.ip];
+        const opcode = this.code.instructions[values.ip];
         if (values.ip >= this.code.codeSize) {
             throw new Error("ip out of range: " + values.ip);
         }
@@ -82,7 +82,7 @@ export class BytecodeDisassembler {
 
         const operands: string[] = [];
         for (let i = 0; i < instruction.operandCount; i++) {
-            const operand = BytecodeDisassembler.getShort(this.code.instrs, values.ip);
+            const operand = BytecodeDisassembler.getShort(this.code.instructions, values.ip);
             values.ip += Bytecode.OPERAND_SIZE_IN_BYTES;
             switch (instruction.type[i]) {
                 case Bytecode.OperandType.STRING: {

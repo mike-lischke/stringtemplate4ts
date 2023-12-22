@@ -20,4 +20,16 @@ export class CommonTree {
     public get token(): Token {
         throw new Error("Method not implemented.");
     }
+
+    public getTokenStartIndex(): number {
+        throw new Error("Method not implemented.");
+    }
+
+    public getTokenStopIndex(): number {
+        throw new Error("Method not implemented.");
+    }
+
+    public setUnknownTokenBoundaries(): void {
+        throw new Error("Method not implemented.");
+    }
 }

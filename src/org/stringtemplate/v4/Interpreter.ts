@@ -6,12 +6,12 @@
  */
 
 /* eslint-disable jsdoc/require-returns, jsdoc/require-param-description, jsdoc/require-param */
+/* eslint-disable jsdoc/no-undefined-types */
 
 import { STWriter } from "./STWriter.js";
 import { STGroup } from "./STGroup.js";
 import { ST } from "./ST.js";
 import { InstanceScope } from "./InstanceScope.js";
-import { AutoIndentWriter } from "./AutoIndentWriter.js";
 import { CompiledST } from "./compiler/CompiledST.js";
 import { BytecodeDisassembler } from "./compiler/BytecodeDisassembler.js";
 import { Bytecode } from "./compiler/Bytecode.js";
@@ -25,6 +25,12 @@ import { Misc } from "./misc/Misc.js";
 import { ErrorType } from "./misc/ErrorType.js";
 
 import { ErrorManager } from "./misc/ErrorManager.js";
+import { GroupParser } from "./compiler/generated/GroupParser.js";
+import { Constructor } from "./reflection/IMember.js";
+import { Compiler } from "./compiler/Compiler.js";
+import { constructorFromUnknown, isIterator } from "./support/helpers.js";
+import { printf } from "fast-printf";
+import { Writer } from "./support/Writer.js";
 
 /**
  * This class knows how to execute template byte codes relative to a particular
@@ -60,7 +66,7 @@ export class Interpreter {
     public debug = false;
 
     /** Operand stack, grows upwards. */
-    protected operands = new Array<Object>(Interpreter.DEFAULT_OPERAND_STACK_SIZE);
+    protected operands = new Array<unknown>(Interpreter.DEFAULT_OPERAND_STACK_SIZE);
 
     /** Stack pointer register. */
     protected sp = -1;
@@ -142,7 +148,7 @@ export class Interpreter {
      * topmost to lowest; here that would be {@code [z y x]}.
      * @param scope
      */
-    public static getEnclosingInstanceStackString(scope: InstanceScope): string {
+    public static getEnclosingInstanceStackString(scope?: InstanceScope): string {
         const templates = Interpreter.getEnclosingInstanceStack(scope, true);
         let buf = "";
         let i = 0;
@@ -158,14 +164,14 @@ export class Interpreter {
         return buf.toString();
     }
 
-    public static getEnclosingInstanceStack(scope: InstanceScope, topDown: boolean): ST[] {
+    public static getEnclosingInstanceStack(scope: InstanceScope | undefined, topDown: boolean): ST[] {
         const stack: ST[] = [];
         let p = scope;
-        while (p !== null) {
+        while (p) {
             if (topDown) {
-                stack.unshift(p.st);
+                stack.unshift(p.st!);
             } else {
-                stack.push(p.st);
+                stack.push(p.st!);
             }
 
             p = p.parent;
@@ -176,8 +182,8 @@ export class Interpreter {
 
     public static getScopeStack(scope: InstanceScope, topDown: boolean): InstanceScope[] {
         const stack: InstanceScope[] = [];
-        let p = scope;
-        while (p !== null) {
+        let p: InstanceScope | undefined = scope;
+        while (p) {
             if (topDown) {
                 stack.unshift(p);
             } else {
@@ -192,8 +198,8 @@ export class Interpreter {
 
     public static getEvalTemplateEventStack(scope: InstanceScope, topDown: boolean): EvalTemplateEvent[] {
         const stack: EvalTemplateEvent[] = [];
-        let p = scope;
-        while (p !== null) {
+        let p: InstanceScope | undefined = scope;
+        while (p) {
             const evalEvent = p.events[p.events.length - 1] as EvalTemplateEvent;
             if (topDown) {
                 stack.unshift(evalEvent);
@@ -211,7 +217,7 @@ export class Interpreter {
         const b1 = memory[index] & 0xFF; // mask off sign-extended bits
         const b2 = memory[index + 1] & 0xFF;
 
-        return b1 << (8 * 1) | b2;
+        return (b1 << 8) | b2;
     }
 
     /**
@@ -221,7 +227,7 @@ export class Interpreter {
      */
     public exec(out: STWriter, scope: InstanceScope): number {
         const self = scope.st;
-        if (Interpreter.trace) {
+        if (Interpreter.trace && self) {
             console.log("exec(" + self.getName() + ")");
         }
 
@@ -245,8 +251,6 @@ export class Interpreter {
      * <p>
      * This method is used for rendering expressions of the form
      * {@code <names:first()>}.</p>
-     * @param scope
-     * @param v
      */
     public first(scope: InstanceScope, v: unknown): unknown {
         if (!v) {
@@ -265,13 +269,11 @@ export class Interpreter {
 
     /**
      * Return the last attribute if multi-valued, or the attribute itself if
-     * single-valued. Unless it's a {@link List} or array, this is pretty slow
+     * single-valued. Unless it's a `List` or array, this is pretty slow
      * as it iterates until the last element.
      * <p>
      * This method is used for rendering expressions of the form
      * {@code <names:last()>}.</p>
-     * @param scope
-     * @param v
      */
     public last(scope: InstanceScope, v: unknown): unknown {
         if (!v) {
@@ -299,17 +301,15 @@ export class Interpreter {
     /**
      * Return everything but the first attribute if multi-valued, or
      * {@code null} if single-valued.
-     * @param scope
-     * @param v
      */
     public rest(scope: InstanceScope, v: unknown): unknown {
         if (!v) {
-            return null;
+            return undefined;
         }
 
         if (Array.isArray(v)) {
             if (v.length <= 1) {
-                return null;
+                return undefined;
             }
 
             return v.slice(1);
@@ -317,14 +317,14 @@ export class Interpreter {
 
         const it = this.convertAnythingIteratableToIterator(scope, v);
         if (!it) {
-            return null;
+            return undefined;
         }
 
         const a = new Array<unknown>();
         const [first] = it;
         if (!first) {
             // if not even one value return null
-            return null;
+            return undefined;
         }
 
         for (const o of it) {
@@ -336,8 +336,6 @@ export class Interpreter {
 
     /**
      * Return all but the last element. <code>trunc(<i>x</i>)==null</code> if <code><i>x</i></code> is single-valued.
-     * @param scope
-     * @param v
      */
     public trunc(scope: InstanceScope, v: unknown): unknown {
         if (!v) {
@@ -348,7 +346,7 @@ export class Interpreter {
         if (!Array.isArray(v)) {
             const it = this.convertAnythingIteratableToIterator(scope, v);
             if (!it) {
-                return null;
+                return undefined;
             }
 
             a = Array.from(it);
@@ -357,7 +355,7 @@ export class Interpreter {
         }
 
         if (a.length <= 1) {
-            return null;
+            return undefined;
         }
 
         return a.slice(0, a.length - 1);
@@ -365,8 +363,6 @@ export class Interpreter {
 
     /**
      * Return a new list without {@code null} values.
-     * @param scope
-     * @param v
      */
     public strip(scope: InstanceScope, v: unknown): unknown {
         if (!v) {
@@ -380,7 +376,9 @@ export class Interpreter {
 
         const a = Array.from(it);
 
-        return a.filter((e) => { return e !== null; });
+        return a.filter((e) => {
+            return e != null;
+        });
     }
 
     /**
@@ -388,12 +386,10 @@ export class Interpreter {
      * <p>
      * Note that {@code null} values are <i>not</i> stripped out; use
      * {@code reverse(strip(v))} to do that.</p>
-     * @param scope
-     * @param v
      */
     public reverse(scope: InstanceScope, v: unknown): unknown {
         if (!v) {
-            return null;
+            return undefined;
         }
 
         if (Array.isArray(v)) {
@@ -414,7 +410,6 @@ export class Interpreter {
      * <p>
      * The implementation treats several common collections and arrays as
      * special cases for speed.</p>
-     * @param v
      */
     public length(v: unknown): number {
         if (!v) {
@@ -442,14 +437,13 @@ export class Interpreter {
     }
 
     public convertAnythingIteratableToIterator(_scope: InstanceScope | null,
-        o: unknown): IterableIterator<unknown> | null {
-        const iter = null;
+        o: unknown): IterableIterator<unknown> | undefined {
         if (!o) {
-            return null;
+            return undefined;
         }
 
         if (typeof o !== "object") {
-            return null;
+            return undefined;
         }
 
         // Is the object itself iterable?
@@ -458,33 +452,33 @@ export class Interpreter {
         }
 
         // Does the object implement the Iterator interface?
-        if ("next" in o && "return" in o) {
+        if (isIterator(o)) {
             // Note: we ignore scope.st.groupThatCreatedThisInstance.iterateAcrossValues here.
             const iterableIterator = {
                 [Symbol.iterator]() {
                     return this;
                 },
                 next: () => {
-                    return (o as Iterator<unknown>).next();
+                    return (o).next();
                 },
             };
 
             return iterableIterator;
         }
 
-        return null;
+        return undefined;
     }
 
-    public convertAnythingToIterator(scope: InstanceScope, o: Object): java.util.Iterator<unknown> {
+    public convertAnythingToIterator(scope: InstanceScope, o: unknown): Iterator<unknown> {
         o = this.convertAnythingIteratableToIterator(scope, o);
-        if (o instanceof java.util.Iterator) {
-            return o as java.util.Iterator<unknown>;
+        if (isIterator(o)) {
+            return o;
         }
 
         const singleton = new ST.AttributeList(1);
-        singleton.add(o);
+        singleton.push(o);
 
-        return singleton.iterator();
+        return singleton[Symbol.iterator]();
     }
 
     /**
@@ -494,38 +488,40 @@ export class Interpreter {
      * <p>
      * Return {@link ST#EMPTY_ATTR} if found definition but no value.</p>
      */
-    public getAttribute(scope: InstanceScope, name: string): Object {
-        let current = scope;
-        while (current !== null) {
+    public getAttribute(scope: InstanceScope, name: string): unknown {
+        let current: InstanceScope | undefined = scope;
+        while (current) {
             const p = current.st;
-            let localArg = null;
-            if (p.impl.formalArguments !== null) {
+            let localArg;
+            if (p?.impl?.formalArguments) {
                 localArg = p.impl.formalArguments.get(name);
             }
 
-            if (localArg !== null) {
-                const o = p.locals[localArg.index];
-
-                return o;
+            if (localArg) {
+                return p?.locals?.[localArg.index];
             }
             current = current.parent; // look up enclosing scope chain
         }
+
         // got to root scope and no definition, try dictionaries in group and up
         const self = scope.st;
-        const g = self.impl.nativeGroup;
-        const o = this.getDictionary(g, name);
-        if (o !== null) {
-            return o;
+        const g = self?.impl?.nativeGroup;
+        if (g) {
+            const o = this.getDictionary(g, name);
+            if (o) {
+                return o;
+            }
         }
 
         // not found, report unknown attr
         throw new STNoSuchAttributeException(name, scope);
     }
 
-    public getDictionary(g: STGroup, name: string): Object {
+    public getDictionary(g: STGroup, name: string): unknown {
         if (g.isDictionary(name)) {
             return g.rawGetDictionary(name);
         }
+
         if (g.imports !== null) {
             for (const sup of g.imports) {
                 const o = this.getDictionary(sup, name);
@@ -536,7 +532,7 @@ export class Interpreter {
             }
         }
 
-        return null;
+        return undefined;
     }
 
     /**
@@ -551,479 +547,519 @@ export class Interpreter {
      */
     public setDefaultArguments(out: STWriter, scope: InstanceScope): void {
         const invokedST = scope.st;
-        if (invokedST.impl.formalArguments === null ||
-            invokedST.impl.numberOfArgsWithDefaultValues === 0) {
+        if (!invokedST?.locals || !invokedST?.impl?.formalArguments
+            || invokedST.impl.numberOfArgsWithDefaultValues === 0) {
             return;
         }
+
         for (const arg of invokedST.impl.formalArguments.values()) {
             // if no value for attribute and default arg, inject default arg into self
             if (invokedST.locals[arg.index] !== ST.EMPTY_ATTR || arg.defaultValueToken === null) {
                 continue;
             }
-            //System.out.println("setting def arg "+arg.name+" to "+arg.defaultValueToken);
-            if (arg.defaultValueToken.getType() === GroupParser.ANONYMOUS_TEMPLATE) {
+
+            if (arg.defaultValueToken?.type === GroupParser.ANONYMOUS_TEMPLATE) {
                 let code = arg.compiledDefaultValue;
-                if (code === null) {
+                if (!code) {
                     code = new CompiledST();
                 }
+
                 const defaultArgST = this.group.createStringTemplateInternally(code);
                 defaultArgST.groupThatCreatedThisInstance = this.group;
+
                 // If default arg is template with single expression
                 // wrapped in parens, x={<(...)>}, then eval to string
                 // rather than setting x to the template for later
                 // eval.
-                const defArgTemplate = arg.defaultValueToken.getText();
-                if (defArgTemplate.startsWith("{" + this.group.delimiterStartChar + "(") &&
+                const defArgTemplate = arg.defaultValueToken.text;
+                if (defArgTemplate?.startsWith("{" + this.group.delimiterStartChar + "(") &&
                     defArgTemplate.endsWith(")" + this.group.delimiterStopChar + "}")) {
 
-                    invokedST.rawSetAttribute(arg.name, this.toString(out, new InstanceScope(scope, invokedST), defaultArgST));
-                }
-                else {
+                    invokedST.rawSetAttribute(arg.name, this.toString(out, new InstanceScope(scope, invokedST),
+                        defaultArgST));
+                } else {
                     invokedST.rawSetAttribute(arg.name, defaultArgST);
                 }
-            }
-            else {
+            } else {
                 invokedST.rawSetAttribute(arg.name, arg.defaultValue);
             }
         }
     }
 
-    public getEvents(): InterpEvent[] { return this.events; }
+    public getEvents(): InterpEvent[] {
+        return this.events;
+    }
 
-    public getExecutionTrace(): string[] { return this.executeTrace; }
+    public getExecutionTrace(): string[] {
+        return this.executeTrace;
+    }
 
-    protected _exec(out: STWriter, scope: InstanceScope): int {
-        const self = scope.st;
+    protected _exec(out: STWriter, scope: InstanceScope): number {
         const start = out.index(); // track char we're about to write
-        let prevOpcode = 0;
+        const self = scope.st;
+        const code = self?.impl?.instructions;        // which code block are we executing
         let n = 0; // how many char we write out
-        let nargs: int;
-        let nameIndex: int;
-        let addr: int;
-        let name: string;
-        let o: Object;
-        let left: Object;
-        let right: Object;
-        let st: ST;
-        let options: Object[];
-        const code = self.impl.instrs;        // which code block are we executing
-        let ip = 0;
-        while (ip < self.impl.codeSize) {
-            if (Interpreter.trace || this.debug) {
-                Interpreter.trace(scope, ip);
-            }
 
-            const opcode = code[ip];
-            //count[opcode]++;
-            scope.ip = ip;
-            ip++; //jump to next instruction or first byte of operand
-            switch (opcode) {
-                case Bytecode.INSTR_LOAD_STR: {
-                    // just testing...
-                    this.load_str(self, ip);
-                    ip += Bytecode.OPERAND_SIZE_IN_BYTES;
-                    break;
+        if (self?.impl && self.locals && code) {
+            let prevOpcode = 0;
+            let argsCount: number;
+            let nameIndex: number;
+            let addr: number;
+            let name: string;
+            let left: unknown;
+            let right: unknown;
+            let st: ST;
+            let options: unknown[];
+            let ip = 0;
+
+            let o: unknown;
+
+            while (ip < self.impl.codeSize) {
+                if (Interpreter.trace || this.debug) {
+                    this.writeTrace(scope, ip);
                 }
 
-                case Bytecode.INSTR_LOAD_ATTR: {
-                    nameIndex = Interpreter.getShort(code, ip);
-                    ip += Bytecode.OPERAND_SIZE_IN_BYTES;
-                    name = self.impl.strings[nameIndex];
-                    try {
-                        o = this.getAttribute(scope, name);
+                const opcode = code[ip];
+
+                scope.ip = ip;
+                ip++; //jump to next instruction or first byte of operand
+                switch (opcode) {
+                    case Bytecode.INSTR_LOAD_STR: {
+                        // just testing...
+                        this.loadStr(self, ip);
+                        ip += Bytecode.OPERAND_SIZE_IN_BYTES;
+
+                        break;
+                    }
+
+                    case Bytecode.INSTR_LOAD_ATTR: {
+                        nameIndex = Interpreter.getShort(code, ip);
+                        ip += Bytecode.OPERAND_SIZE_IN_BYTES;
+                        name = self.impl.strings[nameIndex];
+                        try {
+                            o = this.getAttribute(scope, name);
+                            if (o === ST.EMPTY_ATTR) {
+                                o = undefined;
+                            }
+                        } catch (e) {
+                            if (e instanceof STNoSuchAttributeException) {
+                                this.errMgr.runTimeError(this, scope, ErrorType.NO_SUCH_ATTRIBUTE, name);
+                                o = undefined;
+                            } else {
+                                throw e;
+                            }
+                        }
+
+                        this.operands[++this.sp] = o;
+
+                        break;
+                    }
+
+                    case Bytecode.INSTR_LOAD_LOCAL: {
+                        const valueIndex = Interpreter.getShort(code, ip);
+                        ip += Bytecode.OPERAND_SIZE_IN_BYTES;
+                        o = self.locals[valueIndex];
                         if (o === ST.EMPTY_ATTR) {
                             o = null;
                         }
 
-                    } catch (nsae) {
-                        if (nsae instanceof STNoSuchAttributeException) {
-                            this.errMgr.runTimeError(this, scope, ErrorType.NO_SUCH_ATTRIBUTE, name);
-                            o = null;
-                        } else {
-                            throw nsae;
-                        }
-                    }
-                    this.operands[++this.sp] = o;
-                    break;
-                }
-
-                case Bytecode.INSTR_LOAD_LOCAL: {
-                    const valueIndex = Interpreter.getShort(code, ip);
-                    ip += Bytecode.OPERAND_SIZE_IN_BYTES;
-                    o = self.locals[valueIndex];
-                    if (o === ST.EMPTY_ATTR) {
-                        o = null;
-                    }
-
-                    this.operands[++this.sp] = o;
-                    break;
-                }
-
-                case Bytecode.INSTR_LOAD_PROP: {
-                    nameIndex = Interpreter.getShort(code, ip);
-                    ip += Bytecode.OPERAND_SIZE_IN_BYTES;
-                    o = this.operands[this.sp--];
-                    name = self.impl.strings[nameIndex];
-                    this.operands[++this.sp] = this.getObjectProperty(out, scope, o, name);
-                    break;
-                }
-
-                case Bytecode.INSTR_LOAD_PROP_IND: {
-                    const propName = this.operands[this.sp--];
-                    o = this.operands[this.sp];
-                    this.operands[this.sp] = this.getObjectProperty(out, scope, o, propName);
-                    break;
-                }
-
-                case Bytecode.INSTR_NEW: {
-                    nameIndex = Interpreter.getShort(code, ip);
-                    ip += Bytecode.OPERAND_SIZE_IN_BYTES;
-                    name = self.impl.strings[nameIndex];
-                    nargs = Interpreter.getShort(code, ip);
-                    ip += Bytecode.OPERAND_SIZE_IN_BYTES;
-                    // look up in original hierarchy not enclosing template (variable group)
-                    // see TestSubtemplates.testEvalSTFromAnotherGroup()
-                    st = self.groupThatCreatedThisInstance.getEmbeddedInstanceOf(this, scope, name);
-                    // get n args and store into st's attr list
-                    this.storeArgs(scope, nargs, st);
-                    this.sp -= nargs;
-                    this.operands[++this.sp] = st;
-                    break;
-                }
-
-                case Bytecode.INSTR_NEW_IND: {
-                    nargs = Interpreter.getShort(code, ip);
-                    ip += Bytecode.OPERAND_SIZE_IN_BYTES;
-                    name = String(this.operands[this.sp - nargs]);
-                    st = self.groupThatCreatedThisInstance.getEmbeddedInstanceOf(this, scope, name);
-                    this.storeArgs(scope, nargs, st);
-                    this.sp -= nargs;
-                    this.sp--; // pop template name
-                    this.operands[++this.sp] = st;
-                    break;
-                }
-
-                case Bytecode.INSTR_NEW_BOX_ARGS: {
-                    nameIndex = Interpreter.getShort(code, ip);
-                    ip += Bytecode.OPERAND_SIZE_IN_BYTES;
-                    name = self.impl.strings[nameIndex];
-                    const attrs = this.operands[this.sp--] as Map<string, Object>;
-                    // look up in original hierarchy not enclosing template (variable group)
-                    // see TestSubtemplates.testEvalSTFromAnotherGroup()
-                    st = self.groupThatCreatedThisInstance.getEmbeddedInstanceOf(this, scope, name);
-                    // get n args and store into st's attr list
-                    this.storeArgs(scope, attrs, st);
-                    this.operands[++this.sp] = st;
-                    break;
-                }
-
-                case Bytecode.INSTR_SUPER_NEW: {
-                    nameIndex = Interpreter.getShort(code, ip);
-                    ip += Bytecode.OPERAND_SIZE_IN_BYTES;
-                    name = self.impl.strings[nameIndex];
-                    nargs = Interpreter.getShort(code, ip);
-                    ip += Bytecode.OPERAND_SIZE_IN_BYTES;
-                    this.super_new(scope, name, nargs);
-                    break;
-                }
-
-                case Bytecode.INSTR_SUPER_NEW_BOX_ARGS: {
-                    nameIndex = Interpreter.getShort(code, ip);
-                    ip += Bytecode.OPERAND_SIZE_IN_BYTES;
-                    name = self.impl.strings[nameIndex];
-                    attrs = this.operands[this.sp--] as Map<string, Object>;
-                    this.super_new(scope, name, attrs);
-                    break;
-                }
-
-                case Bytecode.INSTR_STORE_OPTION: {
-                    const optionIndex = Interpreter.getShort(code, ip);
-                    ip += Bytecode.OPERAND_SIZE_IN_BYTES;
-                    o = this.operands[this.sp--];    // value to store
-                    options = this.operands[this.sp] as Object[]; // get options
-                    options[optionIndex] = o; // store value into options on stack
-                    break;
-                }
-
-                case Bytecode.INSTR_STORE_ARG: {
-                    nameIndex = Interpreter.getShort(code, ip);
-                    name = self.impl.strings[nameIndex];
-                    ip += Bytecode.OPERAND_SIZE_IN_BYTES;
-                    o = this.operands[this.sp--];
-                    attrs = this.operands[this.sp] as Map<string, Object>;
-                    attrs.put(name, o); // leave attrs on stack
-                    break;
-                }
-
-                case Bytecode.INSTR_WRITE: {
-                    o = this.operands[this.sp--];
-                    const n1 = this.writeObjectNoOptions(out, scope, o);
-                    n += n1;
-                    this.charsWrittenOnLine += n1;
-                    break;
-                }
-
-                case Bytecode.INSTR_WRITE_OPT: {
-                    options = this.operands[this.sp--] as Object[]; // get options
-                    o = this.operands[this.sp--];                 // get option to write
-                    const n2 = this.writeObjectWithOptions(out, scope, o, options);
-                    n += n2;
-                    this.charsWrittenOnLine += n2;
-                    break;
-                }
-
-                case Bytecode.INSTR_MAP: {
-                    st = this.operands[this.sp--] as ST; // get prototype off stack
-                    o = this.operands[this.sp--];      // get object to map prototype across
-                    this.map(scope, o, st);
-                    break;
-                }
-
-                case Bytecode.INSTR_ROT_MAP: {
-                    const nmaps = Interpreter.getShort(code, ip);
-                    ip += Bytecode.OPERAND_SIZE_IN_BYTES;
-                    const templates = new Array<ST>();
-                    for (let i = nmaps - 1; i >= 0; i--) {
-                        templates.add(this.operands[this.sp - i] as ST);
-                    }
-
-                    this.sp -= nmaps;
-                    o = this.operands[this.sp--];
-                    if (o !== null) {
-                        this.rot_map(scope, o, templates);
-                    }
-
-                    break;
-                }
-
-                case Bytecode.INSTR_ZIP_MAP: {
-                    st = this.operands[this.sp--] as ST;
-                    nmaps = Interpreter.getShort(code, ip);
-                    ip += Bytecode.OPERAND_SIZE_IN_BYTES;
-                    const exprs = new Array<Object>();
-                    for (let i = nmaps - 1; i >= 0; i--) {
-                        exprs.add(this.operands[this.sp - i]);
-                    }
-
-                    this.sp -= nmaps;
-                    this.operands[++this.sp] = this.zip_map(scope, exprs, st);
-                    break;
-                }
-
-                case Bytecode.INSTR_BR: {
-                    ip = Interpreter.getShort(code, ip);
-                    break;
-                }
-
-                case Bytecode.INSTR_BRF: {
-                    addr = Interpreter.getShort(code, ip);
-                    ip += Bytecode.OPERAND_SIZE_IN_BYTES;
-                    o = this.operands[this.sp--]; // <if(expr)>...<endif>
-                    if (!this.testAttributeTrue(o)) {
-                        ip = addr;
-                    }
-                    // jump
-                    break;
-                }
-
-                case Bytecode.INSTR_OPTIONS: {
-                    this.operands[++this.sp] = new Array<Object>(java.lang.Compiler.NUM_OPTIONS);
-                    break;
-                }
-
-                case Bytecode.INSTR_ARGS: {
-                    this.operands[++this.sp] = new Map<string, Object>();
-                    break;
-                }
-
-                case Bytecode.INSTR_PASSTHRU: {
-                    nameIndex = Interpreter.getShort(code, ip);
-                    ip += Bytecode.OPERAND_SIZE_IN_BYTES;
-                    name = self.impl.strings[nameIndex];
-                    attrs = this.operands[this.sp] as Map<string, Object>;
-                    this.passthru(scope, name, attrs);
-                    break;
-                }
-
-                case Bytecode.INSTR_LIST: {
-                    this.operands[++this.sp] = new Array<Object>();
-                    break;
-                }
-
-                case Bytecode.INSTR_ADD: {
-                    o = this.operands[this.sp--];             // pop value
-                    const list = this.operands[this.sp] as Object[]; // don't pop list
-                    this.addToList(scope, list, o);
-                    break;
-                }
-
-                case Bytecode.INSTR_TOSTR: {
-                    // replace with string value; early eval
-                    this.operands[this.sp] = this.toString(out, scope, this.operands[this.sp]);
-                    break;
-                }
-
-                case Bytecode.INSTR_FIRST: {
-                    this.operands[this.sp] = this.first(scope, this.operands[this.sp]);
-                    break;
-                }
-
-                case Bytecode.INSTR_LAST: {
-                    this.operands[this.sp] = this.last(scope, this.operands[this.sp]);
-                    break;
-                }
-
-                case Bytecode.INSTR_REST: {
-                    this.operands[this.sp] = this.rest(scope, this.operands[this.sp]);
-                    break;
-                }
-
-                case Bytecode.INSTR_TRUNC: {
-                    this.operands[this.sp] = this.trunc(scope, this.operands[this.sp]);
-                    break;
-                }
-
-                case Bytecode.INSTR_STRIP: {
-                    this.operands[this.sp] = this.strip(scope, this.operands[this.sp]);
-                    break;
-                }
-
-                case Bytecode.INSTR_TRIM: {
-                    o = this.operands[this.sp--];
-                    if (o.getClass() === string.class) {
-                        this.operands[++this.sp] = (String(o)).trim();
-                    }
-                    else {
-                        this.errMgr.runTimeError(this, scope, ErrorType.EXPECTING_STRING, "trim", o.getClass().getName());
                         this.operands[++this.sp] = o;
+
+                        break;
                     }
-                    break;
-                }
 
-                case Bytecode.INSTR_LENGTH: {
-                    this.operands[this.sp] = this.length(this.operands[this.sp]);
-                    break;
-                }
+                    case Bytecode.INSTR_LOAD_PROP: {
+                        nameIndex = Interpreter.getShort(code, ip);
+                        ip += Bytecode.OPERAND_SIZE_IN_BYTES;
+                        o = this.operands[this.sp--];
+                        name = self.impl.strings[nameIndex];
+                        this.operands[++this.sp] = this.getObjectProperty(out, scope, o, name);
 
-                case Bytecode.INSTR_STRLEN: {
-                    o = this.operands[this.sp--];
-                    if (o.getClass() === string.class) {
-                        this.operands[++this.sp] = (String(o)).length();
+                        break;
                     }
-                    else {
-                        this.errMgr.runTimeError(this, scope, ErrorType.EXPECTING_STRING, "strlen", o.getClass().getName());
-                        this.operands[++this.sp] = 0;
+
+                    case Bytecode.INSTR_LOAD_PROP_IND: {
+                        const propName = this.operands[this.sp--];
+                        o = this.operands[this.sp];
+                        this.operands[this.sp] = this.getObjectProperty(out, scope, o, propName);
+
+                        break;
                     }
-                    break;
-                }
 
-                case Bytecode.INSTR_REVERSE: {
-                    this.operands[this.sp] = this.reverse(scope, this.operands[this.sp]);
-                    break;
-                }
+                    case Bytecode.INSTR_NEW: {
+                        nameIndex = Interpreter.getShort(code, ip);
+                        ip += Bytecode.OPERAND_SIZE_IN_BYTES;
+                        name = self.impl.strings[nameIndex];
+                        argsCount = Interpreter.getShort(code, ip);
+                        ip += Bytecode.OPERAND_SIZE_IN_BYTES;
 
-                case Bytecode.INSTR_NOT: {
-                    this.operands[this.sp] = !this.testAttributeTrue(this.operands[this.sp]);
-                    break;
-                }
+                        // look up in original hierarchy not enclosing template (variable group)
+                        // see TestSubtemplates.testEvalSTFromAnotherGroup()
+                        st = self.groupThatCreatedThisInstance.getEmbeddedInstanceOf(this, scope, name);
 
-                case Bytecode.INSTR_OR: {
-                    right = this.operands[this.sp--];
-                    left = this.operands[this.sp--];
-                    this.operands[++this.sp] = this.testAttributeTrue(left) || this.testAttributeTrue(right);
-                    break;
-                }
+                        // get n args and store into st's attr list
+                        this.storeArgs(scope, argsCount, st);
+                        this.sp -= argsCount;
+                        this.operands[++this.sp] = st;
 
-                case Bytecode.INSTR_AND: {
-                    right = this.operands[this.sp--];
-                    left = this.operands[this.sp--];
-                    this.operands[++this.sp] = this.testAttributeTrue(left) && this.testAttributeTrue(right);
-                    break;
-                }
+                        break;
+                    }
 
-                case Bytecode.INSTR_INDENT: {
-                    const strIndex = Interpreter.getShort(code, ip);
-                    ip += Bytecode.OPERAND_SIZE_IN_BYTES;
-                    this.indent(out, scope, strIndex);
-                    break;
-                }
+                    case Bytecode.INSTR_NEW_IND: {
+                        argsCount = Interpreter.getShort(code, ip);
+                        ip += Bytecode.OPERAND_SIZE_IN_BYTES;
+                        name = String(this.operands[this.sp - argsCount]);
+                        st = self.groupThatCreatedThisInstance.getEmbeddedInstanceOf(this, scope, name);
+                        this.storeArgs(scope, argsCount, st);
+                        this.sp -= argsCount;
+                        this.sp--; // pop template name
+                        this.operands[++this.sp] = st;
 
-                case Bytecode.INSTR_DEDENT: {
-                    out.popIndentation();
-                    break;
-                }
+                        break;
+                    }
 
-                case Bytecode.INSTR_NEWLINE: {
-                    try {
-                        if ((prevOpcode === 0 && !self.isAnonSubtemplate() && !self.impl.isRegion) ||
-                            prevOpcode === Bytecode.INSTR_NEWLINE ||
-                            prevOpcode === Bytecode.INSTR_INDENT ||
-                            this.charsWrittenOnLine > 0) {
-                            out.write(Misc.newline);
+                    case Bytecode.INSTR_NEW_BOX_ARGS: {
+                        nameIndex = Interpreter.getShort(code, ip);
+                        ip += Bytecode.OPERAND_SIZE_IN_BYTES;
+                        name = self.impl.strings[nameIndex];
+                        const attrs = this.operands[this.sp--] as Map<string, Object>;
+
+                        // look up in original hierarchy not enclosing template (variable group)
+                        // see TestSubtemplates.testEvalSTFromAnotherGroup()
+                        st = self.groupThatCreatedThisInstance.getEmbeddedInstanceOf(this, scope, name);
+
+                        // get n args and store into st's attr list
+                        this.storeArgs(scope, attrs, st);
+                        this.operands[++this.sp] = st;
+
+                        break;
+                    }
+
+                    case Bytecode.INSTR_SUPER_NEW: {
+                        nameIndex = Interpreter.getShort(code, ip);
+                        ip += Bytecode.OPERAND_SIZE_IN_BYTES;
+                        name = self.impl.strings[nameIndex];
+                        argsCount = Interpreter.getShort(code, ip);
+                        ip += Bytecode.OPERAND_SIZE_IN_BYTES;
+                        this.superNew(scope, name, argsCount);
+
+                        break;
+                    }
+
+                    case Bytecode.INSTR_SUPER_NEW_BOX_ARGS: {
+                        nameIndex = Interpreter.getShort(code, ip);
+                        ip += Bytecode.OPERAND_SIZE_IN_BYTES;
+                        name = self.impl.strings[nameIndex];
+                        const attrs = this.operands[this.sp--] as Map<string, Object>;
+                        this.superNew(scope, name, attrs);
+
+                        break;
+                    }
+
+                    case Bytecode.INSTR_STORE_OPTION: {
+                        const optionIndex = Interpreter.getShort(code, ip);
+                        ip += Bytecode.OPERAND_SIZE_IN_BYTES;
+                        o = this.operands[this.sp--];    // value to store
+                        options = this.operands[this.sp] as Object[]; // get options
+                        options[optionIndex] = o; // store value into options on stack
+
+                        break;
+                    }
+
+                    case Bytecode.INSTR_STORE_ARG: {
+                        nameIndex = Interpreter.getShort(code, ip);
+                        name = self.impl.strings[nameIndex];
+                        ip += Bytecode.OPERAND_SIZE_IN_BYTES;
+                        o = this.operands[this.sp--];
+                        const attrs = this.operands[this.sp] as Map<string, unknown>;
+                        attrs.set(name, o); // leave attrs on stack
+
+                        break;
+                    }
+
+                    case Bytecode.INSTR_WRITE: {
+                        o = this.operands[this.sp--];
+                        const n1 = this.writeObjectNoOptions(out, scope, o);
+                        n += n1;
+                        this.charsWrittenOnLine += n1;
+
+                        break;
+                    }
+
+                    case Bytecode.INSTR_WRITE_OPT: {
+                        options = this.operands[this.sp--] as Object[]; // get options
+                        o = this.operands[this.sp--];                 // get option to write
+                        const n2 = this.writeObjectWithOptions(out, scope, o, options);
+                        n += n2;
+                        this.charsWrittenOnLine += n2;
+
+                        break;
+                    }
+
+                    case Bytecode.INSTR_MAP: {
+                        st = this.operands[this.sp--] as ST; // get prototype off stack
+                        o = this.operands[this.sp--];      // get object to map prototype across
+                        this.map(scope, o, st);
+
+                        break;
+                    }
+
+                    case Bytecode.INSTR_ROT_MAP: {
+                        const mapCount = Interpreter.getShort(code, ip);
+                        ip += Bytecode.OPERAND_SIZE_IN_BYTES;
+                        const templates = new Array<ST>();
+                        for (let i = mapCount - 1; i >= 0; i--) {
+                            templates.push(this.operands[this.sp - i] as ST);
                         }
-                        this.charsWrittenOnLine = 0;
-                    } catch (ioe) {
-                        if (ioe instanceof java.io.IOException) {
-                            this.errMgr.IOError(self, ErrorType.WRITE_IO_ERROR, ioe);
+
+                        this.sp -= mapCount;
+                        o = this.operands[this.sp--];
+                        if (o !== null) {
+                            this.rotMap(scope, o, templates);
+                        }
+
+                        break;
+                    }
+
+                    case Bytecode.INSTR_ZIP_MAP: {
+                        st = this.operands[this.sp--] as ST;
+                        const mapCount = Interpreter.getShort(code, ip);
+                        ip += Bytecode.OPERAND_SIZE_IN_BYTES;
+                        const exprs = new Array<unknown>();
+                        for (let i = mapCount - 1; i >= 0; i--) {
+                            exprs.push(this.operands[this.sp - i]);
+                        }
+
+                        this.sp -= mapCount;
+                        this.operands[++this.sp] = this.zipMap(scope, exprs, st);
+
+                        break;
+                    }
+
+                    case Bytecode.INSTR_BR: {
+                        ip = Interpreter.getShort(code, ip);
+
+                        break;
+                    }
+
+                    case Bytecode.INSTR_BRF: {
+                        addr = Interpreter.getShort(code, ip);
+                        ip += Bytecode.OPERAND_SIZE_IN_BYTES;
+                        o = this.operands[this.sp--]; // <if(expr)>...<endif>
+                        if (!this.testAttributeTrue(o)) {
+                            ip = addr;
+                        }
+
+                        break;
+                    }
+
+                    case Bytecode.INSTR_OPTIONS: {
+                        this.operands[++this.sp] = new Array<unknown>(Compiler.NUM_OPTIONS);
+
+                        break;
+                    }
+
+                    case Bytecode.INSTR_ARGS: {
+                        this.operands[++this.sp] = new Map<string, unknown>();
+
+                        break;
+                    }
+
+                    case Bytecode.INSTR_PASSTHRU: {
+                        nameIndex = Interpreter.getShort(code, ip);
+                        ip += Bytecode.OPERAND_SIZE_IN_BYTES;
+                        name = self.impl.strings[nameIndex];
+                        const attrs = this.operands[this.sp] as Map<string, unknown>;
+                        this.passthru(scope, name, attrs);
+
+                        break;
+                    }
+
+                    case Bytecode.INSTR_LIST: {
+                        this.operands[++this.sp] = new Array<Object>();
+
+                        break;
+                    }
+
+                    case Bytecode.INSTR_ADD: {
+                        o = this.operands[this.sp--];             // pop value
+                        const list = this.operands[this.sp] as unknown[]; // don't pop list
+                        this.addToList(scope, list, o);
+
+                        break;
+                    }
+
+                    case Bytecode.INSTR_TOSTR: {
+                        // replace with string value; early eval
+                        this.operands[this.sp] = this.toString(out, scope, this.operands[this.sp]);
+
+                        break;
+                    }
+
+                    case Bytecode.INSTR_FIRST: {
+                        this.operands[this.sp] = this.first(scope, this.operands[this.sp]);
+
+                        break;
+                    }
+
+                    case Bytecode.INSTR_LAST: {
+                        this.operands[this.sp] = this.last(scope, this.operands[this.sp]);
+
+                        break;
+                    }
+
+                    case Bytecode.INSTR_REST: {
+                        this.operands[this.sp] = this.rest(scope, this.operands[this.sp]);
+
+                        break;
+                    }
+
+                    case Bytecode.INSTR_TRUNC: {
+                        this.operands[this.sp] = this.trunc(scope, this.operands[this.sp]);
+
+                        break;
+                    }
+
+                    case Bytecode.INSTR_STRIP: {
+                        this.operands[this.sp] = this.strip(scope, this.operands[this.sp]);
+
+                        break;
+                    }
+
+                    case Bytecode.INSTR_TRIM: {
+                        o = this.operands[this.sp--];
+                        if (typeof o === "string") {
+                            this.operands[++this.sp] = o.trim();
                         } else {
-                            throw ioe;
+                            this.errMgr.runTimeError(this, scope, ErrorType.EXPECTING_STRING, "trim", String(o));
+                            this.operands[++this.sp] = o;
                         }
+
+                        break;
                     }
-                    break;
-                }
 
-                case Bytecode.INSTR_NOOP: {
-                    break;
-                }
+                    case Bytecode.INSTR_LENGTH: {
+                        this.operands[this.sp] = this.length(this.operands[this.sp]);
 
-                case Bytecode.INSTR_POP: {
-                    this.sp--; // throw away top of stack
-                    break;
-                }
+                        break;
+                    }
 
-                case Bytecode.INSTR_NULL: {
-                    this.operands[++this.sp] = null;
-                    break;
-                }
+                    case Bytecode.INSTR_STRLEN: {
+                        o = this.operands[this.sp--];
+                        if (typeof o === "string") {
+                            this.operands[++this.sp] = o.length;
+                        } else {
+                            this.errMgr.runTimeError(this, scope, ErrorType.EXPECTING_STRING, "strlen", String(o));
+                            this.operands[++this.sp] = 0;
+                        }
 
-                case Bytecode.INSTR_TRUE: {
-                    this.operands[++this.sp] = true;
-                    break;
-                }
+                        break;
+                    }
 
-                case Bytecode.INSTR_FALSE: {
-                    this.operands[++this.sp] = false;
-                    break;
-                }
+                    case Bytecode.INSTR_REVERSE: {
+                        this.operands[this.sp] = this.reverse(scope, this.operands[this.sp]);
 
-                case Bytecode.INSTR_WRITE_STR: {
-                    strIndex = Interpreter.getShort(code, ip);
-                    ip += Bytecode.OPERAND_SIZE_IN_BYTES;
-                    o = self.impl.strings[strIndex];
-                    n1 = this.writeObjectNoOptions(out, scope, o);
-                    n += n1;
-                    this.charsWrittenOnLine += n1;
-                    break;
-                }
+                        break;
+                    }
 
-                // TODO: generate this optimization
-                //              case Bytecode.INSTR_WRITE_LOCAL:
-                //                  valueIndex = getShort(code, ip);
-                //                  ip += Bytecode.OPND_SIZE_IN_BYTES;
-                //                  o = self.locals[valueIndex];
-                //                  if ( o==ST.EMPTY_ATTR ) o = null;
-                //                  n1 = writeObjectNoOptions(out, self, o);
-                //                  n += n1;
-                //                  nwline += n1;
-                //                  break;
-                default: {
-                    this.errMgr.internalError(self, "invalid bytecode @ " + (ip - 1) + ": " + opcode, null);
-                    self.impl.dump();
-                }
+                    case Bytecode.INSTR_NOT: {
+                        this.operands[this.sp] = !this.testAttributeTrue(this.operands[this.sp]);
 
+                        break;
+                    }
+
+                    case Bytecode.INSTR_OR: {
+                        right = this.operands[this.sp--];
+                        left = this.operands[this.sp--];
+                        this.operands[++this.sp] = this.testAttributeTrue(left) || this.testAttributeTrue(right);
+
+                        break;
+                    }
+
+                    case Bytecode.INSTR_AND: {
+                        right = this.operands[this.sp--];
+                        left = this.operands[this.sp--];
+                        this.operands[++this.sp] = this.testAttributeTrue(left) && this.testAttributeTrue(right);
+
+                        break;
+                    }
+
+                    case Bytecode.INSTR_INDENT: {
+                        const strIndex = Interpreter.getShort(code, ip);
+                        ip += Bytecode.OPERAND_SIZE_IN_BYTES;
+                        this.indent(out, scope, strIndex);
+
+                        break;
+                    }
+
+                    case Bytecode.INSTR_DEDENT: {
+                        out.popIndentation();
+                        break;
+                    }
+
+                    case Bytecode.INSTR_NEWLINE: {
+                        try {
+                            if ((prevOpcode === 0 && !self.isAnonSubtemplate() && !self.impl.isRegion) ||
+                                prevOpcode === Bytecode.INSTR_NEWLINE ||
+                                prevOpcode === Bytecode.INSTR_INDENT ||
+                                this.charsWrittenOnLine > 0) {
+                                out.write(Misc.newLine);
+                            }
+                            this.charsWrittenOnLine = 0;
+                        } catch (ioe) {
+                            if (ioe instanceof Error) {
+                                this.errMgr.iOError(self, ErrorType.WRITE_IO_ERROR, ioe);
+                            } else {
+                                throw ioe;
+                            }
+                        }
+                        break;
+                    }
+
+                    case Bytecode.INSTR_NOOP: {
+                        break;
+                    }
+
+                    case Bytecode.INSTR_POP: {
+                        this.sp--; // throw away top of stack
+                        break;
+                    }
+
+                    case Bytecode.INSTR_NULL: {
+                        this.operands[++this.sp] = null;
+                        break;
+                    }
+
+                    case Bytecode.INSTR_TRUE: {
+                        this.operands[++this.sp] = true;
+                        break;
+                    }
+
+                    case Bytecode.INSTR_FALSE: {
+                        this.operands[++this.sp] = false;
+                        break;
+                    }
+
+                    case Bytecode.INSTR_WRITE_STR: {
+                        const strIndex = Interpreter.getShort(code, ip);
+                        ip += Bytecode.OPERAND_SIZE_IN_BYTES;
+                        o = self.impl.strings[strIndex];
+                        const n1 = this.writeObjectNoOptions(out, scope, o);
+                        n += n1;
+                        this.charsWrittenOnLine += n1;
+                        break;
+                    }
+
+                    default: {
+                        this.errMgr.internalError(self, "invalid bytecode @ " + (ip - 1) + ": " + opcode);
+                        self.impl.dump();
+                    }
+
+                }
+                prevOpcode = opcode;
             }
-            prevOpcode = opcode;
         }
+
         if (this.debug) {
             const stop = out.index() - 1;
             const e = new EvalTemplateEvent(scope, start, stop);
@@ -1033,260 +1069,209 @@ export class Interpreter {
         return n;
     }
 
-    protected load_str(self: ST, ip: int): void {
-        const strIndex = Interpreter.getShort(self.impl.instrs, ip);
+    protected loadStr(self: ST, ip: number): void {
+        const strIndex = Interpreter.getShort(self.impl!.instructions, ip);
         ip += Bytecode.OPERAND_SIZE_IN_BYTES;
-        this.operands[++this.sp] = self.impl.strings[strIndex];
+        this.operands[++this.sp] = self.impl!.strings[strIndex];
     };
 
-    // TODO: refactor to remove dup'd code
-    protected super_new(scope: InstanceScope, name: string, nargs: int): void;
-
-    protected super_new(scope: InstanceScope, name: string, attrs: Map<string, Object>): void;
-    protected super_new(...args: unknown[]): void {
-        switch (args.length) {
-            case 3: {
-                const [scope, name, nargs] = args as [InstanceScope, string, int];
-
-                const self = scope.st;
-                let st = null;
-                const imported = self.impl.nativeGroup.lookupImportedTemplate(name);
-                if (imported === null) {
-                    this.errMgr.runTimeError(this, scope, ErrorType.NO_IMPORTED_TEMPLATE,
-                        name);
-                    st = self.groupThatCreatedThisInstance.createStringTemplateInternally(new CompiledST());
-                }
-                else {
-                    st = imported.nativeGroup.getEmbeddedInstanceOf(this, scope, name);
-                    st.groupThatCreatedThisInstance = this.group;
-                }
-                // get n args and store into st's attr list
-                this.storeArgs(scope, nargs, st);
-                this.sp -= nargs;
-                this.operands[++this.sp] = st;
-
-                break;
+    protected superNew(scope: InstanceScope, name: string, argCountOrAttributes: number | Map<string, unknown>): void {
+        if (typeof argCountOrAttributes === "number") {
+            const self = scope.st;
+            let st;
+            const imported = self?.impl?.nativeGroup.lookupImportedTemplate(name);
+            if (!imported) {
+                this.errMgr.runTimeError(this, scope, ErrorType.NO_IMPORTED_TEMPLATE, name);
+                st = self?.groupThatCreatedThisInstance.createStringTemplateInternally(new CompiledST());
+            } else {
+                st = imported.nativeGroup.getEmbeddedInstanceOf(this, scope, name);
+                st.groupThatCreatedThisInstance = this.group;
             }
 
-            case 3: {
-                const [scope, name, attrs] = args as [InstanceScope, string, Map<string, Object>];
-
-                const self = scope.st;
-                let st = null;
-                const imported = self.impl.nativeGroup.lookupImportedTemplate(name);
-                if (imported === null) {
-                    this.errMgr.runTimeError(this, scope, ErrorType.NO_IMPORTED_TEMPLATE,
-                        name);
-                    st = self.groupThatCreatedThisInstance.createStringTemplateInternally(new CompiledST());
-                }
-                else {
-                    st = imported.nativeGroup.createStringTemplateInternally(imported);
-                    st.groupThatCreatedThisInstance = this.group;
-                }
-
-                // get n args and store into st's attr list
-                this.storeArgs(scope, attrs, st);
-                this.operands[++this.sp] = st;
-
-                break;
+            // get n args and store into st's attr list
+            this.storeArgs(scope, argCountOrAttributes, st);
+            this.sp -= argCountOrAttributes;
+            this.operands[++this.sp] = st;
+        } else {
+            const self = scope.st;
+            let st;
+            const imported = self?.impl?.nativeGroup.lookupImportedTemplate(name);
+            if (!imported) {
+                this.errMgr.runTimeError(this, scope, ErrorType.NO_IMPORTED_TEMPLATE, name);
+                st = self?.groupThatCreatedThisInstance.createStringTemplateInternally(new CompiledST());
+            } else {
+                st = imported.nativeGroup.createStringTemplateInternally(imported);
+                st.groupThatCreatedThisInstance = this.group;
             }
 
-            default: {
-                throw new java.lang.IllegalArgumentException(S`Invalid number of arguments`);
-            }
+            // get n args and store into st's attr list
+            this.storeArgs(scope, argCountOrAttributes, st);
+            this.operands[++this.sp] = st;
         }
     }
 
-    protected passthru(scope: InstanceScope, templateName: string, attrs: Map<string, Object>): void {
+    protected passthru(scope: InstanceScope, templateName: string, attrs: Map<string, unknown>): void {
         const c = this.group.lookupTemplate(templateName);
-        if (c === null) {
+        if (!c) {
             return;
         }
+
         // will get error later
-        if (c.formalArguments === null) {
+        if (!c.formalArguments) {
             return;
         }
 
         for (const arg of c.formalArguments.values()) {
             // if not already set by user, set to value from outer scope
-            if (!attrs.containsKey(arg.name)) {
-                //System.out.println("arg "+arg.name+" missing");
+            if (!attrs.has(arg.name)) {
                 try {
                     const o = this.getAttribute(scope, arg.name);
+
                     // If the attribute exists but there is no value and
                     // the formal argument has no default value, make it null.
-                    if (o === ST.EMPTY_ATTR && arg.defaultValueToken === null) {
-                        attrs.put(arg.name, null);
-                    }
-                    // Else, the attribute has an existing value, set arg.
-                    else {
+                    if (o === ST.EMPTY_ATTR && !arg.defaultValueToken) {
+                        attrs.set(arg.name, undefined);
+                    } else {
+                        // Else, the attribute has an existing value, set arg.
                         if (o !== ST.EMPTY_ATTR) {
-                            attrs.put(arg.name, o);
+                            attrs.set(arg.name, o);
                         }
                     }
-
-                } catch (nsae) {
-                    if (nsae instanceof STNoSuchAttributeException) {
+                } catch (e) {
+                    if (e instanceof STNoSuchAttributeException) {
                         // if no such attribute exists for arg.name, set parameter
                         // if no default value
-                        if (arg.defaultValueToken === null) {
+                        if (!arg.defaultValueToken) {
                             this.errMgr.runTimeError(this, scope, ErrorType.NO_SUCH_ATTRIBUTE_PASS_THROUGH, arg.name);
-                            attrs.put(arg.name, null);
+                            attrs.set(arg.name, undefined);
                         }
                     } else {
-                        throw nsae;
+                        throw e;
                     }
                 }
             }
         }
     }
 
-    protected storeArgs(scope: InstanceScope, attrs: Map<string, Object>, st: ST): void;
-
-    protected storeArgs(scope: InstanceScope, nargs: int, st: ST): void;
+    protected storeArgs(scope: InstanceScope, attrs: Map<string, unknown>, st?: ST): void;
+    protected storeArgs(scope: InstanceScope, argCount: number, st?: ST): void;
     protected storeArgs(...args: unknown[]): void {
-        switch (args.length) {
-            case 3: {
-                const [scope, attrs, st] = args as [InstanceScope, Map<string, Object>, ST];
+        if (args[1] instanceof Map) {
+            const [scope, attrs, st] = args as [InstanceScope, Map<string, unknown>, ST | undefined];
 
-                let noSuchAttributeReported = false;
-                if (attrs !== null) {
-                    for (const argument of attrs.entrySet()) {
-                        if (!st.impl.hasFormalArgs) {
-                            if (st.impl.formalArguments === null || !st.impl.formalArguments.containsKey(argument.getKey())) {
-                                try {
-                                    // we clone the CompiledST to prevent modifying the original
-                                    // formalArguments map during interpretation.
-                                    st.impl = st.impl.clone();
-                                    st.add(argument.getKey(), argument.getValue());
-                                } catch (ex) {
-                                    if (ex instanceof java.lang.CloneNotSupportedException) {
-                                        noSuchAttributeReported = true;
-                                        this.errMgr.runTimeError(this, scope,
-                                            ErrorType.NO_SUCH_ATTRIBUTE,
-                                            argument.getKey());
-                                    } else {
-                                        throw ex;
-                                    }
+            let noSuchAttributeReported = false;
+            if (attrs && st) {
+                for (const [key, value] of attrs.entries()) {
+                    if (!st.impl?.hasFormalArgs) {
+                        if (!st.impl?.formalArguments || !st.impl?.formalArguments.has(key)) {
+                            try {
+                                // we clone the CompiledST to prevent modifying the original
+                                // formalArguments map during interpretation.
+                                st.impl = st.impl!.clone();
+                                st.add(key, value);
+                            } catch (ex) {
+                                if (ex instanceof Error) {
+                                    noSuchAttributeReported = true;
+                                    this.errMgr.runTimeError(this, scope, ErrorType.NO_SUCH_ATTRIBUTE, key);
+                                } else {
+                                    throw ex;
                                 }
                             }
-                            else {
-                                st.rawSetAttribute(argument.getKey(), argument.getValue());
-                            }
+                        } else {
+                            st.rawSetAttribute(key, value);
                         }
-                        else {
-                            // don't let it throw an exception in rawSetAttribute
-                            if (st.impl.formalArguments === null || !st.impl.formalArguments.containsKey(argument.getKey())) {
-                                noSuchAttributeReported = true;
-                                this.errMgr.runTimeError(this, scope,
-                                    ErrorType.NO_SUCH_ATTRIBUTE,
-                                    argument.getKey());
-                                continue;
-                            }
+                    } else {
+                        // don't let it throw an exception in rawSetAttribute
+                        if (!st.impl.formalArguments || !st.impl.formalArguments.has(key)) {
+                            noSuchAttributeReported = true;
+                            this.errMgr.runTimeError(this, scope, ErrorType.NO_SUCH_ATTRIBUTE, key);
+                            continue;
+                        }
 
-                            st.rawSetAttribute(argument.getKey(), argument.getValue());
-                        }
+                        st.rawSetAttribute(key, value);
                     }
                 }
-
-                if (st.impl.hasFormalArgs) {
-                    let argumentCountMismatch = false;
-                    let formalArguments = st.impl.formalArguments;
-                    if (formalArguments === null) {
-                        formalArguments = java.util.Collections.emptyMap();
-                    }
-
-                    // first make sure that all non-default arguments are specified
-                    // ignore this check if a NO_SUCH_ATTRIBUTE error already occurred
-                    if (!noSuchAttributeReported) {
-                        for (const formalArgument of formalArguments.entrySet()) {
-                            if (formalArgument.getValue().defaultValueToken !== null || formalArgument.getValue().defaultValue !== null) {
-                                // this argument has a default value, so it doesn't need to appear in attrs
-                                continue;
-                            }
-
-                            if (attrs === null || !attrs.containsKey(formalArgument.getKey())) {
-                                argumentCountMismatch = true;
-                                break;
-                            }
-                        }
-                    }
-
-                    // next make sure there aren't too many arguments. note that the names
-                    // of arguments are checked below as they are applied to the template
-                    // instance, so there's no need to do that here.
-                    if (attrs !== null && attrs.size() > formalArguments.size()) {
-                        argumentCountMismatch = true;
-                    }
-
-                    if (argumentCountMismatch) {
-                        const nargs = attrs !== null ? attrs.size() : 0;
-                        const nformalArgs = formalArguments.size();
-                        this.errMgr.runTimeError(this, scope,
-                            ErrorType.ARGUMENT_COUNT_MISMATCH,
-                            nargs,
-                            st.impl.name,
-                            nformalArgs);
-                    }
-                }
-
-                break;
             }
 
-            case 3: {
-                const [scope, nargs, st] = args as [InstanceScope, int, ST];
-
-                if (nargs > 0 && !st.impl.hasFormalArgs && st.impl.formalArguments === null) {
-                    st.add(ST.IMPLICIT_ARG_NAME, null); // pretend we have "it" arg
+            if (st?.impl?.hasFormalArgs) {
+                let argumentCountMismatch = false;
+                let formalArguments = st.impl.formalArguments;
+                if (!formalArguments) {
+                    formalArguments = new Map();
                 }
 
-                let nformalArgs = 0;
-                if (st.impl.formalArguments !== null) {
-                    nformalArgs = st.impl.formalArguments.size();
+                // first make sure that all non-default arguments are specified
+                // ignore this check if a NO_SUCH_ATTRIBUTE error already occurred
+                if (!noSuchAttributeReported) {
+                    for (const [argumentKey, argumentValue] of formalArguments.entries()) {
+                        if (argumentValue.defaultValueToken || argumentValue.defaultValue) {
+                            // this argument has a default value, so it doesn't need to appear in attrs
+                            continue;
+                        }
+
+                        if (!attrs || !attrs.has(argumentKey)) {
+                            argumentCountMismatch = true;
+                            break;
+                        }
+                    }
                 }
 
-                const firstArg = this.sp - (nargs - 1);
-                const numToStore = java.lang.Math.min(nargs, nformalArgs);
-                if (st.impl.isAnonSubtemplate) {
-                    nformalArgs -= Interpreter.predefinedAnonSubtemplateAttributes.size();
+                // next make sure there aren't too many arguments. note that the names
+                // of arguments are checked below as they are applied to the template
+                // instance, so there's no need to do that here.
+                if (attrs.size > formalArguments.size) {
+                    argumentCountMismatch = true;
                 }
 
-                if (nargs < (nformalArgs - st.impl.numberOfArgsWithDefaultValues) ||
-                    nargs > nformalArgs) {
-                    this.errMgr.runTimeError(this, scope,
-                        ErrorType.ARGUMENT_COUNT_MISMATCH,
-                        nargs,
-                        st.impl.name,
-                        nformalArgs);
+                if (argumentCountMismatch) {
+                    const argCount = attrs?.size ?? 0;
+                    const formalArgCount = formalArguments.size;
+                    this.errMgr.runTimeError(this, scope, ErrorType.ARGUMENT_COUNT_MISMATCH, argCount,
+                        st.impl.name, formalArgCount);
                 }
+            }
+        } else {
+            const [scope, argCount, st] = args as [InstanceScope, number, ST | undefined];
 
-                if (st.impl.formalArguments === null) {
-                    return;
-                }
-
-                const argNames = st.impl.formalArguments.keySet().iterator();
-                for (let i = 0; i < numToStore; i++) {
-                    const o = this.operands[firstArg + i];    // value to store
-                    const argName = argNames.next();
-                    st.rawSetAttribute(argName, o);
-                }
-
-                break;
+            if (argCount > 0 && !st?.impl?.hasFormalArgs && !st?.impl?.formalArguments) {
+                st?.add(ST.IMPLICIT_ARG_NAME, null); // pretend we have "it" arg
             }
 
-            default: {
-                throw new java.lang.IllegalArgumentException(S`Invalid number of arguments`);
+            let formalArgCount = 0;
+            if (st?.impl?.formalArguments) {
+                formalArgCount = st.impl.formalArguments.size;
+            }
+
+            const firstArg = this.sp - (argCount - 1);
+            const numToStore = Math.min(argCount, formalArgCount);
+            if (st?.impl?.isAnonSubtemplate) {
+                formalArgCount -= Interpreter.predefinedAnonSubtemplateAttributes.size;
+            }
+
+            if (argCount < (formalArgCount - (st?.impl?.numberOfArgsWithDefaultValues ?? 0)) ||
+                argCount > formalArgCount) {
+                this.errMgr.runTimeError(this, scope, ErrorType.ARGUMENT_COUNT_MISMATCH, argCount, st?.impl?.name,
+                    formalArgCount);
+            }
+
+            if (!st?.impl?.formalArguments) {
+                return;
+            }
+
+            const argNames = st.impl.formalArguments.keys();
+            for (let i = 0; i < numToStore; i++) {
+                const o = this.operands[firstArg + i]; // value to store
+                const argName = argNames.next().value as string;
+                st.rawSetAttribute(argName, o);
             }
         }
     }
 
-    protected indent(out: STWriter, scope: InstanceScope, strIndex: int): void {
-        const indent = scope.st.impl.strings[strIndex];
+    protected indent(out: STWriter, scope: InstanceScope, strIndex: number): void {
+        const indent = scope.st?.impl?.strings[strIndex] ?? "";
         if (this.debug) {
             const start = out.index(); // track char we're about to write
-            const e = new IndentEvent(scope,
-                start, start + indent.length() - 1,
-                this.getExprStartChar(scope),
+            const e = new IndentEvent(scope, start, start + indent.length - 1, this.getExprStartChar(scope),
                 this.getExprStopChar(scope));
             this.trackDebugEvent(scope, e);
         }
@@ -1296,17 +1281,12 @@ export class Interpreter {
     /**
      * Write out an expression result that doesn't use expression options.
      *  E.g., {@code <name>}
-     * @param out
-     * @param scope
-     * @param o
      */
-    protected writeObjectNoOptions(out: STWriter, scope: InstanceScope, o: Object): int {
+    protected writeObjectNoOptions(out: STWriter, scope: InstanceScope, o: unknown): number {
         const start = out.index(); // track char we're about to write
-        const n = this.writeObject(out, scope, o, null);
+        const n = this.writeObject(out, scope, o);
         if (this.debug) {
-            const e = new EvalExprEvent(scope,
-                start, out.index() - 1,
-                this.getExprStartChar(scope),
+            const e = new EvalExprEvent(scope, start, out.index() - 1, this.getExprStartChar(scope),
                 this.getExprStopChar(scope));
             this.trackDebugEvent(scope, e);
         }
@@ -1317,35 +1297,32 @@ export class Interpreter {
     /**
      * Write out an expression result that uses expression options.
      *  E.g., {@code <names; separator=", ">}
-     * @param out
-     * @param scope
-     * @param o
-     * @param options
      */
-    protected writeObjectWithOptions(out: STWriter, scope: InstanceScope, o: Object,
-        options: Object[]): int {
+    protected writeObjectWithOptions(out: STWriter, scope: InstanceScope, o: unknown,
+        options: unknown[]): number {
         const start = out.index(); // track char we're about to write
-        // precompute all option values (render all the way to strings)
-        let optionStrings = null;
-        if (options !== null) {
+
+        // pre compute all option values (render all the way to strings)
+        let optionStrings;
+        if (options) {
             optionStrings = new Array<string>(options.length);
-            for (let i = 0; i < java.lang.Compiler.NUM_OPTIONS; i++) {
+            for (let i = 0; i < Compiler.NUM_OPTIONS; i++) {
                 optionStrings[i] = this.toString(out, scope, options[i]);
             }
         }
-        if (options !== null && options[Interpreter.Option.ANCHOR.ordinal()] !== null) {
+
+        if (options && options[Interpreter.Option.ANCHOR]) {
             out.pushAnchorPoint();
         }
 
         const n = this.writeObject(out, scope, o, optionStrings);
 
-        if (options !== null && options[Interpreter.Option.ANCHOR.ordinal()] !== null) {
+        if (options !== null && options[Interpreter.Option.ANCHOR]) {
             out.popAnchorPoint();
         }
+
         if (this.debug) {
-            const e = new EvalExprEvent(scope,
-                start, out.index() - 1,
-                this.getExprStartChar(scope),
+            const e = new EvalExprEvent(scope, start, out.index() - 1, this.getExprStartChar(scope),
                 this.getExprStopChar(scope));
             this.trackDebugEvent(scope, e);
         }
@@ -1356,53 +1333,45 @@ export class Interpreter {
     /**
      * Generic method to emit text for an object. It differentiates
      *  between templates, iterable objects, and plain old Java objects (POJOs)
-     * @param out
-     * @param scope
-     * @param o
-     * @param options
      */
-    protected writeObject(out: STWriter, scope: InstanceScope, o: Object, options: string[]): int {
+    protected writeObject(out: STWriter, scope: InstanceScope, o: unknown, options?: string[]): number {
         let n = 0;
-        if (o === null) {
-            if (options !== null && options[Interpreter.Option.NULL.ordinal()] !== null) {
-                o = options[Interpreter.Option.NULL.ordinal()];
-            }
-            else {
+        if (o == null) {
+            if (options && options[Interpreter.Option.NULL]) {
+                o = options[Interpreter.Option.NULL];
+            } else {
                 return 0;
             }
 
         }
+
         if (o instanceof ST) {
             scope = new InstanceScope(scope, o);
-            if (options !== null && options[Interpreter.Option.WRAP.ordinal()] !== null) {
+            if (options && options[Interpreter.Option.WRAP]) {
                 // if we have a wrap string, then inform writer it
                 // might need to wrap
                 try {
-                    out.writeWrap(options[Interpreter.Option.WRAP.ordinal()]);
+                    out.writeWrap(options[Interpreter.Option.WRAP]);
                 } catch (ioe) {
-                    if (ioe instanceof java.io.IOException) {
-                        this.errMgr.IOError(scope.st, ErrorType.WRITE_IO_ERROR, ioe);
+                    if (ioe instanceof Error) {
+                        this.errMgr.iOError(scope.st, ErrorType.WRITE_IO_ERROR, ioe);
                     } else {
                         throw ioe;
                     }
                 }
             }
             n = this.exec(out, scope);
-        }
-        else {
+        } else {
             o = this.convertAnythingIteratableToIterator(scope, o); // normalize
             try {
-                if (o instanceof java.util.Iterator) {
+                if (isIterator(o)) {
                     n = this.writeIterator(out, scope, o, options);
-                }
-
-                else {
+                } else {
                     n = this.writePOJO(out, scope, o, options);
                 }
-
             } catch (ioe) {
-                if (ioe instanceof java.io.IOException) {
-                    this.errMgr.IOError(scope.st, ErrorType.WRITE_IO_ERROR, ioe, o);
+                if (ioe instanceof Error) {
+                    this.errMgr.iOError(scope.st, ErrorType.WRITE_IO_ERROR, ioe, o);
                 } else {
                     throw ioe;
                 }
@@ -1412,28 +1381,31 @@ export class Interpreter {
         return n;
     }
 
-    protected writeIterator(out: STWriter, scope: InstanceScope, o: Object, options: string[]): int {
-        if (o === null) {
+    protected writeIterator(out: STWriter, scope: InstanceScope, it?: Iterator<unknown>, options?: string[]): number {
+        if (!it) {
             return 0;
         }
 
         let n = 0;
-        const it = o as java.util.Iterator<unknown>;
-        let separator = null;
-        if (options !== null) {
-            separator = options[Interpreter.Option.SEPARATOR.ordinal()];
+        let separator;
+        if (options) {
+            separator = options[Interpreter.Option.SEPARATOR];
         }
 
         let seenAValue = false;
-        while (it.hasNext()) {
+        while (true) {
             const iterValue = it.next();
+            if (iterValue.done) {
+                break;
+            }
+
             // Emit separator if we're beyond first value
             const needSeparator = seenAValue &&
-                separator !== null &&            // we have a separator and
-                (iterValue !== null ||           // either we have a value
-                    options[Interpreter.Option.NULL.ordinal()] !== null); // or no value but null option
+                separator &&            // we have a separator and
+                (iterValue ||           // either we have a value
+                    options![Interpreter.Option.NULL]); // or no value but null option
             if (needSeparator) {
-                n += out.writeSeparator(separator);
+                n += out.writeSeparator(separator ?? "");
             }
 
             const nw = this.writeObject(out, scope, iterValue, options);
@@ -1447,44 +1419,44 @@ export class Interpreter {
         return n;
     }
 
-    protected writePOJO(out: STWriter, scope: InstanceScope, o: Object, options: string[]): int {
-        let formatString = null;
-        if (options !== null) {
-            formatString = options[Interpreter.Option.FORMAT.ordinal()];
+    protected writePOJO(out: STWriter, scope: InstanceScope, o: unknown, options?: string[]): number {
+        let formatString = "";
+        if (options) {
+            formatString = options[Interpreter.Option.FORMAT];
         }
 
-        const v = this.renderObject(scope, formatString, o, o.getClass());
-        let n: int;
-        if (options !== null && options[Interpreter.Option.WRAP.ordinal()] !== null) {
-            n = out.write(v, options[Interpreter.Option.WRAP.ordinal()]);
-        }
-        else {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+        const v = this.renderObject(scope, formatString, o, constructorFromUnknown(0)!);
+        let n: number;
+        if (options && options[Interpreter.Option.WRAP]) {
+            n = out.write(v, options[Interpreter.Option.WRAP]);
+        } else {
             n = out.write(v);
         }
 
         return n;
     }
 
-    protected getExprStartChar(scope: InstanceScope): int {
-        const templateLocation = scope.st.impl.sourceMap[scope.ip];
-        if (templateLocation !== null) {
+    protected getExprStartChar(scope: InstanceScope): number {
+        const templateLocation = scope.st?.impl?.sourceMap[scope.ip];
+        if (templateLocation) {
             return templateLocation.a;
         }
 
         return -1;
     }
 
-    protected getExprStopChar(scope: InstanceScope): int {
-        const templateLocation = scope.st.impl.sourceMap[scope.ip];
-        if (templateLocation !== null) {
+    protected getExprStopChar(scope: InstanceScope): number {
+        const templateLocation = scope.st?.impl?.sourceMap[scope.ip];
+        if (templateLocation) {
             return templateLocation.b;
         }
 
         return -1;
     }
 
-    protected map(scope: InstanceScope, attr: Object, /* final */  st: ST): void {
-        this.rot_map(scope, attr, java.util.Collections.singletonList(st));
+    protected map(scope: InstanceScope, attr: unknown, st: ST): void {
+        this.rotMap(scope, attr, [st]);
     };
 
     /**
@@ -1494,53 +1466,62 @@ export class Interpreter {
      * @param attr
      * @param prototypes
      */
-    protected rot_map(scope: InstanceScope, attr: Object, prototypes: ST[]): void {
-        if (attr === null) {
-            this.operands[++this.sp] = null;
+    protected rotMap(scope: InstanceScope, attr: unknown, prototypes: ST[]): void {
+        if (!attr) {
+            this.operands[++this.sp] = undefined;
 
             return;
         }
+
         attr = this.convertAnythingIteratableToIterator(scope, attr);
-        if (attr instanceof java.util.Iterator) {
-            const mapped = this.rot_map_iterator(scope, attr as java.util.Iterator, prototypes);
+        if (isIterator(attr)) {
+            const mapped = this.rotateMapIterator(scope, attr, prototypes);
             this.operands[++this.sp] = mapped;
-        }
-        else { // if only single value, just apply first template to sole value
-            const proto = prototypes.get(0);
+        } else { // if only single value, just apply first template to sole value
+            const proto = prototypes[0];
             const st = this.group.createStringTemplateInternally(proto);
-            if (st !== null) {
+            if (st) {
                 this.setFirstArgument(scope, st, attr);
-                if (st.impl.isAnonSubtemplate) {
+                if (st.impl?.isAnonSubtemplate) {
                     st.rawSetAttribute("i0", 0);
                     st.rawSetAttribute("i", 1);
                 }
                 this.operands[++this.sp] = st;
-            }
-            else {
+            } else {
                 this.operands[++this.sp] = null;
             }
         }
     }
 
-    protected rot_map_iterator(scope: InstanceScope, attr: java.util.Iterator<unknown>, prototypes: ST[]): ST[] {
-        const mapped = new Array<ST>();
+    protected rotateMapIterator(scope: InstanceScope, attr: Iterator<unknown>,
+        prototypes: ST[]): Array<ST | undefined> {
+        const mapped = new Array<ST | undefined>();
         const iter = attr;
         let i0 = 0;
         let i = 1;
         let ti = 0;
-        while (iter.hasNext()) {
+
+        while (true) {
             const iterValue = iter.next();
-            if (iterValue === null) { mapped.add(null); continue; }
-            const templateIndex = ti % prototypes.size(); // rotate through
+            if (iterValue.done) {
+                break;
+            }
+
+            if (!iterValue) {
+                mapped.push(undefined);
+                continue;
+            }
+
+            const templateIndex = ti % prototypes.length; // rotate through
             ti++;
-            const proto = prototypes.get(templateIndex);
+            const proto = prototypes[templateIndex];
             const st = this.group.createStringTemplateInternally(proto);
             this.setFirstArgument(scope, st, iterValue);
-            if (st.impl.isAnonSubtemplate) {
+            if (st.impl?.isAnonSubtemplate) {
                 st.rawSetAttribute("i0", i0);
                 st.rawSetAttribute("i", i);
             }
-            mapped.add(st);
+            mapped.push(st);
             i0++;
             i++;
         }
@@ -1556,50 +1537,44 @@ export class Interpreter {
      * @param prototype
      */
     // todo: i, i0 not set unless mentioned? map:{k,v | ..}?
-    protected zip_map(scope: InstanceScope, exprs: Object[], prototype: ST): ST.AttributeList {
-        if (exprs === null || prototype === null || exprs.size() === 0) {
-            return null; // do not apply if missing templates or empty values
+    protected zipMap(scope: InstanceScope, exprs: unknown[], prototype: ST): ST.AttributeList | undefined {
+        if (!exprs || !prototype || exprs.length === 0) {
+            return undefined; // do not apply if missing templates or empty values
         }
-        // make everything iterable
-        for (let i = 0; i < exprs.size(); i++) {
-            const attr = exprs.get(i);
-            if (attr !== null) {
-                exprs.set(i, this.convertAnythingToIterator(scope, attr));
-            }
 
+        // make everything iterable
+        for (let i = 0; i < exprs.length; i++) {
+            const attr = exprs[i];
+            if (attr !== null) {
+                exprs[i] = this.convertAnythingToIterator(scope, attr);
+            }
         }
 
         // ensure arguments line up
-        let numExprs = exprs.size();
+        let numExprs = exprs.length;
         const code = prototype.impl;
-        const formalArguments = code.formalArguments;
-        if (!code.hasFormalArgs || formalArguments === null) {
+        const formalArguments = code?.formalArguments;
+        if (!code?.hasFormalArgs || !formalArguments) {
             this.errMgr.runTimeError(this, scope, ErrorType.MISSING_FORMAL_ARGUMENTS);
 
-            return null;
+            return undefined;
         }
 
         // todo: track formal args not names for efficient filling of locals
-        let formalArgumentNames = formalArguments.keySet().toArray(new Array<string>(formalArguments.size()));
-        let nformalArgs = formalArgumentNames.length;
+        let formalArgumentNames = [...formalArguments.keys()];
+        let formalArgCount = formalArgumentNames.length;
         if (prototype.isAnonSubtemplate()) {
-            nformalArgs -= Interpreter.predefinedAnonSubtemplateAttributes.size();
+            formalArgCount -= Interpreter.predefinedAnonSubtemplateAttributes.size;
         }
 
-        if (nformalArgs !== numExprs) {
-            this.errMgr.runTimeError(this, scope,
-                ErrorType.MAP_ARGUMENT_COUNT_MISMATCH,
-                numExprs,
-                nformalArgs);
+        if (formalArgCount !== numExprs) {
+            this.errMgr.runTimeError(this, scope, ErrorType.MAP_ARGUMENT_COUNT_MISMATCH, numExprs, formalArgCount);
+
             // TODO just fill first n
             // truncate arg list to match smaller size
-            const shorterSize = java.lang.Math.min(formalArgumentNames.length, numExprs);
+            const shorterSize = Math.min(formalArgumentNames.length, numExprs);
             numExprs = shorterSize;
-            const newFormalArgumentNames = new Array<string>(shorterSize);
-            java.lang.System.arraycopy(formalArgumentNames, 0,
-                newFormalArgumentNames, 0,
-                shorterSize);
-            formalArgumentNames = newFormalArgumentNames;
+            formalArgumentNames = formalArgumentNames.slice(0, shorterSize);
         }
 
         // keep walking while at least one attribute has values
@@ -1613,81 +1588,75 @@ export class Interpreter {
             embedded.rawSetAttribute("i0", i);
             embedded.rawSetAttribute("i", i + 1);
             for (let a = 0; a < numExprs; a++) {
-                const it = exprs.get(a) as java.util.Iterator<unknown>;
-                if (it !== null && it.hasNext()) {
-                    const argName = formalArgumentNames[a];
-                    const iteratedValue = it.next();
-                    embedded.rawSetAttribute(argName, iteratedValue);
-                }
-                else {
+                const it = exprs[a] as Iterator<unknown>;
+                if (it) {
+                    const iteratedValue = [it];
+                    if (iteratedValue) {
+                        const argName = formalArgumentNames[a];
+                        embedded.rawSetAttribute(argName, iteratedValue);
+                    }
+                } else {
                     numEmpty++;
                 }
             }
+
             if (numEmpty === numExprs) {
                 break;
             }
 
-            results.add(embedded);
+            results.push(embedded);
             i++;
         }
 
         return results;
     }
 
-    protected setFirstArgument(scope: InstanceScope, st: ST, attr: Object): void {
-        if (!st.impl.hasFormalArgs) {
-            if (st.impl.formalArguments === null) {
+    protected setFirstArgument(scope: InstanceScope, st: ST, attr: unknown): void {
+        if (!st.impl?.hasFormalArgs) {
+            if (!st.impl?.formalArguments) {
                 st.add(ST.IMPLICIT_ARG_NAME, attr);
 
                 return;
             }
             // else fall thru to set locals[0]
         }
-        if (st.impl.formalArguments === null) {
-            this.errMgr.runTimeError(this, scope,
-                ErrorType.ARGUMENT_COUNT_MISMATCH,
-                1,
-                st.impl.name,
-                0);
+
+        if (!st.impl.formalArguments) {
+            this.errMgr.runTimeError(this, scope, ErrorType.ARGUMENT_COUNT_MISMATCH, 1, st.impl.name, 0);
 
             return;
         }
-        st.locals[0] = attr;
+
+        st.locals![0] = attr;
     }
 
-    protected addToList(scope: InstanceScope, list: Object[], o: Object): void {
+    protected addToList(scope: InstanceScope, list: unknown[], o: unknown): void {
         o = this.convertAnythingIteratableToIterator(scope, o);
-        if (o instanceof java.util.Iterator) {
+        if (isIterator(o)) {
             // copy of elements into our temp list
-            const it = o as java.util.Iterator<unknown>;
-            while (it.hasNext()) { list.add(it.next()); }
-        }
-        else {
-            list.add(o);
+            while (true) {
+                const iterValue = o.next();
+                if (iterValue.done) {
+                    break;
+                }
+
+                list.push(iterValue.value);
+            }
+        } else {
+            list.push(o);
         }
     }
 
-    protected override  toString(out: STWriter, scope: InstanceScope, value: Object): string {
-        if (value !== null) {
-            if (value.getClass() === string.class) {
-                return String(value);
+    protected toString(out: STWriter, scope: InstanceScope, value: unknown): string {
+        if (value != null) {
+            if (typeof value === "string") {
+                return value;
             }
 
             // if not string already, must evaluate it
-            const sw = new java.io.StringWriter();
-            let stw: STWriter;
-            try {
-                const writerClass = out.getClass();
-                const ctor = writerClass.getConstructor(java.io.Writer.class);
-                stw = ctor.newInstance(sw);
-            } catch (e) {
-                if (e instanceof Error) {
-                    stw = new AutoIndentWriter(sw);
-                    this.errMgr.runTimeError(this, scope, ErrorType.WRITER_CTOR_ISSUE, out.getClass().getSimpleName());
-                } else {
-                    throw e;
-                }
-            }
+            const sw = new Writer();
+            const prototype = Object.getPrototypeOf(out) as Constructor<STWriter>;
+            const stw = Reflect.construct(prototype, [sw]);
 
             if (this.debug && !scope.earlyEval) {
                 scope = new InstanceScope(scope, scope.st);
@@ -1699,117 +1668,124 @@ export class Interpreter {
             return sw.toString();
         }
 
-        return null;
+        return "";
     }
 
-    protected testAttributeTrue(a: Object): boolean {
-        if (a === null) {
+    protected testAttributeTrue(a: unknown): boolean {
+        if (a == null) {
             return false;
         }
 
-        if (a instanceof java.lang.Boolean) {
-            return a as java.lang.Boolean;
-        }
-
-        if (a instanceof java.util.Collection) {
-            return (a as java.util.Collection<unknown>).size() > 0;
+        if (Array.isArray(a)) {
+            return a.length > 0;
         }
 
         if (a instanceof Map) {
-            return (a as Map<unknown, unknown>).size() > 0;
+            return a.size > 0;
         }
 
-        if (a instanceof java.lang.Iterable) {
-            return (a as java.lang.Iterable<unknown>).iterator().hasNext();
-        }
-        if (a instanceof java.util.Iterator) {
-            return (a as java.util.Iterator<unknown>).hasNext();
+        if (isIterator(a)) {
+            const value = a.next();
+
+            return !value.done;
         }
 
         return true; // any other non-null object, return true--it's present
     }
 
-    protected getObjectProperty(out: STWriter, scope: InstanceScope, o: Object, property: Object): Object {
-        if (o === null) {
-            this.errMgr.runTimeError(this, scope, ErrorType.NO_SUCH_PROPERTY,
-                "null." + property);
+    protected getObjectProperty(out: STWriter, scope: InstanceScope, o: unknown, property: unknown): unknown {
+        if (!o) {
+            this.errMgr.runTimeError(this, scope, ErrorType.NO_SUCH_PROPERTY, "undefined." + property);
 
-            return null;
+            return undefined;
+        }
+
+        if (typeof o !== "object") {
+            this.errMgr.runTimeError(this, scope, ErrorType.NO_SUCH_PROPERTY, typeof o + "." + property);
+
+            return undefined;
         }
 
         try {
-            const self = scope.st;
-            const adap = self.groupThatCreatedThisInstance.getModelAdaptor(o.getClass());
+            const self = scope.st!;
+            const adapter = self.groupThatCreatedThisInstance.getModelAdaptor(o as Constructor);
 
-            return adap.getProperty(this, self, o, property, this.toString(out, scope, property));
+            return adapter.getProperty(this, self, o, property, this.toString(out, scope, property));
         } catch (e) {
             if (e instanceof STNoSuchPropertyException) {
-                this.errMgr.runTimeError(this, scope, ErrorType.NO_SUCH_PROPERTY,
-                    e, o.getClass().getName() + "." + property);
+                this.errMgr.runTimeError(this, scope, ErrorType.NO_SUCH_PROPERTY, e, o.constructor.name + "." +
+                    property);
             } else {
                 throw e;
             }
         }
 
-        return null;
+        return undefined;
     }
 
-    protected trace(scope: InstanceScope, ip: int): void {
+    protected writeTrace(scope: InstanceScope, ip: number): void {
         const self = scope.st;
-        const tr = new java.lang.StringBuilder();
+
+        if (!self?.impl) {
+            return;
+        }
+
+        let tr = "";
         const dis = new BytecodeDisassembler(self.impl);
-        const buf = new java.lang.StringBuilder();
-        dis.disassembleInstruction(buf, ip);
+        const buf = "";
+        dis.disassembleInstruction({ buf, ip });
         let name = self.impl.name + ":";
         if (Misc.referenceEquals(self.impl.name, ST.UNKNOWN_NAME)) {
             name = "";
         }
 
-        tr.append(string.format("%-40s", name + buf));
-        tr.append("\tstack=[");
+        tr += printf("%-40s", name + buf);
+        tr += "\tstack=[";
         for (let i = 0; i <= this.sp; i++) {
             const o = this.operands[i];
-            this.printForTrace(tr, scope, o);
+            tr = this.printForTrace(tr, scope, o);
         }
-        tr.append(" ], calls=");
-        tr.append(Interpreter.getEnclosingInstanceStackString(scope));
-        tr.append(", sp=" + this.sp + ", nw=" + this.charsWrittenOnLine);
+
+        tr += " ], calls=";
+        tr += Interpreter.getEnclosingInstanceStackString(scope);
+        tr += ", sp=" + this.sp + ", nw=" + this.charsWrittenOnLine;
         const s = tr.toString();
         if (this.debug) {
-            this.executeTrace.add(s);
+            this.executeTrace.push(s);
         }
 
         if (Interpreter.trace) {
-            java.lang.System.out.println(s);
+            console.log(s);
         }
-
     }
 
-    protected printForTrace(tr: java.lang.StringBuilder, scope: InstanceScope, o: Object): void {
+    protected printForTrace(tr: string, scope: InstanceScope, o: unknown): string {
         if (o instanceof ST) {
-            if ((o).impl === null) {
-                tr.append("bad-template()");
+            if (!o.impl) {
+                tr += "bad-template()";
+            } else {
+                tr += " " + (o).impl.name + "()";
             }
 
-            else {
-                tr.append(" " + (o).impl.name + "()");
-            }
-
-            return;
+            return tr;
         }
+
         o = this.convertAnythingIteratableToIterator(scope, o);
-        if (o instanceof java.util.Iterator) {
-            const it = o as java.util.Iterator<unknown>;
-            tr.append(" [");
-            while (it.hasNext()) {
-                const iterValue = it.next();
+        if (isIterator(o)) {
+            tr += " [";
+            while (true) {
+                const iterValue = o.next();
+                if (iterValue.done) {
+                    break;
+                }
                 this.printForTrace(tr, scope, iterValue);
             }
-            tr.append(" ]");
+            tr += " ]";
+        } else {
+            tr += " " + o;
         }
-        else {
-            tr.append(" " + o);
-        }
+
+        return tr;
     }
 
     /**
@@ -1823,25 +1799,23 @@ export class Interpreter {
      * @param e
      */
     protected trackDebugEvent(scope: InstanceScope, e: InterpEvent): void {
-        //      System.out.println(e);
-        this.events.add(e);
-        scope.events.add(e);
+        this.events.push(e);
+        scope.events.push(e);
         if (e instanceof EvalTemplateEvent) {
             const parent = scope.parent;
-            if (parent !== null) {
-                // System.out.println("add eval "+e.self.getName()+" to children of "+parent.getName());
-                scope.parent.childEvalTemplateEvents.add(e);
+            if (parent) {
+                scope.parent.childEvalTemplateEvents.push(e);
             }
         }
     }
 
-    private renderObject<T>(scope: InstanceScope, formatString: string, o: Object, attributeType: java.lang.Class<T>): string {
+    private renderObject<T>(scope: InstanceScope, formatString: string, o: T, attributeType: Constructor<T>): string {
         // ask the native group defining the surrounding template for the renderer
-        const r = scope.st.impl.nativeGroup.getAttributeRenderer(attributeType);
-        if (r !== null) {
-            return r.toString(attributeType.cast(o), formatString, this.locale);
+        const r = scope.st?.impl?.nativeGroup.getAttributeRenderer(attributeType);
+        if (r) {
+            return r.toString(o, formatString, this.locale);
         } else {
-            return o.toString();
+            return String(o);
         }
     }
 }

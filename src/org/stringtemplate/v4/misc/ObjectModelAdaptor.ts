@@ -1,180 +1,114 @@
+/* java2ts: keep */
+
 /*
- * [The "BSD license"]
- *  Copyright (c) 2011 Terence Parr
- *  All rights reserved.
- *
- *  Redistribution and use in source and binary forms, with or without
- *  modification, are permitted provided that the following conditions
- *  are met:
- *  1. Redistributions of source code must retain the above copyright
- *     notice, this list of conditions and the following disclaimer.
- *  2. Redistributions in binary form must reproduce the above copyright
- *     notice, this list of conditions and the following disclaimer in the
- *     documentation and/or other materials provided with the distribution.
- *  3. The name of the author may not be used to endorse or promote products
- *     derived from this software without specific prior written permission.
- *
- *  THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
- *  IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
- *  OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
- *  IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
- *  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
- *  NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- *  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- *  THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- *  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
- *  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Copyright (c) Terence Parr. All rights reserved.
+ * Licensed under the BSD-3 License. See License.txt in the project root for license information.
  */
 
-
-
-import { java, JavaObject } from "jree";
 import { STNoSuchPropertyException } from "./STNoSuchPropertyException.js";
 import { Interpreter } from "../Interpreter.js";
 import { ModelAdaptor } from "../ModelAdaptor.js";
 import { ST } from "../ST.js";
+import { Constructor, IMember } from "../reflection/IMember.js";
+import { Method } from "../reflection/Method.js";
+import { Field } from "../reflection/Field.js";
 
+export class ObjectModelAdaptor implements ModelAdaptor<Constructor> {
+    protected static readonly INVALID_MEMBER: IMember = new Field(Object, "INVALID_MEMBER");
+    protected static readonly membersCache = new Map<Constructor, Map<string, IMember>>();
 
-
-export  class ObjectModelAdaptor<T> extends JavaObject implements ModelAdaptor<T> {
-    protected static readonly  INVALID_MEMBER:  java.lang.reflect.Member;
-
-    protected static readonly  membersCache =
-        new  Map<java.lang.Class<unknown>, Map<string, java.lang.reflect.Member>>();
-
-    protected static  findMember(clazz: java.lang.Class<unknown>, memberName: string):  java.lang.reflect.Member {
-        if (clazz === null) {
-            throw new  java.lang.NullPointerException("clazz");
-        }
-        if (memberName === null) {
-            throw new  java.lang.NullPointerException("memberName");
+    protected static findMember(clazz: Constructor, memberName: string): IMember | undefined {
+        if (clazz == null) {
+            throw new Error("clazz");
         }
 
-        /* synchronized (membersCache) { */
-            let  members = ObjectModelAdaptor.membersCache.get(clazz);
-            let  member: java.lang.reflect.Member;
-            if (members !== null) {
-                member = members.get(memberName);
-                if (member !== null) {
-                    return member !== ObjectModelAdaptor.INVALID_MEMBER ? member : null;
-                }
-            }
-            else {
-                members = new  Map<string, java.lang.reflect.Member>();
-                ObjectModelAdaptor.membersCache.put(clazz, members);
-            }
+        if (!memberName) {
+            throw new Error("memberName");
+        }
 
-            // try getXXX and isXXX properties, look up using reflection
-            let  methodSuffix = java.lang.Character.toUpperCase(memberName.charAt(0)) +
-                memberName.substring(1, memberName.length());
-            
-            member = ObjectModelAdaptor.tryGetMethod(clazz, "get" + methodSuffix);
-            if (member === null) {
-                member = ObjectModelAdaptor.tryGetMethod(clazz, "is" + methodSuffix);
-                if (member === null) {
-                    member = ObjectModelAdaptor.tryGetMethod(clazz, "has" + methodSuffix);
-                }
+        let members = ObjectModelAdaptor.membersCache.get(clazz);
+        let member: IMember | undefined;
+        if (members) {
+            member = members.get(memberName);
+            if (member) {
+                return member !== ObjectModelAdaptor.INVALID_MEMBER ? member : undefined;
             }
-
-            if (member === null) {
-                // try for a visible field
-                member = ObjectModelAdaptor.tryGetField(clazz, memberName);
-            }
-
-            members.put(memberName, member !== null ? member : ObjectModelAdaptor.INVALID_MEMBER);
-            return member;
-        /* } */ 
-    }
-
-    protected static  tryGetMethod(clazz: java.lang.Class<unknown>, methodName: string):  java.lang.reflect.Method {
-        try {
-            let  method = clazz.getMethod(methodName);
-            if (method !== null) {
-                method.setAccessible(true);
-            }
-
-            return method;
-        } catch (ex) {
-if (ex instanceof java.lang.Exception) {
         } else {
-	throw ex;
-	}
-}
+            members = new Map<string, IMember>();
+            ObjectModelAdaptor.membersCache.set(clazz, members);
+        }
 
-        return null;
-    }
+        // try getXXX and isXXX properties, look up using reflection
+        const methodSuffix = memberName[0].toUpperCase() + memberName.substring(1);
 
-    protected static  tryGetField(clazz: java.lang.Class<unknown>, fieldName: string):  java.lang.reflect.Field {
-        try {
-            let  field = clazz.getField(fieldName);
-            if (field !== null) {
-                field.setAccessible(true);
+        member = ObjectModelAdaptor.tryGetMethod(clazz, "get" + methodSuffix);
+        if (!member) {
+            member = ObjectModelAdaptor.tryGetMethod(clazz, "is" + methodSuffix);
+            if (!member) {
+                member = ObjectModelAdaptor.tryGetMethod(clazz, "has" + methodSuffix);
             }
+        }
 
-            return field;
-        } catch (ex) {
-if (ex instanceof java.lang.Exception) {
-        } else {
-	throw ex;
-	}
-}
+        if (!member) {
+            // try for a visible field
+            member = ObjectModelAdaptor.tryGetField(clazz, memberName);
+        }
 
-        return null;
+        members.set(memberName, member ?? ObjectModelAdaptor.INVALID_MEMBER);
+
+        return member;
     }
 
-    public  getProperty(interp: Interpreter, self: ST, model: T, property: Object, propertyName: string):  Object
-    {
-        if (model === null) {
-            throw new  java.lang.NullPointerException("o");
+    protected static tryGetMethod(clazz: Constructor, methodName: string): Method | undefined {
+        const members = Object.getOwnPropertyNames(clazz.prototype);
+        for (const member of members) {
+            if (member === methodName) {
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+                const method = clazz.prototype[member] as Function;
+                if (typeof method === "function") {
+                    return new Method(clazz, method);
+                }
+            }
         }
 
-        let  c = model.getClass();
+        return undefined;
+    }
 
-        if ( property===null ) {
-            return this.throwNoSuchProperty(c, propertyName, null);
+    protected static tryGetField(clazz: Constructor, fieldName: string): Field | undefined {
+        const members = Object.getOwnPropertyNames(clazz.prototype);
+        for (const member of members) {
+            if (member === fieldName) {
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+                const field = clazz.prototype[member] as unknown;
+                if (typeof field !== "function" && typeof field !== "object") {
+                    return new Field(clazz, member);
+                }
+            }
         }
 
-        let  member = ObjectModelAdaptor.findMember(c, propertyName);
-        if ( member!==null ) {
-            try {
-                if (member instanceof java.lang.reflect.Method) {
-                    return (member as java.lang.reflect.Method).invoke(model);
-                }
-                else {
- if (member instanceof java.lang.reflect.Field) {
-                    return (member as java.lang.reflect.Field).get(model);
-                }
-}
+        return undefined;
+    }
 
-            } catch (e) {
-if (e instanceof java.lang.Exception) {
-                this.throwNoSuchProperty(c, propertyName, e);
+    public getProperty(_interp: Interpreter, _self: ST, model: Object, property: unknown,
+        propertyName: string): unknown {
+        const prototype = Object.getPrototypeOf(model) as Constructor;
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+        const member = ObjectModelAdaptor.findMember(prototype, propertyName);
+        if (member) {
+            if (member instanceof Method) {
+                return member.invoke(model);
             } else {
-	throw e;
-	}
-}
+                if (member instanceof Field) {
+                    return member.get(model);
+                }
+            }
         }
 
-        return this.throwNoSuchProperty(c, propertyName, null);
+        this.throwNoSuchProperty(prototype, propertyName);
     }
 
-    protected  throwNoSuchProperty(clazz: java.lang.Class<unknown>, propertyName: string, cause: java.lang.Exception):  Object {
-        throw new  STNoSuchPropertyException(cause, null, clazz.getName() + "." + propertyName);
+    protected throwNoSuchProperty<T extends Constructor>(clazz: T, propertyName: string): never {
+        throw new STNoSuchPropertyException(undefined, clazz, propertyName);
     }
-     static {
-        let  invalidMember: java.lang.reflect.Member;
-        try {
-            invalidMember = ObjectModelAdaptor.class.getDeclaredField("INVALID_MEMBER");
-        } catch (ex) {
-if (ex instanceof java.lang.NoSuchFieldException) {
-            invalidMember = null;
-        }else if (ex instanceof java.lang.SecurityException) {
-            invalidMember = null;
-        } else {
-	throw ex;
-	}
-}
 
-        ObjectModelAdaptor.INVALID_MEMBER = invalidMember;
-    }
 }

@@ -16,12 +16,15 @@
     "license": "MIT",
     "scripts": {
         "test": "test",
-        "generate-parsers": "antlr4ng -no-visitor -no-listener -Dlanguage=TypeScript -o src/org/stringtemplate/v4/compiler/generated -package parser -encoding utf8 -Xexact-output-dir src/org/stringtemplate/v4/compiler/*.g4"
+        "generate-parsers": "antlr4ng -no-visitor -no-listener -Dlanguage=TypeScript -o src/org/stringtemplate/v4/compiler/generated -package parser -encoding utf8 -Xexact-output-dir src/org/stringtemplate/v4/compiler/*.g4",
+        "generate-parsers-v3": "java -jar bin/antlr-3.5.3-complete-no-st3.jar -o generated -lib  src/org/stringtemplate/v4/compiler/generated src/org/stringtemplate/v4/compiler/CodeGenerator.g"
     },
     "devDependencies": {
+        "@types/he": "^1.2.3",
         "@types/node": "20.10.4",
         "@typescript-eslint/eslint-plugin": "6.14.0",
         "@typescript-eslint/parser": "6.13.2",
+        "antlr4ng-cli": "^1.0.7",
         "eslint": "8.55.0",
         "eslint-plugin-import": "2.29.0",
         "eslint-plugin-jsdoc": "46.9.0",
@@ -29,7 +32,8 @@
         "typescript": "5.3.3"
     },
     "dependencies": {
-        "antlr4ng": "^2.0.3",
-        "fast-printf": "1.6.9"
+        "antlr4ng": "^2.0.4",
+        "fast-printf": "1.6.9",
+        "he": "^1.2.0"
     }
 }

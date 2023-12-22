@@ -1,53 +1,59 @@
+/* java2ts: keep */
+
 /*
- * [The "BSD license"]
- *  Copyright (c) 2011 Terence Parr
- *  All rights reserved.
- *
- *  Redistribution and use in source and binary forms, with or without
- *  modification, are permitted provided that the following conditions
- *  are met:
- *  1. Redistributions of source code must retain the above copyright
- *     notice, this list of conditions and the following disclaimer.
- *  2. Redistributions in binary form must reproduce the above copyright
- *     notice, this list of conditions and the following disclaimer in the
- *     documentation and/or other materials provided with the distribution.
- *  3. The name of the author may not be used to endorse or promote products
- *     derived from this software without specific prior written permission.
- *
- *  THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
- *  IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
- *  OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
- *  IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
- *  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
- *  NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- *  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- *  THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- *  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
- *  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Copyright (c) Terence Parr. All rights reserved.
+ * Licensed under the BSD-3 License. See License.txt in the project root for license information.
  */
 
-import { JavaObject, java, type int } from "jree";
+/* eslint-disable max-classes-per-file */
 
+import { StackTraceElement } from "../support/StackTraceElement.js";
 
-
-/** An event that happens when building ST trees, adding attributes etc... */
-export  class ConstructionEvent extends JavaObject {
-    public  stack:  java.lang.Throwable;
-    public  constructor() { super();
-this.stack = new  java.lang.Throwable(); }
-
-    public  getFileName():  string { return this.getSTEntryPoint().getFileName(); }
-    public  getLine():  int { return this.getSTEntryPoint().getLineNumber(); }
-    
-    public  getSTEntryPoint():  java.lang.StackTraceElement {
-        let  trace = this.stack.getStackTrace();
-        for (let e of trace) {
-            let  name = e.toString();
-            if ( !name.startsWith("org.stringtemplate.v4") ) {
- return e;
+class StackHolder {
+    protected stack?: string;
 }
 
+/** An event that happens when building ST trees, adding attributes etc... */
+export class ConstructionEvent extends StackHolder {
+    #elements: StackTraceElement[] = [];
+
+    public constructor() {
+        super();
+
+        Error.captureStackTrace(this, ConstructionEvent);
+        this.fillInStackTrace();
+    }
+
+    public getFileName(): string {
+        return this.getSTEntryPoint().getFileName();
+    }
+
+    public getLine(): number {
+        return this.getSTEntryPoint().getLineNumber();
+    }
+
+    public getSTEntryPoint(): StackTraceElement {
+        for (const e of this.#elements) {
+            const name = e.toString();
+            if (!name.startsWith("org.stringtemplate.v4")) { // XXX: This won't work.
+                return e;
+            }
         }
-        return trace[0];
+
+        return this.#elements[0];
+    }
+
+    /**
+     * Fills in the execution stack trace. This method records within this Throwable object information about the
+     * current state of the stack frames for the current thread.
+     */
+    private fillInStackTrace(): void {
+        if (this.stack) {
+            const lines = this.stack.split("\n").slice(1);
+
+            this.#elements = lines.map((line) => {
+                return new StackTraceElement(line);
+            });
+        }
     }
 }

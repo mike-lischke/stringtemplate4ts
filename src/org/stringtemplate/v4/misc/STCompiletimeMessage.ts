@@ -21,11 +21,11 @@ export class STCompiletimeMessage extends STMessage {
     public templateToken?: Token;
 
     /** token inside template */
-    public token: Token;
+    public token?: Token;
     public srcName: string;
 
-    public constructor(error: ErrorType, srcName: string, templateToken: Token | undefined, t: Token,
-        cause?: Error | null, arg?: string | null, arg2?: string) {
+    public constructor(error: ErrorType, srcName: string, templateToken?: Token, t?: Token,
+        cause?: Error, arg?: string | number, arg2?: string | number) {
         if (!cause) {
             super(error);
             this.templateToken = templateToken;
@@ -53,12 +53,12 @@ export class STCompiletimeMessage extends STMessage {
         let line = 0;
         let charPos = -1;
         if (this.token !== null) {
-            line = this.token.line;
-            charPos = this.token.column;
+            line = this.token?.line ?? 0;
+            charPos = this.token?.column ?? 0;
 
             // check the input streams - if different then token is embedded in templateToken and we need to
             // adjust the offset
-            if (this.templateToken && this.templateToken.inputStream !== this.token.inputStream) {
+            if (this.templateToken && this.templateToken.inputStream !== this.token?.inputStream) {
                 let templateDelimiterSize = 1;
                 if (this.templateToken.type === GroupParser.BIGSTRING
                     || this.templateToken.type === GroupParser.BIGSTRING_NO_NL) {

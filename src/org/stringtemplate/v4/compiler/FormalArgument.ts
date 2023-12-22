@@ -30,7 +30,7 @@ export class FormalArgument {
     /** If they specified default value {@code x=y}, store the token here */
     public defaultValueToken?: Token;
     public defaultValue: unknown; // x="str", x=true, x=false
-    public compiledDefaultValue: CompiledST; // x={...}
+    public compiledDefaultValue: CompiledST | undefined; // x={...}
 
     public constructor(name: string, defaultValueToken?: Token) {
         this.name = name;
