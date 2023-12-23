@@ -58,3 +58,34 @@ export const isIterator = (obj: unknown): obj is Iterator<unknown> => {
     // Iterator is an interface, so use duck typing.
     return (obj != null && typeof obj === "object" && "next" in obj && "return" in obj);
 };
+
+/**
+ * Converts a Typescript string to a UTF-16 char code array. The string uses UTF-16 internally
+ * so there's no need to handle surrogate pairs.
+ *
+ * @param data The Typescript string.
+ *
+ * @returns The UTF-16 char code array.
+ */
+export const convertStringToUTF16 = (data: string): Uint16Array => {
+    const result = new Uint16Array(data.length);
+    for (let i = 0; i < data.length; i++) {
+        result[i] = data.charCodeAt(i);
+    }
+
+    return result;
+};
+
+/**
+ * Converts a UTF-16 char code array to a Typescript string. The string uses UTF-16 internally
+ * so there's no need to handle surrogate pairs.
+ *
+ * @param data The UTF-16 char code array.
+ *
+ * @returns The Typescript string.
+ */
+export const convertUTF16ToString = (data: Uint16Array): string => {
+    const decoder = new TextDecoder("utf-16");
+
+    return decoder.decode(data);
+};

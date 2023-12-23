@@ -34,6 +34,7 @@
         "Xexact",
         "clazz",
         "instrs",
+        "jree",
         "messageformat",
         "mvnrepository",
         "stringtemplate",

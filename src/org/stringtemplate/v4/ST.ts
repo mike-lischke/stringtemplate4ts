@@ -22,7 +22,7 @@ import { Aggregate } from "./misc/Aggregate.js";
 import { MultiMap } from "./misc/MultiMap.js";
 import { ErrorManager } from "./misc/ErrorManager.js";
 import { defaultLocale } from "./support/helpers.js";
-import { Writer } from "./support/Writer.js";
+import { StringWriter } from "./support/StringWriter.js";
 
 /**
  * An instance of the StringTemplate. It consists primarily of
@@ -421,7 +421,6 @@ export class ST {
     public write(out: STWriter, locale: Intl.Locale): number;
     public write(out: STWriter, listener: STErrorListener): number;
     public write(out: STWriter, locale: Intl.Locale, listener: STErrorListener): number;
-    public write(out: STWriter, locale: Intl.Locale, listener: STErrorListener, lineWidth: number): number;
     public write(...args: unknown[]): number {
         switch (args.length) {
             case 1: {
@@ -461,16 +460,6 @@ export class ST {
                 const scope = new InstanceScope(undefined, this);
 
                 return interp.exec(out, scope);
-            }
-
-            case 4: {
-                const [out, listener, locale, lineWidth] = args as [STWriter, STErrorListener, Intl.Locale, number];
-
-                const w = new AutoIndentWriter(out);
-                w.setLineWidth(lineWidth);
-                const n = this.write(w, locale, listener);
-
-                return n;
             }
 
             default: {
@@ -515,7 +504,7 @@ export class ST {
             }
         }
 
-        const out = new Writer();
+        const out = new StringWriter();
         const wr = new AutoIndentWriter(out);
         wr.setLineWidth(lineWidth);
         this.write(wr, locale);
@@ -562,11 +551,10 @@ export class ST {
             }
         }
 
-        const out = new Writer();
+        const out = new StringWriter();
         const wr = new AutoIndentWriter(out);
         wr.setLineWidth(lineWidth);
-        const interp =
-            new Interpreter(this.groupThatCreatedThisInstance, locale, true);
+        const interp = new Interpreter(this.groupThatCreatedThisInstance, locale, true);
         const scope = new InstanceScope(undefined, this);
         interp.exec(wr, scope); // render and track events
 

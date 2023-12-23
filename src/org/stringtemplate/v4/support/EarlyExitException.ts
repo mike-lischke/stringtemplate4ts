@@ -7,6 +7,6 @@ import { IntStream, RecognitionException } from "antlr4ng";
 
 export class EarlyExitException extends RecognitionException {
     public constructor(decisionNumber: number, stream: IntStream) {
-        super({ message: "", recognizer: null, input: null, ctx: null });
+        super({ message: "Early exit", recognizer: null, input: null, ctx: null });
     }
 }

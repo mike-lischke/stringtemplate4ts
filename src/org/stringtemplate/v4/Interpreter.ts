@@ -30,7 +30,7 @@ import { Constructor } from "./reflection/IMember.js";
 import { Compiler } from "./compiler/Compiler.js";
 import { constructorFromUnknown, isIterator } from "./support/helpers.js";
 import { printf } from "fast-printf";
-import { Writer } from "./support/Writer.js";
+import { StringWriter } from "./support/StringWriter.js";
 
 /**
  * This class knows how to execute template byte codes relative to a particular
@@ -290,7 +290,7 @@ export class Interpreter {
         }
 
         // Return the last value from the iterator.
-        let r = null;
+        let r;
         for (const e of it) {
             r = e;
         }
@@ -660,7 +660,7 @@ export class Interpreter {
                         ip += Bytecode.OPERAND_SIZE_IN_BYTES;
                         o = self.locals[valueIndex];
                         if (o === ST.EMPTY_ATTR) {
-                            o = null;
+                            o = undefined;
                         }
 
                         this.operands[++this.sp] = o;
@@ -1654,7 +1654,7 @@ export class Interpreter {
             }
 
             // if not string already, must evaluate it
-            const sw = new Writer();
+            const sw = new StringWriter();
             const prototype = Object.getPrototypeOf(out) as Constructor<STWriter>;
             const stw = Reflect.construct(prototype, [sw]);
 
