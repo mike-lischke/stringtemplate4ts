@@ -89,14 +89,14 @@ export class Interpreter {
 
     /** If {@link #trace} is {@code true}, track trace here. */
     // TODO: track the pieces not a string and track what it contributes to output
-    protected executeTrace: string[];
+    protected executeTrace: string[] = [];
 
     /**
      * Track everything happening in interpreter across all templates if
      * {@link #debug}. The last event in this field is the
      * {@link EvalTemplateEvent} for the root template.
      */
-    protected events: InterpEvent[];
+    protected events: InterpEvent[] = [];
 
     public constructor(group: STGroup, debug: boolean);
     public constructor(group: STGroup, locale: Intl.Locale, debug: boolean);
@@ -134,11 +134,6 @@ export class Interpreter {
             default: {
                 throw new Error("Invalid number of arguments");
             }
-        }
-
-        if (this.debug) {
-            this.events = new Array<InterpEvent>();
-            this.executeTrace = new Array<string>();
         }
     }
 

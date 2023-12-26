@@ -128,7 +128,7 @@ export class STGroup {
      *  <p>
      *  This structure is synchronized.</p>
      */
-    protected renderers: Map<Constructor, AttributeRenderer<unknown>>;
+    protected renderers = new TypeRegistry<Constructor, AttributeRenderer<unknown>>();
 
     /**
      * A dictionary that allows people to register a model adaptor for
@@ -819,10 +819,6 @@ export class STGroup {
      *  set renderer into all import groups.
      */
     public registerRenderer<T>(attributeType: Constructor<T>, r: AttributeRenderer<T>, recursive?: boolean): void {
-        if (!this.renderers) {
-            this.renderers = new TypeRegistry<Constructor, AttributeRenderer<unknown>>();
-        }
-
         this.renderers.set(attributeType, r);
 
         if (recursive) {

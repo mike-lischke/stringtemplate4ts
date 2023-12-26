@@ -8,7 +8,9 @@ import { RecognizerSharedState } from "./RecognizerSharedState.js";
 import { CommonTree } from "./CommonTree.js";
 
 export class BaseRecognizer {
-    protected state: RecognizerSharedState;
+    protected state: RecognizerSharedState = {
+        _fsp: -1,
+    };
 
     public match(_input: IntStream, _type: number, _follow: BitSet | null): CommonTree | null {
         throw new Error("Not implemented");

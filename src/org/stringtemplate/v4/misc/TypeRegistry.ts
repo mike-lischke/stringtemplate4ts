@@ -10,7 +10,7 @@ import { isSuperclassOf } from "../support/helpers.js";
 import { AmbiguousMatchException } from "./AmbiguousMatchException.js";
 
 export class TypeRegistry<K extends Constructor, V> implements Map<K, V> {
-    public [Symbol.toStringTag]: string;
+    public [Symbol.toStringTag]: string = "TypeRegistry";
 
     private readonly backingStore = new Map<K, V>();
     private readonly cache = new Map<K, K | undefined>();
@@ -133,7 +133,7 @@ export class TypeRegistry<K extends Constructor, V> implements Map<K, V> {
                     builder += `The class '${key.name}' does not match a single item in the registry. ` +
                         `The ${j} ambiguous matches are:"`;
                     for (let i = 0; i < j; i++) {
-                        builder += "\n    " + candidates[j]?.name ?? "<null>";
+                        builder += "\n    " + (candidates[j]?.name ?? "<null>");
                     }
 
                     throw new AmbiguousMatchException(builder);

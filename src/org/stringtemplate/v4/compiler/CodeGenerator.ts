@@ -102,19 +102,19 @@ export class CodeGenerator extends TreeParser {
     // $ANTLR end "templateAndEOF"
 
     public static template_scope = class template_scope {
-        public state: CompilationState;
+        public state!: CompilationState;
     };
 
     // $ANTLR end "exprElement"
 
     public static region_return = class region_return extends TreeRuleReturnScope {
-        public name: string;
+        public name!: string;
     };
 
     // $ANTLR end "region"
 
     public static subtemplate_return = class subtemplate_return extends TreeRuleReturnScope {
-        public name: string;
+        public name!: string;
     };
 
     // $ANTLR end "ifstat"
@@ -152,7 +152,7 @@ export class CodeGenerator extends TreeParser {
     public static args_return = class args_return extends TreeRuleReturnScope {
         public n = 0;
         public namedArgs = false;
-        public passThru: boolean;
+        public passThru = false;
     };
 
     // $ANTLR end "args"
@@ -285,7 +285,7 @@ export class CodeGenerator extends TreeParser {
     public static readonly FOLLOW_NULL_in_listElement1319 = new BitSet([0x0000000000000002n]);
 
     protected outermostTemplateName?: string;	// name of overall template
-    protected outermostImpl: CompiledST;
+    protected outermostImpl!: CompiledST;
     protected templateToken?: Token;			// overall template token
     protected errMgr?: ErrorManager;
     protected template_stack = new Stack<CodeGenerator.template_scope>();

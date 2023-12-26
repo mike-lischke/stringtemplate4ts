@@ -17,7 +17,7 @@ export class InstanceScope {
     public readonly st?: ST;
 
     /** Current instruction pointer. */
-    public ip: number;
+    public ip = 0;
 
     /**
      * Includes the {@link EvalTemplateEvent} for this template. This is a

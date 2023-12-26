@@ -18,8 +18,10 @@ export class StringWriter extends Writer {
     public constructor();
     /** Create a new string writer using the specified initial string-buffer size. */
     public constructor(initialSize: number);
-    public constructor() {
+    public constructor(initialSize?: number) {
         super();
+
+        this.#data = new Uint16Array(initialSize ?? 16);
     }
 
     public override toString(): string {

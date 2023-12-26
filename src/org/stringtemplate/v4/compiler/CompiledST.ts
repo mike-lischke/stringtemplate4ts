@@ -26,7 +26,7 @@ import { Compiler } from "./Compiler.js";
  *  of the same template share a single implementation ({@link ST#impl} field).
  */
 export class CompiledST {
-    public name: string;
+    public name = "";
 
     /**
      * Every template knows where it is relative to the group that loaded it.

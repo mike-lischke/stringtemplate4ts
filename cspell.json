@@ -37,9 +37,12 @@
         "jree",
         "messageformat",
         "mvnrepository",
+        "outfile",
         "stringtemplate",
         "structname",
         "subdir",
+        "testng",
+        "unmocked",
         "userid"
     ],
     "import": []

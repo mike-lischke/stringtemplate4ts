@@ -19,16 +19,8 @@ import { Misc } from "./misc/Misc.js";
  *  or an import.
  */
 export class STGroupFile extends STGroup {
-    /**
-     * Just records how user "spelled" the file name they wanted to load.
-     *  The url is the key field here for loading content.
-     *
-     *  If they use ctor with URL arg, this field is null.
-     */
-    public fileName: string;
-
     /** Where to find the group file. NonNull. */
-    public url: string;
+    public fileName: string;
 
     protected alreadyLoaded = false;
 
@@ -136,10 +128,10 @@ export class STGroupFile extends STGroup {
                 // no prefix since this group file is the entire group, nothing lives
                 // beneath it.
                 if (STGroupFile.verbose) {
-                    console.log("loading group file " + this.url.toString());
+                    console.log("loading group file " + this.fileName);
                 }
 
-                this.loadGroupFile("/", this.url.toString());
+                this.loadGroupFile("/", this.fileName);
                 if (STGroupFile.verbose) {
                     console.log("found " + this.templates.size + " templates in " + this.fileName + " = " +
                         [...this.templates.keys()].join(", "));
