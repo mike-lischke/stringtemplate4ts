@@ -171,4 +171,8 @@ export class STGroupFile extends STGroup {
     public override getRootDir(): string {
         return dirname(this.fileName);
     }
+
+    protected override importGroupFile(fileName: string): STGroup | undefined {
+        return new STGroupFile(fileName, this.encoding, this.delimiterStartChar, this.delimiterStopChar);
+    }
 }

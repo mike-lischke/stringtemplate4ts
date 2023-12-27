@@ -13,6 +13,8 @@
 
 import { BitSet, RecognitionException, Token } from "antlr4ng";
 
+import { IFormalArgument } from "./common.js";
+
 import { STLexer } from "./STLexer.js";
 import { FormalArgument } from "./FormalArgument.js";
 import { CompiledST } from "./CompiledST.js";
@@ -431,7 +433,7 @@ export class CodeGenerator extends TreeParser {
 
     // $ANTLR start "template"
     // CodeGenerator.g:146:1: template[String name, List<FormalArgument> args] returns [CompiledST impl] : chunk ;
-    public template(name: string | null, args: FormalArgument[]): CompiledST {
+    public template(name: string | null, args: IFormalArgument[]): CompiledST {
         this.template_stack.push(new CodeGenerator.template_scope());
         this.template_stack.peek().state = new CompilationState(this.errMgr!, name ?? "", this.input.getTokenStream());
         const impl = this.template_stack.peek().state.impl;

@@ -46,7 +46,7 @@ import { STLexer } from "../STLexer.js";
 }
 
 @parser::members {
-public currentGroup: STGroup;
+public currentGroup!: STGroup;
 
 public displayRecognitionError(tokenNames: string[],  e: antlr.RecognitionException): void {
     const msg = e.message;
@@ -80,7 +80,7 @@ public addArgument(args: FormalArgument[] , t: Token, defaultValueToken?: Token)
 }
 
 @lexer::members {
-public currentGroup: STGroup;
+public currentGroup!: STGroup;
 
 public reportError(e: antlr.RecognitionException): void {
     let msg: string;
@@ -120,10 +120,7 @@ oldStyleHeader: // ignore but lets us use this parser in AW for both v3 and v4
 ;
 
 groupName
-    returns[name: string]
-    @init {
-let buf = "";
-}:
+    @init {let buf = "";}:
     a = ID {buf += $a.text;} ('.' a = ID {buf += $a.text;})*
 ;
 
@@ -187,7 +184,7 @@ if ($name.index >= 0) { // if ID missing
     template = template.substring(n);
     let templateName = $name.text;
     if (prefix.length > 0 ) {
-        templateName = prefix+$name.text;
+        templateName = prefix + $name.text;
     }
 
     let enclosingTemplateName = $enclosing.text;
@@ -195,7 +192,7 @@ if ($name.index >= 0) { // if ID missing
         enclosingTemplateName = prefix + enclosingTemplateName;
     }
 
-    // @ts-ignore, because ANTLR4 doesn't allow a non-null assertion with attribute references.
+    // @ts-ignore, because ST4 doesn't allow a non-null assertion with attribute references.
     const formalArgs = $formalArgs.args;
     this.currentGroup.defineTemplateOrRegion(templateName, enclosingTemplateName, templateToken,
                                     template, $name, formalArgs);
@@ -206,7 +203,7 @@ if ($name.index >= 0) { // if ID missing
 
 formalArgs
     returns[args: FormalArgument[] = []]
-    locals[hasOptionalParameter: boolean;]
+    locals[hasOptionalParameter: boolean = false]
     @init { $formalArgs::hasOptionalParameter = false; }:
     formalArg[$args] (',' formalArg[$args])*
     |
@@ -231,13 +228,13 @@ if ( this.currentGroup.rawGetDictionary($ID.text)!=null ) {
 } else if ( this.currentGroup.rawGetTemplate($ID.text)!=null ) {
     this.currentGroup.errMgr.compileTimeError(ErrorType.TEMPLATE_REDEFINITION_AS_MAP, undefined, $ID);
 } else {
-    this.currentGroup.defineDictionary($ID.text, $dict.mapping);
+    this.currentGroup.defineDictionary($ID.text, $dict.mapping!);
 }
 }
 ;
 
 dict
-    returns[mapping: Map<string, unknown>]
+    returns[mapping: Map<string, unknown> | undefined]
     @init {const mapping = new Map<string, unknown>();}:
     '[' dictPairs[mapping] ']'
 ;

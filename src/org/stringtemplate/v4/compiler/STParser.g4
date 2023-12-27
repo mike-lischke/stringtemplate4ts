@@ -40,12 +40,13 @@ tokens {
 import { ErrorManager } from "../../misc/ErrorManager.js";
 import { STLexer } from "../STLexer.js";
 import { Compiler } from "../Compiler.js";
+import { Interpreter } from "../../Interpreter.js";
 import { ErrorType } from "../../misc/ErrorType.js";
 }
 
 @members {
-private errMgr: ErrorManager;
-private templateToken: Token;
+private errMgr!: ErrorManager;
+private templateToken!: Token;
 
 public static create(input: antlr.TokenStream, errMgr: ErrorManager, templateToken: antlr.Token): STParser {
     const result = new STParser(input);
@@ -148,7 +149,7 @@ option
     @init {
 	const id = this.inputStream.LT(1)!.text!;
 	const defVal = Compiler.defaultOptionValues.get(id);
-	const validOption = Compiler.supportedOptions.get(id) != null;
+	const validOption = Interpreter.supportedOptions.get(id) != null;
 }:
     ID {
 		if (!validOption) {

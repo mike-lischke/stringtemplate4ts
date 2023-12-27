@@ -95,7 +95,7 @@ export class GroupParser extends antlr.Parser {
     }
 
 
-    public currentGroup: STGroup;
+    public currentGroup!: STGroup;
 
     public displayRecognitionError(tokenNames: string[],  e: antlr.RecognitionException): void {
         const msg = e.message;
@@ -317,9 +317,7 @@ export class GroupParser extends antlr.Parser {
     public groupName(): GroupNameContext {
         let localContext = new GroupNameContext(this.context, this.state);
         this.enterRule(localContext, 4, GroupParser.RULE_groupName);
-
         let buf = "";
-
         let _la: number;
         try {
             this.enterOuterAlt(localContext, 1);
@@ -542,7 +540,7 @@ export class GroupParser extends antlr.Parser {
                     template = template.substring(n);
                     let templateName = (localContext._name?.text ?? '');
                     if (prefix.length > 0 ) {
-                        templateName = prefix+(localContext._name?.text ?? '');
+                        templateName = prefix + (localContext._name?.text ?? '');
                     }
 
                     let enclosingTemplateName = (localContext._enclosing?.text ?? '');
@@ -550,7 +548,7 @@ export class GroupParser extends antlr.Parser {
                         enclosingTemplateName = prefix + enclosingTemplateName;
                     }
 
-                    // @ts-ignore, because ANTLR4 doesn't allow a non-null assertion with attribute references.
+                    // @ts-ignore, because ST4 doesn't allow a non-null assertion with attribute references.
                     const formalArgs = localContext._formalArgs.args;
                     this.currentGroup.defineTemplateOrRegion(templateName, enclosingTemplateName, templateToken,
                                                     template, localContext?._name, formalArgs);
@@ -727,7 +725,7 @@ export class GroupParser extends antlr.Parser {
             } else if ( this.currentGroup.rawGetTemplate((localContext._ID?.text ?? ''))!=null ) {
                 this.currentGroup.errMgr.compileTimeError(ErrorType.TEMPLATE_REDEFINITION_AS_MAP, undefined, localContext?._ID);
             } else {
-                this.currentGroup.defineDictionary((localContext._ID?.text ?? ''), localContext._dict.mapping);
+                this.currentGroup.defineDictionary((localContext._ID?.text ?? ''), localContext._dict.mapping!);
             }
 
             }
@@ -1154,7 +1152,6 @@ export class OldStyleHeaderContext extends antlr.ParserRuleContext {
 
 
 export class GroupNameContext extends antlr.ParserRuleContext {
-    public name: string;
     public _a?: Token | null;
     public constructor(parent: antlr.ParserRuleContext | null, invokingState: number) {
         super(parent, invokingState);
@@ -1256,7 +1253,7 @@ export class TemplateDefContext extends antlr.ParserRuleContext {
 
 export class FormalArgsContext extends antlr.ParserRuleContext {
     public args: FormalArgument[] = [];
-    public hasOptionalParameter: boolean;;
+    public hasOptionalParameter: boolean = false;
     public constructor(parent: antlr.ParserRuleContext | null, invokingState: number) {
         super(parent, invokingState);
     }
@@ -1329,7 +1326,7 @@ export class DictDefContext extends antlr.ParserRuleContext {
 
 
 export class DictContext extends antlr.ParserRuleContext {
-    public mapping: Map<string, unknown>;
+    public mapping: Map<string, unknown> | undefined;
     public constructor(parent: antlr.ParserRuleContext | null, invokingState: number) {
         super(parent, invokingState);
     }

@@ -9,11 +9,11 @@
 
 import { Token } from "antlr4ng";
 
-import { FormalArgument } from "./FormalArgument.js";
+import { ICompiledST, IFormalArgument, RegionType } from "./common.js";
+
+import { Interval } from "../misc/Interval.js";
 import { BytecodeDisassembler } from "./BytecodeDisassembler.js";
 import { STGroup } from "../STGroup.js";
-import { ST } from "../ST.js";
-import { Interval } from "../misc/Interval.js";
 import { GroupParser } from "./generated/GroupParser.js";
 import { CommonTree } from "../support/CommonTree.js";
 import { TokenStreamV3 } from "../support/TokenStreamV3.js";
@@ -25,7 +25,7 @@ import { Compiler } from "./Compiler.js";
  *  info.  It's the implementation of an ST you might say.  All instances
  *  of the same template share a single implementation ({@link ST#impl} field).
  */
-export class CompiledST {
+export class CompiledST implements ICompiledST {
     public name = "";
 
     /**
@@ -57,19 +57,16 @@ export class CompiledST {
     public templateDefStartToken?: Token;
 
     /** Overall token stream for template (debug only). */
-    public tokens: TokenStreamV3;
+    public tokens?: TokenStreamV3;
 
     /** How do we interpret syntax of template? (debug only) */
-    public ast: CommonTree;
+    public ast?: CommonTree;
 
-    public formalArguments: Map<string, FormalArgument>;
+    public formalArguments = new Map<string, IFormalArgument>();
 
-    public hasFormalArgs: boolean;
+    public hasFormalArgs = false;
 
-    public numberOfArgsWithDefaultValues: number;
-
-    /** A list of all regions and sub templates. */
-    public implicitlyDefinedTemplates: CompiledST[] = [];
+    public numberOfArgsWithDefaultValues = 0;
 
     /**
      * The group that physically defines this {@link ST} definition. We use it
@@ -83,7 +80,7 @@ export class CompiledST {
      * Does this template come from a {@code <@region>...<@end>} embedded in
      *  another template?
      */
-    public isRegion: boolean;
+    public isRegion = false;
 
     /**
      * If someone refs {@code <@r()>} in template t, an implicit
@@ -95,20 +92,26 @@ export class CompiledST {
      * to prevent more than one manual def though. Between this var and
      * {@link #isRegion} we can determine these cases.</p>
      */
-    public regionDefType: ST.RegionType;
+    public regionDefType: RegionType = RegionType.IMPLICIT;
 
-    public isAnonSubtemplate: boolean; // {...}
+    public isAnonSubtemplate = false; // {...}
 
-    public strings: string[];     // string operands of instructions
-    public codeSize: number;
-    public sourceMap: Interval[]; // maps IP to range in template pattern
+    public strings: string[] = [];     // string operands of instructions
+    public codeSize: number = 0;
+    public sourceMap: Interval[] = []; // maps IP to range in template pattern
 
-    public instructions: Int8Array;        // byte-addressable code memory.
+    public instructions: Int8Array;    // byte-addressable code memory.
+
+    /** A list of all regions and sub templates. */
+    private implicitlyDefinedTemplates: CompiledST[] = [];
 
     public constructor() {
         this.instructions = new Int8Array(Compiler.TEMPLATE_INITIAL_CODE_SIZE);
         this.sourceMap = new Array<Interval>(Compiler.TEMPLATE_INITIAL_CODE_SIZE);
         this.template = "";
+    }
+
+    public static compileGroup(group: STGroup): ICompiledST {
     }
 
     /**
@@ -176,7 +179,7 @@ export class CompiledST {
                             templateToken: fa.defaultValueToken,
                         });
 
-                        if (fa.compiledDefaultValue != null) {
+                        if (fa.compiledDefaultValue) {
                             fa.compiledDefaultValue.name = argSTname;
                             fa.compiledDefaultValue.defineImplicitlyDefinedTemplates(group);
                         }
@@ -212,7 +215,7 @@ export class CompiledST {
         }
     }
 
-    public defineFormalArgs(args: FormalArgument[]): void {
+    public defineFormalArgs(args: IFormalArgument[]): void {
         this.hasFormalArgs = true; // even if no args; it's formally defined
         this.formalArguments = new Map();
         for (const a of args) {
@@ -223,7 +226,7 @@ export class CompiledST {
     /**
      * Used by {@link ST#add} to add args one by one without turning on full formal args definition signal.
      */
-    public addArg(a: FormalArgument): void {
+    public addArg(a: IFormalArgument): void {
         if (this.formalArguments.has(a.name)) {
             throw new Error(`Formal argument ${a.name} already exists.`);
         }

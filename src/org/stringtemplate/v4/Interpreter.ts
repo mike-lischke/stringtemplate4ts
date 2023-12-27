@@ -27,10 +27,18 @@ import { ErrorType } from "./misc/ErrorType.js";
 import { ErrorManager } from "./misc/ErrorManager.js";
 import { GroupParser } from "./compiler/generated/GroupParser.js";
 import { Constructor } from "./reflection/IMember.js";
-import { Compiler } from "./compiler/Compiler.js";
 import { constructorFromUnknown, isIterator } from "./support/helpers.js";
 import { printf } from "fast-printf";
 import { StringWriter } from "./support/StringWriter.js";
+import { IErrorManager, IInstanceScope, IST, ISTGroup } from "./compiler/common.js";
+
+export enum InterpreterOption {
+    ANCHOR = 0,
+    FORMAT = 1,
+    NULL = 2,
+    SEPARATOR = 3,
+    WRAP = 4
+};
 
 /**
  * This class knows how to execute template byte codes relative to a particular
@@ -54,6 +62,14 @@ export class Interpreter {
 
     public static readonly predefinedAnonSubtemplateAttributes = new Set<string>([
         "i", "i0",
+    ]);
+
+    public static readonly supportedOptions = new Map<string, InterpreterOption>([
+        ["anchor", InterpreterOption.ANCHOR],
+        ["format", InterpreterOption.FORMAT],
+        ["null", InterpreterOption.NULL],
+        ["separator", InterpreterOption.SEPARATOR],
+        ["wrap", InterpreterOption.WRAP],
     ]);
 
     /**
@@ -100,8 +116,8 @@ export class Interpreter {
 
     public constructor(group: STGroup, debug: boolean);
     public constructor(group: STGroup, locale: Intl.Locale, debug: boolean);
-    public constructor(group: STGroup, errMgr: ErrorManager, debug: boolean);
-    public constructor(group: STGroup, locale: Intl.Locale, errMgr: ErrorManager, debug: boolean);
+    public constructor(group: STGroup, errMgr: IErrorManager, debug: boolean);
+    public constructor(group: STGroup, locale: Intl.Locale, errMgr: IErrorManager, debug: boolean);
     public constructor(...args: unknown[]) {
         switch (args.length) {
             case 2: {
@@ -512,19 +528,17 @@ export class Interpreter {
         throw new STNoSuchAttributeException(name, scope);
     }
 
-    public getDictionary(g: STGroup, name: string): unknown {
+    public getDictionary(g: ISTGroup, name: string): unknown {
         if (g.isDictionary(name)) {
             return g.rawGetDictionary(name);
         }
 
-        if (g.imports !== null) {
-            for (const sup of g.imports) {
-                const o = this.getDictionary(sup, name);
-                if (o !== null) {
-                    return o;
-                }
-
+        for (const sup of g.imports) {
+            const o = this.getDictionary(sup, name);
+            if (o !== null) {
+                return o;
             }
+
         }
 
         return undefined;
@@ -849,7 +863,7 @@ export class Interpreter {
                     }
 
                     case Bytecode.INSTR_OPTIONS: {
-                        this.operands[++this.sp] = new Array<unknown>(Compiler.NUM_OPTIONS);
+                        this.operands[++this.sp] = new Array<unknown>(Interpreter.supportedOptions.size);
 
                         break;
                     }
@@ -1148,11 +1162,11 @@ export class Interpreter {
         }
     }
 
-    protected storeArgs(scope: InstanceScope, attrs: Map<string, unknown>, st?: ST): void;
-    protected storeArgs(scope: InstanceScope, argCount: number, st?: ST): void;
+    protected storeArgs(scope: IInstanceScope, attrs: Map<string, unknown>, st?: IST): void;
+    protected storeArgs(scope: IInstanceScope, argCount: number, st?: IST): void;
     protected storeArgs(...args: unknown[]): void {
         if (args[1] instanceof Map) {
-            const [scope, attrs, st] = args as [InstanceScope, Map<string, unknown>, ST | undefined];
+            const [scope, attrs, st] = args as [IInstanceScope, Map<string, unknown>, IST | undefined];
 
             let noSuchAttributeReported = false;
             if (attrs && st) {
@@ -1226,7 +1240,7 @@ export class Interpreter {
                 }
             }
         } else {
-            const [scope, argCount, st] = args as [InstanceScope, number, ST | undefined];
+            const [scope, argCount, st] = args as [IInstanceScope, number, ST | undefined];
 
             if (argCount > 0 && !st?.impl?.hasFormalArgs && !st?.impl?.formalArguments) {
                 st?.add(ST.IMPLICIT_ARG_NAME, null); // pretend we have "it" arg
@@ -1301,18 +1315,18 @@ export class Interpreter {
         let optionStrings;
         if (options) {
             optionStrings = new Array<string>(options.length);
-            for (let i = 0; i < Compiler.NUM_OPTIONS; i++) {
+            for (let i = 0; i < Interpreter.supportedOptions.size; i++) {
                 optionStrings[i] = this.toString(out, scope, options[i]);
             }
         }
 
-        if (options && options[Interpreter.Option.ANCHOR]) {
+        if (options && options[InterpreterOption.ANCHOR]) {
             out.pushAnchorPoint();
         }
 
         const n = this.writeObject(out, scope, o, optionStrings);
 
-        if (options !== null && options[Interpreter.Option.ANCHOR]) {
+        if (options !== null && options[InterpreterOption.ANCHOR]) {
             out.popAnchorPoint();
         }
 
@@ -1332,8 +1346,8 @@ export class Interpreter {
     protected writeObject(out: STWriter, scope: InstanceScope, o: unknown, options?: string[]): number {
         let n = 0;
         if (o == null) {
-            if (options && options[Interpreter.Option.NULL]) {
-                o = options[Interpreter.Option.NULL];
+            if (options && options[InterpreterOption.NULL]) {
+                o = options[InterpreterOption.NULL];
             } else {
                 return 0;
             }
@@ -1342,11 +1356,11 @@ export class Interpreter {
 
         if (o instanceof ST) {
             scope = new InstanceScope(scope, o);
-            if (options && options[Interpreter.Option.WRAP]) {
+            if (options && options[InterpreterOption.WRAP]) {
                 // if we have a wrap string, then inform writer it
                 // might need to wrap
                 try {
-                    out.writeWrap(options[Interpreter.Option.WRAP]);
+                    out.writeWrap(options[InterpreterOption.WRAP]);
                 } catch (ioe) {
                     if (ioe instanceof Error) {
                         this.errMgr.iOError(scope.st, ErrorType.WRITE_IO_ERROR, ioe);
@@ -1384,7 +1398,7 @@ export class Interpreter {
         let n = 0;
         let separator;
         if (options) {
-            separator = options[Interpreter.Option.SEPARATOR];
+            separator = options[InterpreterOption.SEPARATOR];
         }
 
         let seenAValue = false;
@@ -1398,7 +1412,7 @@ export class Interpreter {
             const needSeparator = seenAValue &&
                 separator &&            // we have a separator and
                 (iterValue ||           // either we have a value
-                    options![Interpreter.Option.NULL]); // or no value but null option
+                    options![InterpreterOption.NULL]); // or no value but null option
             if (needSeparator) {
                 n += out.writeSeparator(separator ?? "");
             }
@@ -1417,14 +1431,14 @@ export class Interpreter {
     protected writePOJO(out: STWriter, scope: InstanceScope, o: unknown, options?: string[]): number {
         let formatString = "";
         if (options) {
-            formatString = options[Interpreter.Option.FORMAT];
+            formatString = options[InterpreterOption.FORMAT];
         }
 
         // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
         const v = this.renderObject(scope, formatString, o, constructorFromUnknown(0)!);
         let n: number;
-        if (options && options[Interpreter.Option.WRAP]) {
-            n = out.write(v, options[Interpreter.Option.WRAP]);
+        if (options && options[InterpreterOption.WRAP]) {
+            n = out.write(v, options[InterpreterOption.WRAP]);
         } else {
             n = out.write(v);
         }
@@ -1790,8 +1804,6 @@ export class Interpreter {
      * {@link EvalTemplateEvent}, store in parent's
      * {@link InstanceScope#childEvalTemplateEvents} list for {@link STViz} tree
      * view.
-     * @param scope
-     * @param e
      */
     protected trackDebugEvent(scope: InstanceScope, e: InterpEvent): void {
         this.events.push(e);
@@ -1813,15 +1825,4 @@ export class Interpreter {
             return String(o);
         }
     }
-}
-
-export namespace Interpreter {
-    export enum Option {
-        ANCHOR = 0,
-        FORMAT = 1,
-        NULL = 2,
-        SEPARATOR = 3,
-        WRAP = 4
-    };
-
 }

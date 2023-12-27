@@ -5,11 +5,13 @@
  * Licensed under the BSD-3 License. See License.txt in the project root for license information.
  */
 
+import { IInstanceScope } from "./compiler/common.js";
+
 import { ST } from "./ST.js";
 import { EvalTemplateEvent } from "./debug/EvalTemplateEvent.js";
 import { InterpEvent } from "./debug/InterpEvent.js";
 
-export class InstanceScope {
+export class InstanceScope implements IInstanceScope {
     /** Template that invoked us. */
     public readonly parent?: InstanceScope;
 

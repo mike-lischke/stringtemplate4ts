@@ -6,31 +6,22 @@
  */
 
 import { HashCode, Token } from "antlr4ng";
+
+import { IFormalArgument } from "./common.js";
 import { CompiledST } from "./CompiledST.js";
 
 /**
- * Represents the name of a formal argument defined in a template:
- * <pre>
- *  test(a,b,x=defaultValue) ::= "<a> <n> <x>"
- * </pre> Each template has a set of these formal arguments or sets
- * {@link CompiledST#hasFormalArgs} to {@code false} (indicating that no
- * arguments were specified such as when we create a template with
- * {@code new ST(...)}).
- *
- * <p>
- * Note: originally, I tracked cardinality as well as the name of an attribute.
- * I'm leaving the code here as I suspect something may come of it later.
- * Currently, though, cardinality is not used.</p>
+ * Implementation of the formal argument interface.
  */
-export class FormalArgument {
+export class FormalArgument implements IFormalArgument {
     public name: string;
 
-    public index: number; // which argument is it? from 0..n-1
+    public index = 0; // which argument is it? from 0..n-1
 
     /** If they specified default value {@code x=y}, store the token here */
     public defaultValueToken?: Token;
     public defaultValue: unknown; // x="str", x=true, x=false
-    public compiledDefaultValue: CompiledST | undefined; // x={...}
+    public compiledDefaultValue?: CompiledST; // x={...}
 
     public constructor(name: string, defaultValueToken?: Token) {
         this.name = name;

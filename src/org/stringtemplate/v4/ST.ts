@@ -13,7 +13,6 @@ import { STErrorListener } from "./STErrorListener.js";
 import { Interpreter } from "./Interpreter.js";
 import { InstanceScope } from "./InstanceScope.js";
 import { AutoIndentWriter } from "./AutoIndentWriter.js";
-import { CompiledST } from "./compiler/CompiledST.js";
 import { FormalArgument } from "./compiler/FormalArgument.js";
 import { AddAttributeEvent } from "./debug/AddAttributeEvent.js";
 import { ConstructionEvent } from "./debug/ConstructionEvent.js";
@@ -23,6 +22,7 @@ import { MultiMap } from "./misc/MultiMap.js";
 import { ErrorManager } from "./misc/ErrorManager.js";
 import { defaultLocale } from "./support/helpers.js";
 import { StringWriter } from "./support/StringWriter.js";
+import { ICompiledST, IST } from "./compiler/common.js";
 
 /**
  * An instance of the StringTemplate. It consists primarily of
@@ -38,7 +38,7 @@ import { StringWriter } from "./support/StringWriter.js";
  *  TODO: {@link ST#locals} is not actually a hash table like the documentation
  *  says.</p>
  */
-export class ST {
+export class ST implements IST {
     public static readonly VERSION = "4.3.4ng";
 
     /** Events during template hierarchy construction (not evaluation) */
@@ -67,7 +67,7 @@ export class ST {
     };
 
     /** The implementation for this template among all instances of same template . */
-    public impl?: CompiledST;
+    public impl?: ICompiledST;
 
     /**
      * Created as instance of which group? We need this to initialize interpreter
@@ -136,12 +136,12 @@ export class ST {
             // entire impl so formalArguments list is cloned as well. Don't want
             // further derivations altering previous arg defs. See
             // testRedefOfKeyInCloneAfterAddingAttribute().
-            this.impl = proto.impl!.clone();
+            this.impl = proto.impl?.clone();
 
             if (proto.locals) {
                 this.locals = [...proto.locals];
             } else {
-                if (this.impl.formalArguments.size > 0) {
+                if (this.impl && this.impl.formalArguments.size > 0) {
                     this.locals = new Array<Object>(this.impl.formalArguments.size);
                     this.locals.fill(ST.EMPTY_ATTR);
                 }
@@ -596,16 +596,6 @@ export class ST {
 
 // eslint-disable-next-line @typescript-eslint/no-namespace, no-redeclare
 export namespace ST {
-    /** {@code <@r()>}, {@code <@r>...<@end>}, and {@code @t.r() ::= "..."} defined manually by coder */
-    export enum RegionType {
-        /** {@code <@r()>} */
-        IMPLICIT,
-        /** {@code <@r>...<@end>} */
-        EMBEDDED,
-        /** {@code @t.r() ::= "..."} */
-        EXPLICIT,
-    };
-
     export type DebugState = InstanceType<typeof ST.DebugState>;
     export type AttributeList = InstanceType<typeof ST.AttributeList>;
 }

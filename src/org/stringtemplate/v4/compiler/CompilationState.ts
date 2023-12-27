@@ -81,7 +81,7 @@ export class CompilationState {
     }
 
     public setOption(id: CommonTree): void {
-        const option = Compiler.supportedOptions.get(id.getText())!;
+        const option = Interpreter.supportedOptions.get(id.getText())!;
         this.emit1(id, Bytecode.INSTR_STORE_OPTION, option);
     }
 

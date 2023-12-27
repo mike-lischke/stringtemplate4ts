@@ -6,8 +6,9 @@
  */
 
 import { InstanceScope } from "../InstanceScope.js";
+import { IInterpEvent } from "../compiler/common.js";
 
-export class InterpEvent {
+export class InterpEvent implements IInterpEvent {
     public scope: InstanceScope;
     /** Index of first char into output stream. */
     public readonly outputStartChar: number;

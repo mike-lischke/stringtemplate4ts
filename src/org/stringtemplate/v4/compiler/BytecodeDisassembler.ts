@@ -5,15 +5,15 @@
  * Licensed under the BSD-3 License. See License.txt in the project root for license information.
  */
 
-import { CompiledST } from "./CompiledST.js";
 import { Bytecode } from "./Bytecode.js";
 import { Misc } from "../misc/Misc.js";
 import { printf } from "fast-printf";
+import { ICompiledST } from "./common.js";
 
 export class BytecodeDisassembler {
-    protected code: CompiledST;
+    protected code: ICompiledST;
 
-    public constructor(code: CompiledST) {
+    public constructor(code: ICompiledST) {
         this.code = code;
     }
 

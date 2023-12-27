@@ -7,8 +7,9 @@
 
 import { InterpEvent } from "./InterpEvent.js";
 import { InstanceScope } from "../InstanceScope.js";
+import { IEvalTemplateEvent } from "../compiler/common.js";
 
-export class EvalTemplateEvent extends InterpEvent {
+export class EvalTemplateEvent extends InterpEvent implements IEvalTemplateEvent {
     public constructor(scope: InstanceScope, exprStartChar: number, exprStopChar: number) {
         super(scope, exprStartChar, exprStopChar);
     }

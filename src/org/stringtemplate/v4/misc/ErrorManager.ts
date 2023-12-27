@@ -18,6 +18,7 @@ import { InstanceScope } from "../InstanceScope.js";
 import { Interpreter } from "../Interpreter.js";
 import { ST } from "../ST.js";
 import { STErrorListener } from "../STErrorListener.js";
+import { IInstanceScope } from "../compiler/common.js";
 
 export class ErrorManager {
     public static DEFAULT_ERROR_LISTENER = new class implements STErrorListener {
@@ -94,11 +95,12 @@ export class ErrorManager {
         );
     }
 
-    public runTimeError(interp: Interpreter, scope: InstanceScope, error: ErrorType): void;
-    public runTimeError(interp: Interpreter, scope: InstanceScope, error: ErrorType, arg: unknown): void;
-    public runTimeError(interp: Interpreter, scope: InstanceScope, error: ErrorType, e: Error, arg: unknown): void;
-    public runTimeError(interp: Interpreter, scope: InstanceScope, error: ErrorType, arg: unknown, arg2: unknown): void;
-    public runTimeError(interp: Interpreter, scope: InstanceScope, error: ErrorType, arg: unknown, arg2: unknown,
+    public runTimeError(interp: Interpreter, scope: IInstanceScope, error: ErrorType): void;
+    public runTimeError(interp: Interpreter, scope: IInstanceScope, error: ErrorType, arg: unknown): void;
+    public runTimeError(interp: Interpreter, scope: IInstanceScope, error: ErrorType, e: Error, arg: unknown): void;
+    public runTimeError(interp: Interpreter, scope: IInstanceScope, error: ErrorType, arg: unknown,
+        arg2: unknown): void;
+    public runTimeError(interp: Interpreter, scope: IInstanceScope, error: ErrorType, arg: unknown, arg2: unknown,
         arg3: unknown): void;
     public runTimeError(...args: unknown[]): void {
         switch (args.length) {

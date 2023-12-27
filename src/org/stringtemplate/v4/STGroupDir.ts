@@ -158,4 +158,9 @@ export class STGroupDir extends STGroup {
 
         return this.loadTemplateFile(prefix, unqualifiedName + STGroupDir.TEMPLATE_FILE_EXTENSION);
     }
+
+    protected override importGroupDir(dirName: string): STGroup | undefined {
+        return new STGroupDir(dirName, this.encoding, this.delimiterStartChar, this.delimiterStopChar);
+
+    }
 }

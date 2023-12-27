@@ -76,7 +76,7 @@ export class GroupLexer extends antlr.Lexer {
     ];
 
 
-    public currentGroup: STGroup;
+    public currentGroup!: STGroup;
 
     public reportError(e: antlr.RecognitionException): void {
         let msg: string;

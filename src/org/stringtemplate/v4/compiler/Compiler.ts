@@ -13,32 +13,20 @@ import {
 
 import { STLexer } from "./STLexer.js";
 import { STException } from "./STException.js";
-import { FormalArgument } from "./FormalArgument.js";
 import { CompiledST } from "./CompiledST.js";
 import { Bytecode } from "./Bytecode.js";
-import { Interpreter } from "../Interpreter.js";
-import { ST } from "../ST.js";
 import { STGroup } from "../STGroup.js";
 import { ErrorType } from "../misc/ErrorType.js";
 import { GroupParser } from "./generated/GroupParser.js";
 import { STParser } from "./generated/STParser.js";
 import { CommonTreeNodeStream } from "../support/CommonTreeNodeStream.js";
 import { CodeGenerator } from "./CodeGenerator.js";
+import { ICompilerParameters, RegionType } from "./common.js";
 
 /** A compiler for a single template. */
 export class Compiler {
     public static readonly SUBTEMPLATE_PREFIX = "_sub";
     public static readonly TEMPLATE_INITIAL_CODE_SIZE = 15;
-
-    public static readonly supportedOptions = new Map<string, Interpreter.Option>([
-        ["anchor", Interpreter.Option.ANCHOR],
-        ["format", Interpreter.Option.FORMAT],
-        ["null", Interpreter.Option.NULL],
-        ["separator", Interpreter.Option.SEPARATOR],
-        ["wrap", Interpreter.Option.WRAP],
-    ]);
-
-    public static readonly NUM_OPTIONS = Compiler.supportedOptions.size;
 
     public static readonly defaultOptionValues = new Map<string, string>([
         ["anchor", "true"],
@@ -74,7 +62,7 @@ export class Compiler {
         const blank = new CompiledST();
         blank.isRegion = true;
         blank.templateDefStartToken = nameToken;
-        blank.regionDefType = ST.RegionType.IMPLICIT;
+        blank.regionDefType = RegionType.IMPLICIT;
         blank.name = mangled;
         outermostImpl.addImplicitlyDefinedTemplate(blank);
 
@@ -88,13 +76,7 @@ export class Compiler {
     }
 
     /** Compile full template with known or unknown formal arguments. */
-    public compile(values: {
-        srcName?: string,
-        name?: string,
-        args?: FormalArgument[],
-        template: string,
-        templateToken?: Token;
-    }): CompiledST | undefined {
+    public compile(values: ICompilerParameters): CompiledST | undefined {
         const is = CharStreams.fromString(values.template);
         is.name = values.srcName ?? values.name ?? "<anonymous>";
 
@@ -148,7 +130,7 @@ export class Compiler {
 
             // XXX: This is the interface between the ANTLRv4 parse tree and the ANTLRv3 AST node.
             ///impl.ast = r.getTree();
-            impl.ast.setUnknownTokenBoundaries();
+            impl.ast?.setUnknownTokenBoundaries();
             impl.tokens = tokens;
         } catch (re) {
             if (re instanceof RecognitionException) {
