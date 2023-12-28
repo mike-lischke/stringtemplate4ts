@@ -9,8 +9,8 @@ import { existsSync } from "fs";
 import { dirname, resolve } from "path";
 
 import { STGroup } from "./STGroup.js";
-import { CompiledST } from "./compiler/CompiledST.js";
 import { Misc } from "./misc/Misc.js";
+import { ICompiledST } from "./compiler/common.js";
 
 /**
  * The internal representation of a single group file (which must end in
@@ -112,8 +112,8 @@ export class STGroupFile extends STGroup {
     }
 
     public override load(): void;
-    public override load(name: string): CompiledST;
-    public override load(...args: unknown[]): void | CompiledST {
+    public override load(name: string): ICompiledST | null | undefined;
+    public override load(...args: unknown[]): void | ICompiledST | null | undefined {
         if (!this.alreadyLoaded) {
             this.load();
         }

@@ -13,7 +13,7 @@
 
 import { BitSet, RecognitionException, Token } from "antlr4ng";
 
-import { IFormalArgument } from "./common.js";
+import { IFormalArgument, RegionType } from "./common.js";
 
 import { STLexer } from "./STLexer.js";
 import { FormalArgument } from "./FormalArgument.js";
@@ -22,7 +22,6 @@ import { CompilationState } from "./CompilationState.js";
 import { Bytecode } from "./Bytecode.js";
 import { ErrorType } from "../misc/ErrorType.js";
 import { STGroup } from "../STGroup.js";
-import { ST } from "../ST.js";
 import { ErrorManager } from "../misc/ErrorManager.js";
 import { TreeParser } from "../support/TreeParser.js";
 import { TreeRuleReturnScope } from "../support/TreeRuleReturnScope.js";
@@ -971,7 +970,7 @@ export class CodeGenerator extends TreeParser {
 
                 const sub = template7;
                 sub.isRegion = true;
-                sub.regionDefType = ST.RegionType.EMBEDDED;
+                sub.regionDefType = RegionType.EMBEDDED;
                 sub.templateDefStartToken = ID6?.token;
 
                 this.outermostImpl.addImplicitlyDefinedTemplate(sub);

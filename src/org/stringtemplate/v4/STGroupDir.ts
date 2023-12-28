@@ -13,8 +13,8 @@ import * as path from "path";
 import { CharStreams, Token } from "antlr4ng";
 
 import { STGroup } from "./STGroup.js";
-import { CompiledST } from "./compiler/CompiledST.js";
 import { Misc } from "./misc/Misc.js";
+import { ICompiledST, ISTGroup } from "./compiler/common.js";
 
 // TODO: caching?
 
@@ -101,7 +101,7 @@ export class STGroupDir extends STGroup {
     /**
      * Load .st as relative file name relative to root by {@code prefix}.
      */
-    public override loadTemplateFile(prefix: string, unqualifiedFileName: string): CompiledST | undefined {
+    public override loadTemplateFile(prefix: string, unqualifiedFileName: string): ICompiledST | undefined {
         if (STGroupDir.verbose) {
             console.log("loadTemplateFile(" + unqualifiedFileName + ") in group dir " +
                 "from " + this.groupDirName + " prefix=" + prefix);
@@ -129,8 +129,8 @@ export class STGroupDir extends STGroup {
      *  precedence over directory with same name. {@code name} is always fully-qualified.
      * @param name
      */
-    public override load(name: string): CompiledST | undefined;
-    public override load(name?: string): CompiledST | undefined {
+    public override load(name: string): ICompiledST | undefined | null;
+    public override load(name?: string): ICompiledST | undefined | null | void {
         if (!name) {
             super.load();
 
@@ -159,7 +159,7 @@ export class STGroupDir extends STGroup {
         return this.loadTemplateFile(prefix, unqualifiedName + STGroupDir.TEMPLATE_FILE_EXTENSION);
     }
 
-    protected override importGroupDir(dirName: string): STGroup | undefined {
+    protected override importGroupDir(dirName: string): ISTGroup | undefined {
         return new STGroupDir(dirName, this.encoding, this.delimiterStartChar, this.delimiterStopChar);
 
     }

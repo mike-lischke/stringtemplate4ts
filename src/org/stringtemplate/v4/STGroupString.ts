@@ -7,8 +7,9 @@
 
 import { CharStreams, CommonTokenStream } from "antlr4ng";
 
+import { ICompiledST } from "./compiler/common.js";
+
 import { STGroup } from "./STGroup.js";
-import { CompiledST } from "./compiler/CompiledST.js";
 import { GroupParser } from "./compiler/generated/GroupParser.js";
 import { GroupLexer } from "./compiler/generated/GroupLexer.js";
 
@@ -75,8 +76,8 @@ export class STGroupString extends STGroup {
     }
 
     public override load(): void;
-    public override load(name: string): CompiledST;
-    public override load(...args: unknown[]): void | CompiledST {
+    public override load(name: string): ICompiledST | null | undefined;
+    public override load(...args: unknown[]): void | ICompiledST | null | undefined {
         switch (args.length) {
             case 0: {
 

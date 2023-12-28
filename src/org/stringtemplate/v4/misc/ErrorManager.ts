@@ -18,7 +18,7 @@ import { InstanceScope } from "../InstanceScope.js";
 import { Interpreter } from "../Interpreter.js";
 import { ST } from "../ST.js";
 import { STErrorListener } from "../STErrorListener.js";
-import { IInstanceScope } from "../compiler/common.js";
+import { IInstanceScope, IST } from "../compiler/common.js";
 
 export class ErrorManager {
     public static DEFAULT_ERROR_LISTENER = new class implements STErrorListener {
@@ -162,7 +162,7 @@ export class ErrorManager {
         }
     }
 
-    public internalError(self: ST | undefined, msg: string, e?: Error): void {
+    public internalError(self: IST | undefined, msg: string, e?: Error): void {
         this.listener.internalError(new STMessage(ErrorType.INTERNAL_ERROR, self, e, msg));
     }
 

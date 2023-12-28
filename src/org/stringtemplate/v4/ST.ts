@@ -18,11 +18,12 @@ import { AddAttributeEvent } from "./debug/AddAttributeEvent.js";
 import { ConstructionEvent } from "./debug/ConstructionEvent.js";
 import { InterpEvent } from "./debug/InterpEvent.js";
 import { Aggregate } from "./misc/Aggregate.js";
-import { MultiMap } from "./misc/MultiMap.js";
 import { ErrorManager } from "./misc/ErrorManager.js";
 import { defaultLocale } from "./support/helpers.js";
 import { StringWriter } from "./support/StringWriter.js";
-import { ICompiledST, IST } from "./compiler/common.js";
+import { ICompiledST, IST, ISTGroup } from "./compiler/common.js";
+import { setStringTemplateCloner, setStringTemplateFactory } from "./compiler/factories.js";
+import { DebugState } from "./DebugState.js";
 
 /**
  * An instance of the StringTemplate. It consists primarily of
@@ -40,15 +41,6 @@ import { ICompiledST, IST } from "./compiler/common.js";
  */
 export class ST implements IST {
     public static readonly VERSION = "4.3.4ng";
-
-    /** Events during template hierarchy construction (not evaluation) */
-    public static DebugState = class DebugState {
-        /** Record who made us? {@link ConstructionEvent} creates {@link Exception} to grab stack */
-        public newSTEvent: ConstructionEvent | undefined;
-
-        /** Track construction-time add attribute "events"; used for ST user-level debugging */
-        public addAttrEvents = new MultiMap<string, AddAttributeEvent>();
-    };
 
     public static readonly UNKNOWN_NAME = "anonymous";
     public static readonly EMPTY_ATTR = {};
@@ -92,13 +84,13 @@ export class ST implements IST {
      *   g2 = {t()}
      *  </pre>
      */
-    public groupThatCreatedThisInstance: STGroup;
+    public groupThatCreatedThisInstance: ISTGroup;
 
     /**
      * If {@link STGroup#trackCreationEvents}, track creation and add
      *  attribute events for each object. Create this object on first use.
      */
-    public debugState?: ST.DebugState;
+    public debugState?: DebugState;
 
     /**
      * Safe to simultaneously write via {@link #add}, which is synchronized.
@@ -120,7 +112,7 @@ export class ST implements IST {
      *  Copy all fields minus {@link #debugState}; don't delegate to {@link #ST()},
      *  which creates {@link ConstructionEvent}.
      */
-    public constructor(proto: ST);
+    public constructor(proto: IST);
     public constructor(group: STGroup, template: string);
     /**
      * Create ST using non-default delimiters; each one of these will live
@@ -154,7 +146,7 @@ export class ST implements IST {
 
         if (STGroup.trackCreationEvents) {
             if (!this.debugState) {
-                this.debugState = new ST.DebugState();
+                this.debugState = new DebugState();
             }
 
             this.debugState.newSTEvent = new ConstructionEvent();
@@ -174,8 +166,7 @@ export class ST implements IST {
         }
 
         this.groupThatCreatedThisInstance = group;
-        this.impl = this.groupThatCreatedThisInstance.compile(group.getFileName(), undefined, undefined, template,
-            undefined)!;
+        this.impl = this.groupThatCreatedThisInstance.compile({ srcName: group.getFileName(), template })!;
         this.impl.hasFormalArgs = false;
         this.impl.name = ST.UNKNOWN_NAME;
         this.impl.defineImplicitlyDefinedTemplates(this.groupThatCreatedThisInstance);
@@ -251,7 +242,7 @@ export class ST implements IST {
 
         if (STGroup.trackCreationEvents) {
             if (!this.debugState) {
-                this.debugState = new ST.DebugState();
+                this.debugState = new DebugState();
             }
 
             this.debugState.addAttrEvents.map(name, new AddAttributeEvent(name, value));
@@ -592,10 +583,32 @@ export class ST implements IST {
         this.locals![arg.index] = value;
     }
 
+    static {
+        // Register string template factories for use by other modules.
+
+        setStringTemplateFactory((group: ISTGroup, impl?: ICompiledST): IST => {
+            const st = new ST();
+            st.impl = impl;
+            st.groupThatCreatedThisInstance = group;
+            if (impl?.formalArguments) {
+                st.locals = new Array<Object>(impl.formalArguments.size);
+                st.locals.fill(ST.EMPTY_ATTR);
+            }
+
+            return st;
+        });
+
+        setStringTemplateCloner((prototype?: IST): IST => {
+            if (prototype) {
+                return new ST(prototype);
+            }
+
+            return new ST();
+        });
+    }
 }
 
 // eslint-disable-next-line @typescript-eslint/no-namespace, no-redeclare
 export namespace ST {
-    export type DebugState = InstanceType<typeof ST.DebugState>;
     export type AttributeList = InstanceType<typeof ST.AttributeList>;
 }

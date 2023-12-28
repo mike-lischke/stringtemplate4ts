@@ -5,10 +5,8 @@
  * Licensed under the BSD-3 License. See License.txt in the project root for license information.
  */
 
-import { Interpreter } from "../Interpreter.js";
 import { ModelAdaptor } from "../ModelAdaptor.js";
-import { ST } from "../ST.js";
-import { STGroup } from "../STGroup.js";
+import { IInterpreter, IST, ISTGroup } from "../compiler/common.js";
 
 // TODO: get rid of `unknown` as allowed type.
 // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
@@ -18,10 +16,10 @@ export type ValueOrIterable<Key extends AllowedMapKey, Value> = Key | Value | It
 export class MapModelAdaptor<Key extends AllowedMapKey, Value> implements ModelAdaptor<Map<Key, Value>> {
 
     private static getDefaultValue<Value>(map: Map<unknown, Value>): Value | undefined {
-        return map.get(STGroup.DEFAULT_KEY);
+        return map.get(ISTGroup.DEFAULT_KEY);
     }
 
-    public getProperty(_interp: Interpreter, _self: ST, model: Map<Key, Value>, property: Key,
+    public getProperty(_interp: IInterpreter, _self: IST, model: Map<Key, Value>, property: Key,
         propertyName: string): ValueOrIterable<Key, Value> | undefined {
         let value: ValueOrIterable<Key, Value> | undefined;
         if (!property) {
@@ -47,7 +45,7 @@ export class MapModelAdaptor<Key extends AllowedMapKey, Value> implements ModelA
         }
 
         // not found, use default
-        if (value === STGroup.DICT_KEY) {
+        if (value === ISTGroup.DICT_KEY) {
             value = property;
         }
 

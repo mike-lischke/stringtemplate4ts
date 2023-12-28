@@ -10,6 +10,9 @@ import { CommonTree } from "../support/CommonTree.js";
 import { Interval } from "../misc/Interval.js";
 import { Constructor } from "../reflection/IMember.js";
 import { AttributeRenderer } from "../AttributeRenderer.js";
+import { DebugState } from "../DebugState.js";
+import { ErrorType } from "../misc/ErrorType.js";
+import { ModelAdaptor } from "../ModelAdaptor.js";
 
 /**
  * An instance of the StringTemplate. It consists primarily of
@@ -26,10 +29,24 @@ import { AttributeRenderer } from "../AttributeRenderer.js";
  *  says.</p>
  */
 export interface IST {
-    groupThatCreatedThisInstance: ISTGroup;
+    /**
+     * If {@link STGroup#trackCreationEvents}, track creation and add
+     *  attribute events for each object. Create this object on first use.
+     */
+    debugState?: DebugState;
 
     /** The implementation for this template among all instances of same template . */
     impl?: ICompiledST;
+
+    groupThatCreatedThisInstance: ISTGroup;
+
+    /**
+     * Safe to simultaneously write via {@link #add}, which is synchronized.
+     *  Reading during exec is, however, NOT synchronized.  So, not thread safe
+     *  to add attributes while it is being evaluated.  Initialized to
+     *  {@link #EMPTY_ATTR} to distinguish {@code null} from empty.
+     */
+    locals?: unknown[];
 
     /**
      * Inject an attribute (name/value pair). If there is already an attribute
@@ -52,6 +69,19 @@ export interface IST {
      *  outside so toss an exception to notify them.
      */
     rawSetAttribute(name: string, value: unknown): void;
+
+    isAnonSubtemplate(): boolean;
+
+    /**
+     * Split {@code aggrName.{propName1,propName2}} into list
+     *  {@code [propName1, propName2]} and the {@code aggrName}. Spaces are
+     *  allowed around {@code ','}.
+     */
+    addAggr(aggregateSpec: string, ...values: unknown[]): IST;
+
+    render(lineWidth?: number): string;
+    render(locale: Intl.Locale, lineWidth?: number): string;
+
 }
 
 /**
@@ -76,6 +106,16 @@ export interface IInterpreter {
 }
 
 export interface IErrorManager {
+    runTimeError(interp: IInterpreter, scope: IInstanceScope, error: ErrorType): void;
+    runTimeError(interp: IInterpreter, scope: IInstanceScope, error: ErrorType, arg: unknown): void;
+    runTimeError(interp: IInterpreter, scope: IInstanceScope, error: ErrorType, e: Error, arg: unknown): void;
+    runTimeError(interp: IInterpreter, scope: IInstanceScope, error: ErrorType, arg: unknown, arg2: unknown): void;
+    runTimeError(interp: IInterpreter, scope: IInstanceScope, error: ErrorType, arg: unknown, arg2: unknown,
+        arg3: unknown): void;
+
+    iOError(self: IST | undefined, error: ErrorType, e: Error, arg?: unknown): void;
+
+    internalError(self: IST | undefined, msg: string, e?: Error): void;
 }
 
 export interface IInterpEvent {
@@ -140,6 +180,9 @@ export interface ISTGroup {
      */
     errMgr: IErrorManager;
 
+    delimiterStartChar: string;
+    delimiterStopChar: string;
+
     rawGetDictionary(name: string): Map<string, unknown> | undefined;
     isDictionary(name: string): boolean;
 
@@ -167,6 +210,11 @@ export interface ISTGroup {
      */
     createStringTemplateInternally(implOrProto: ICompiledST | IST): IST;
 
+    compile(params: ICompilerParameters): ICompiledST | undefined;
+
+    getModelAdaptor<T>(attributeType: Constructor<T>): ModelAdaptor<T>;
+
+    lookupTemplate(name: string): ICompiledST | undefined;
 }
 
 /**
@@ -318,3 +366,8 @@ export const isCompiledST = (value: unknown): value is ICompiledST => {
         && (candidate.name !== undefined)
         && (candidate.prefix !== undefined) && (candidate.template !== undefined);
 };
+
+export namespace ISTGroup {
+    export const DEFAULT_KEY = "default";
+    export const DICT_KEY = "key";
+}

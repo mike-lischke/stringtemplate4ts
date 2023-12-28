@@ -12,7 +12,7 @@ import path from "path";
 
 import { CharStream, CharStreams, CommonToken, CommonTokenStream, RecognitionException, Token } from "antlr4ng";
 
-import { ICompiledST, RegionType, isCompiledST } from "./compiler/common.js";
+import { ICompiledST, ICompilerParameters, IST, ISTGroup, RegionType, isCompiledST } from "./compiler/common.js";
 
 import { STErrorListener } from "./STErrorListener.js";
 import { ST } from "./ST.js";
@@ -20,7 +20,6 @@ import { ModelAdaptor } from "./ModelAdaptor.js";
 import { Interpreter } from "./Interpreter.js";
 import { InstanceScope } from "./InstanceScope.js";
 import { AttributeRenderer } from "./AttributeRenderer.js";
-//import { CompiledST } from "./compiler/CompiledST.js";
 import { FormalArgument } from "./compiler/FormalArgument.js";
 import { STException } from "./compiler/STException.js";
 import { Aggregate } from "./misc/Aggregate.js";
@@ -36,6 +35,7 @@ import { Constructor } from "./reflection/IMember.js";
 import { GroupParser } from "./compiler/generated/GroupParser.js";
 import { Compiler } from "./compiler/Compiler.js";
 import { GroupLexer } from "./compiler/generated/GroupLexer.js";
+import { cloneStringTemplate, createStringTemplate } from "./compiler/factories.js";
 
 /**
  * A directory or directory tree of {@code .st} template files and/or group files.
@@ -198,7 +198,7 @@ export class STGroup {
      * The primary means of getting an instance of a template from this
      *  group. Names must be absolute, fully-qualified names like {@code /a/b}.
      */
-    public getInstanceOf(name: string): ST | undefined {
+    public getInstanceOf(name: string): IST | undefined {
         if (STGroup.verbose) {
             console.log(this.constructor.name + ".getInstanceOf(" + name + ")");
         }
@@ -213,7 +213,7 @@ export class STGroup {
 
         const c = this.lookupTemplate(name);
         if (c) {
-            return this.createStringTemplate(c);
+            return createStringTemplate(this, c);
         }
 
         return undefined;
@@ -222,7 +222,7 @@ export class STGroup {
     /**
      * Create singleton template for use with dictionary values.
      */
-    public createSingleton(templateToken: Token): ST {
+    public createSingleton(templateToken: Token): IST {
         let template: string;
         if (templateToken.type === GroupParser.BIGSTRING || templateToken.type === GroupParser.BIGSTRING_NO_NL) {
             template = templateToken.text!.substring(2);
@@ -230,7 +230,7 @@ export class STGroup {
             template = templateToken.text!.substring(1);
         }
 
-        const impl = this.compile(this.getFileName(), undefined, undefined, template, templateToken)!;
+        const impl = this.compile({ srcName: this.getFileName(), template, templateToken })!;
         const st = this.createStringTemplateInternally(impl);
         st.groupThatCreatedThisInstance = this;
         st.impl!.hasFormalArgs = false;
@@ -329,8 +329,8 @@ export class STGroup {
      *  return just one template). {@code name} is fully-qualified.
      */
     public load(): void;
-    public load(name: string): ICompiledST | undefined;
-    public load(name?: string): ICompiledST | undefined | void {
+    public load(name: string): ICompiledST | undefined | null;
+    public load(name?: string): ICompiledST | undefined | null | void {
         // Force a load if it makes sense for the group, if no name is given.
         if (name) {
             return undefined;
@@ -424,7 +424,14 @@ export class STGroup {
         template = Misc.trimOneTrailingNewline(template);
 
         // compile, passing in templateName as enclosing name for any embedded regions
-        const code = this.compile(this.getFileName(), fullyQualifiedTemplateName, compileArgs, template, templateToken);
+        const code = this.compile({
+            srcName: this.getFileName(),
+            name: fullyQualifiedTemplateName,
+            args: compileArgs,
+            template,
+            templateToken,
+        });
+
         if (code) {
             code.name = fullyQualifiedTemplateName;
             this.rawDefineTemplate(fullyQualifiedTemplateName, code, nameT);
@@ -458,7 +465,12 @@ export class STGroup {
         const name = regionT.text!;
         template = Misc.trimOneStartingNewline(template);
         template = Misc.trimOneTrailingNewline(template);
-        const code = this.compile(this.getFileName(), enclosingTemplateName, undefined, template, templateToken);
+        const code = this.compile({
+            srcName: this.getFileName(),
+            name: enclosingTemplateName,
+            template,
+            templateToken,
+        });
         const mangled = STGroup.getMangledRegionName(enclosingTemplateName, name);
 
         if (!this.lookupTemplate(mangled)) {
@@ -540,14 +552,10 @@ export class STGroup {
     /**
      * Compile a template.
      */
-    public compile(srcName: string,
-        name: string | undefined,
-        args: FormalArgument[] | undefined,
-        template: string,
-        templateToken: Token | undefined): ICompiledST | undefined { // for error location
+    public compile(params: ICompilerParameters): ICompiledST | undefined { // for error location
         const c = new Compiler(this);
 
-        return c.compile({ srcName, name, args, template, templateToken });
+        return c.compile(params);
     }
 
     /**
@@ -588,7 +596,7 @@ export class STGroup {
     public importTemplates(fileNameToken: Token): void;
     public importTemplates(g: STGroup, clearOnUnload: boolean): void;
     public importTemplates(...args: unknown[]): void {
-        let g;
+        let g: STGroup | null | undefined;
         let clearOnUnload;
 
         switch (args.length) {
@@ -646,17 +654,17 @@ export class STGroup {
                     } else {
                         if (isGroupFile) {
                             if (fs.existsSync(fileUnderRoot)) {
-                                g = this.importGroupFile(fileUnderRoot);
+                                g = this.importGroupFile(fileUnderRoot) as STGroup;
                             } else {
-                                g = this.importGroupFile(fileName);
+                                g = this.importGroupFile(fileName) as STGroup;
                             }
                         } else {
                             if (isGroupDir) {
                                 if (fs.existsSync(fileUnderRoot)) {
-                                    g = this.importGroupDir(fileUnderRoot);
+                                    g = this.importGroupDir(fileUnderRoot) as STGroup;
                                 } else {
                                     // try in CLASSPATH
-                                    g = this.importGroupDir(fileName);
+                                    g = this.importGroupDir(fileName) as STGroup;
                                 }
                             }
                         }
@@ -809,7 +817,7 @@ export class STGroup {
                 g.registerRenderer(attributeType, r, true);
             }
         }
-    }
+    };
 
     /**
      * Get renderer for class {@code T} associated with this group.
@@ -831,25 +839,13 @@ export class STGroup {
         return this.renderers.get(attributeType);
     }
 
-    public createStringTemplate(impl: ICompiledST): ST {
-        const st = new ST();
-        st.impl = impl;
-        st.groupThatCreatedThisInstance = this;
-        if (impl.formalArguments) {
-            st.locals = new Array<Object>(impl.formalArguments.size);
-            st.locals.fill(ST.EMPTY_ATTR);
-        }
-
-        return st;
-    }
-
     /**
      * Differentiate so we can avoid having creation events for regions,
      *  map operations, and other implicit "new ST" events during rendering.
      */
-    public createStringTemplateInternally(implOrProto: ICompiledST | ST): ST {
-        if (isCompiledST(implOrProto)) {
-            const st = this.createStringTemplate(implOrProto);
+    public createStringTemplateInternally(implOrProto?: ICompiledST | IST): IST {
+        if (!implOrProto || isCompiledST(implOrProto)) {
+            const st = createStringTemplate(this, implOrProto);
             if (STGroup.trackCreationEvents && st.debugState) {
                 st.debugState.newSTEvent = undefined; // toss it out
             }
@@ -857,7 +853,7 @@ export class STGroup {
             return st;
         }
 
-        return new ST(implOrProto); // no need to wack debugState; not set in ST(proto).
+        return cloneStringTemplate(implOrProto); // no need to wack debugState; not set in ST(proto).
     }
 
     public getName(): string {
@@ -932,7 +928,7 @@ export class STGroup {
         return result;
     }
 
-    public getEmbeddedInstanceOf(interp: Interpreter, scope: InstanceScope, name: string): ST {
+    public getEmbeddedInstanceOf(interp: Interpreter, scope: InstanceScope, name: string): IST {
         let fullyQualifiedName = name;
         if (name[0] !== "/" && scope.st) {
             fullyQualifiedName = scope.st.impl!.prefix + name;
@@ -946,7 +942,7 @@ export class STGroup {
         if (!st) {
             this.errMgr.runTimeError(interp, scope, ErrorType.NO_SUCH_TEMPLATE, fullyQualifiedName);
 
-            return this.createStringTemplateInternally(new CompiledST());
+            return this.createStringTemplateInternally();
         }
 
         // this is only called internally. wack any debug ST create events
@@ -984,11 +980,11 @@ export class STGroup {
         return undefined;
     }
 
-    protected importGroupFile(fileName: string): STGroup | undefined {
+    protected importGroupFile(fileName: string): ISTGroup | undefined {
         return undefined;
     }
 
-    protected importGroupDir(fileName: string): STGroup | undefined {
+    protected importGroupDir(fileName: string): ISTGroup | undefined {
         return undefined;
     }
 

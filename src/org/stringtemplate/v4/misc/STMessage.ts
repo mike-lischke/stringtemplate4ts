@@ -9,7 +9,7 @@ import { Token } from "antlr4ng";
 import { printf } from "fast-printf";
 
 import { ErrorType } from "./ErrorType.js";
-import { ST } from "../ST.js";
+import { IST } from "../compiler/common.js";
 
 /**
  * Upon error, ST creates an {@link STMessage} or subclass instance and notifies
@@ -23,7 +23,7 @@ export class STMessage {
      * if in debug mode, has created instance, add attr events and eval
      *  template events.
      */
-    public self?: ST;
+    public self?: IST;
     public error: ErrorType;
     public arg: unknown;
     public arg2: unknown;
@@ -31,12 +31,12 @@ export class STMessage {
     public cause?: Error;
 
     public constructor(error: ErrorType);
-    public constructor(error: ErrorType, self: ST);
-    public constructor(error: ErrorType, self?: ST, cause?: Error);
-    public constructor(error: ErrorType, self?: ST, cause?: Error, arg?: unknown);
-    public constructor(error: ErrorType, self?: ST, cause?: Error, where?: Token, arg?: unknown);
-    public constructor(error: ErrorType, self?: ST, cause?: Error, arg?: unknown, arg2?: unknown);
-    public constructor(error: ErrorType, self?: ST, cause?: Error, arg?: unknown, arg2?: unknown, arg3?: unknown);
+    public constructor(error: ErrorType, self: IST);
+    public constructor(error: ErrorType, self?: IST, cause?: Error);
+    public constructor(error: ErrorType, self?: IST, cause?: Error, arg?: unknown);
+    public constructor(error: ErrorType, self?: IST, cause?: Error, where?: Token, arg?: unknown);
+    public constructor(error: ErrorType, self?: IST, cause?: Error, arg?: unknown, arg2?: unknown);
+    public constructor(error: ErrorType, self?: IST, cause?: Error, arg?: unknown, arg2?: unknown, arg3?: unknown);
     public constructor(...args: unknown[]) {
         switch (args.length) {
             case 1: {
@@ -47,7 +47,7 @@ export class STMessage {
             }
 
             case 2: {
-                const [error, self] = args as [ErrorType, ST];
+                const [error, self] = args as [ErrorType, IST];
 
                 this.error = error;
                 this.self = self;
@@ -56,7 +56,7 @@ export class STMessage {
             }
 
             case 3: {
-                const [error, self, cause] = args as [ErrorType, ST, Error];
+                const [error, self, cause] = args as [ErrorType, IST, Error];
 
                 this.error = error;
                 this.self = self;
@@ -66,7 +66,7 @@ export class STMessage {
             }
 
             case 4: {
-                const [error, self, cause, arg] = args as [ErrorType, ST, Error, unknown];
+                const [error, self, cause, arg] = args as [ErrorType, IST, Error, unknown];
 
                 this.error = error;
                 this.self = self;
@@ -78,14 +78,14 @@ export class STMessage {
 
             case 5: {
                 if (args[3] && typeof args[3] === "object" && "tokenIndex" in args[3]) {
-                    const [error, self, cause, _where, arg] = args as [ErrorType, ST, Error, Token, unknown];
+                    const [error, self, cause, _where, arg] = args as [ErrorType, IST, Error, Token, unknown];
 
                     this.error = error;
                     this.self = self;
                     this.cause = cause;
                     this.arg = arg;
                 } else {
-                    const [error, self, cause, arg, arg2] = args as [ErrorType, ST, Error, unknown, unknown];
+                    const [error, self, cause, arg, arg2] = args as [ErrorType, IST, Error, unknown, unknown];
 
                     this.error = error;
                     this.self = self;
@@ -98,7 +98,8 @@ export class STMessage {
             }
 
             case 6: {
-                const [error, self, cause, arg, arg2, arg3] = args as [ErrorType, ST, Error, unknown, unknown, unknown];
+                const [error, self, cause, arg, arg2, arg3] =
+                    args as [ErrorType, IST, Error, unknown, unknown, unknown];
 
                 this.error = error;
                 this.self = self;

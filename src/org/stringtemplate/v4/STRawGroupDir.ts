@@ -7,9 +7,10 @@
 
 import { CharStream, CommonToken } from "antlr4ng";
 
+import { ICompiledST } from "./compiler/common.js";
+
 import { STGroupDir } from "./STGroupDir.js";
 import { STLexer } from "./compiler/STLexer.js";
-import { CompiledST } from "./compiler/CompiledST.js";
 import { Misc } from "./misc/Misc.js";
 import { Compiler } from "./compiler/Compiler.js";
 
@@ -19,7 +20,7 @@ import { Compiler } from "./compiler/Compiler.js";
  */
 export class STRawGroupDir extends STGroupDir {
     public override loadTemplateFile(prefix: string, unqualifiedFileName: string,
-        templateStream?: CharStream): CompiledST | undefined {
+        templateStream?: CharStream): ICompiledST | undefined {
         if (!templateStream) {
             return super.loadTemplateFile(prefix, unqualifiedFileName);
         }

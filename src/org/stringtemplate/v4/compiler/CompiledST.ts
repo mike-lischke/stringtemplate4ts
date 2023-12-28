@@ -111,9 +111,6 @@ export class CompiledST implements ICompiledST {
         this.template = "";
     }
 
-    public static compileGroup(group: STGroup): ICompiledST {
-    }
-
     /**
      * Cloning the {@link CompiledST} for an {@link ST} instance allows
      * {@link ST#add} to be called safely during interpretation for templates

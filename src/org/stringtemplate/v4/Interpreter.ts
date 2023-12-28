@@ -96,12 +96,12 @@ export class Interpreter {
      *  @see ST#groupThatCreatedThisInstance
      *  @see CompiledST#nativeGroup
      */
-    protected group: STGroup;
+    protected group: ISTGroup;
 
     /** For renderers, we have to pass in the locale. */
     protected locale: Intl.Locale;
 
-    protected errMgr: ErrorManager;
+    protected errMgr: IErrorManager;
 
     /** If {@link #trace} is {@code true}, track trace here. */
     // TODO: track the pieces not a string and track what it contributes to output
@@ -114,10 +114,10 @@ export class Interpreter {
      */
     protected events: InterpEvent[] = [];
 
-    public constructor(group: STGroup, debug: boolean);
-    public constructor(group: STGroup, locale: Intl.Locale, debug: boolean);
-    public constructor(group: STGroup, errMgr: IErrorManager, debug: boolean);
-    public constructor(group: STGroup, locale: Intl.Locale, errMgr: IErrorManager, debug: boolean);
+    public constructor(group: ISTGroup, debug: boolean);
+    public constructor(group: ISTGroup, locale: Intl.Locale, debug: boolean);
+    public constructor(group: ISTGroup, errMgr: IErrorManager, debug: boolean);
+    public constructor(group: ISTGroup, locale: Intl.Locale, errMgr: IErrorManager, debug: boolean);
     public constructor(...args: unknown[]) {
         switch (args.length) {
             case 2: {
@@ -130,10 +130,10 @@ export class Interpreter {
 
             case 3: {
                 if (args[1] instanceof Intl.Locale) {
-                    [this.group, this.locale, this.debug] = args as [STGroup, Intl.Locale, boolean];
+                    [this.group, this.locale, this.debug] = args as [ISTGroup, Intl.Locale, boolean];
                     this.errMgr = this.group.errMgr;
                 } else {
-                    [this.group, this.errMgr, this.debug] = args as [STGroup, ErrorManager, boolean];
+                    [this.group, this.errMgr, this.debug] = args as [ISTGroup, ErrorManager, boolean];
                     this.locale = new Intl.Locale("en-US");
                 }
 
@@ -142,7 +142,7 @@ export class Interpreter {
 
             case 4: {
                 [this.group, this.locale, this.errMgr, this.debug] =
-                    args as [STGroup, Intl.Locale, ErrorManager, boolean];
+                    args as [ISTGroup, Intl.Locale, ErrorManager, boolean];
 
                 break;
             }
@@ -617,7 +617,7 @@ export class Interpreter {
             let name: string;
             let left: unknown;
             let right: unknown;
-            let st: ST;
+            let st: IST;
             let options: unknown[];
             let ip = 0;
 
@@ -1464,7 +1464,7 @@ export class Interpreter {
         return -1;
     }
 
-    protected map(scope: InstanceScope, attr: unknown, st: ST): void {
+    protected map(scope: InstanceScope, attr: unknown, st: IST): void {
         this.rotMap(scope, attr, [st]);
     };
 
@@ -1475,7 +1475,7 @@ export class Interpreter {
      * @param attr
      * @param prototypes
      */
-    protected rotMap(scope: InstanceScope, attr: unknown, prototypes: ST[]): void {
+    protected rotMap(scope: InstanceScope, attr: unknown, prototypes: IST[]): void {
         if (!attr) {
             this.operands[++this.sp] = undefined;
 
@@ -1503,8 +1503,8 @@ export class Interpreter {
     }
 
     protected rotateMapIterator(scope: InstanceScope, attr: Iterator<unknown>,
-        prototypes: ST[]): Array<ST | undefined> {
-        const mapped = new Array<ST | undefined>();
+        prototypes: IST[]): Array<IST | undefined> {
+        const mapped = new Array<IST | undefined>();
         const iter = attr;
         let i0 = 0;
         let i = 1;
@@ -1546,7 +1546,7 @@ export class Interpreter {
      * @param prototype
      */
     // todo: i, i0 not set unless mentioned? map:{k,v | ..}?
-    protected zipMap(scope: InstanceScope, exprs: unknown[], prototype: ST): ST.AttributeList | undefined {
+    protected zipMap(scope: InstanceScope, exprs: unknown[], prototype: IST): ST.AttributeList | undefined {
         if (!exprs || !prototype || exprs.length === 0) {
             return undefined; // do not apply if missing templates or empty values
         }
@@ -1620,7 +1620,7 @@ export class Interpreter {
         return results;
     }
 
-    protected setFirstArgument(scope: InstanceScope, st: ST, attr: unknown): void {
+    protected setFirstArgument(scope: InstanceScope, st: IST, attr: unknown): void {
         if (!st.impl?.hasFormalArgs) {
             if (!st.impl?.formalArguments) {
                 st.add(ST.IMPLICIT_ARG_NAME, attr);
