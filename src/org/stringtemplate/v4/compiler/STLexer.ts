@@ -340,7 +340,10 @@ export class STLexer implements TokenSource {
     protected inside(): Token {
         while (true) {
             switch (String.fromCodePoint(this.c)) {
-                case " ": case "\t": case "\n": case "\r": {
+                case " ":
+                case "\t":
+                case "\n":
+                case "\r": {
                     this.consume();
 
                     return STLexer.SKIP;

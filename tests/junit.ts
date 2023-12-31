@@ -6,9 +6,7 @@
 type Throwable = Error;
 
 export const assertEquals = <T>(expected: T | null, actual: T | null): void => {
-    if (expected !== actual) {
-        throw new Error(`Expected ${expected} but got ${actual}`);
-    }
+    expect(actual).toEqual(expected);
 };
 
 export const assertThrows = <T extends Throwable>(expected: new (message: string) => T, func: () => void): T => {

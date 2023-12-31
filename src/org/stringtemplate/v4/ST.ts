@@ -84,7 +84,7 @@ export class ST implements IST {
      *   g2 = {t()}
      *  </pre>
      */
-    public groupThatCreatedThisInstance: ISTGroup;
+    public groupThatCreatedThisInstance!: ISTGroup;
 
     /**
      * If {@link STGroup#trackCreationEvents}, track creation and add
@@ -154,6 +154,10 @@ export class ST implements IST {
 
         let group;
         let template;
+        if (args.length === 0) {
+            return;
+        }
+
         if (args.length === 1) {
             [template] = args as [string];
             group = STGroup.defaultGroup;
@@ -319,7 +323,7 @@ export class ST implements IST {
         const aggregateName = aggregateSpec.substring(0, dot);
         let propString = aggregateSpec.substring(dot + 2, aggregateSpec.length - 1);
         propString = propString.trim();
-        const propNames = propString.split("\\ *,\\ *");
+        const propNames = propString.split(",");
         if (propNames.length === 0) {
             throw new Error("invalid aggregate attribute format: " + aggregateSpec);
         }
@@ -333,7 +337,7 @@ export class ST implements IST {
         const aggregate = new Aggregate();
         for (const p of propNames) {
             const v = values[i++];
-            aggregate.properties.set(p, v);
+            aggregate.properties.set(p.trim(), v);
         }
 
         this.add(aggregateName, aggregate); // now add as usual

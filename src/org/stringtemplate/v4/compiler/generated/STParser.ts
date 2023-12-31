@@ -143,9 +143,9 @@ export class STParser extends antlr.Parser {
 
 
     private errMgr!: ErrorManager;
-    private templateToken!: Token;
+    private templateToken?: Token;
 
-    public static create(input: antlr.TokenStream, errMgr: ErrorManager, templateToken: antlr.Token): STParser {
+    public static create(input: antlr.TokenStream, errMgr: ErrorManager, templateToken?: antlr.Token): STParser {
         const result = new STParser(input);
         result.errMgr = errMgr;
         result.templateToken = templateToken;

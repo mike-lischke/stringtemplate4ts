@@ -19,7 +19,6 @@ import { STGroup } from "../STGroup.js";
 import { ErrorType } from "../misc/ErrorType.js";
 import { GroupParser } from "./generated/GroupParser.js";
 import { STParser } from "./generated/STParser.js";
-import { CommonTreeNodeStream } from "../support/CommonTreeNodeStream.js";
 import { CodeGenerator } from "./CodeGenerator.js";
 import { ICompilerParameters, RegionType } from "./common.js";
 
@@ -56,7 +55,7 @@ export class Compiler {
     }
 
     public static defineBlankRegion(outermostImpl: CompiledST, nameToken?: Token): CompiledST {
-        const outermostTemplateName = outermostImpl.name;
+        const outermostTemplateName = outermostImpl.name!;
         const mangled = STGroup.getMangledRegionName(outermostTemplateName, nameToken?.text ?? "");
 
         const blank = new CompiledST();
@@ -99,7 +98,7 @@ export class Compiler {
         }
 
         const tokens = new CommonTokenStream(lexer);
-        const p = STParser.create(tokens, this.group.errMgr, values.templateToken!);
+        const p = STParser.create(tokens, this.group.errMgr, values.templateToken);
         let r;
         try {
             r = p.templateAndEOF();
@@ -113,24 +112,20 @@ export class Compiler {
 
         if (p.numberOfSyntaxErrors > 0) {
             const impl = new CompiledST();
-            impl.defineFormalArgs(values.args ?? []);
+            impl.defineFormalArgs(values.args);
 
             return impl;
         }
 
-        const nodes = new CommonTreeNodeStream(r);
-        nodes.setTokenStream(tokens);
-        const gen = new CodeGenerator(nodes, this.group.errMgr, values.name, values.template, values.templateToken);
+        const gen = new CodeGenerator(tokens, r, this.group.errMgr, values.name, values.template, values.templateToken);
 
         let impl;
         try {
-            impl = gen.template(values.name!, values.args!);
+            impl = gen.template(r.template(), values.name, values.args);
             impl.nativeGroup = this.group;
             impl.template = values.template;
 
-            // XXX: This is the interface between the ANTLRv4 parse tree and the ANTLRv3 AST node.
-            ///impl.ast = r.getTree();
-            impl.ast?.setUnknownTokenBoundaries();
+            impl.ast = r;
             impl.tokens = tokens;
         } catch (re) {
             if (re instanceof RecognitionException) {

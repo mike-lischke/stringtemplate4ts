@@ -3,8 +3,8 @@
  * Licensed under the BSD-3 License. See License.txt in the project root for license information.
  */
 
-import { RecognitionException } from "antlr4ng";
-import { TreeNodeStream } from "./TreeNodeStream.js";
+import { RecognitionException, TokenStream } from "antlr4ng";
+
 import { BaseRecognizer } from "./BaseRecognizer.js";
 import { RecognizerSharedState } from "./RecognizerSharedState.js";
 
@@ -12,9 +12,9 @@ export class TreeParser extends BaseRecognizer {
     public static readonly DOWN = -1;
     public static readonly UP = -2;
 
-    protected input: TreeNodeStream;
+    protected input: TokenStream;
 
-    public constructor(input: TreeNodeStream, state: RecognizerSharedState) {
+    public constructor(input: TokenStream, state: RecognizerSharedState) {
         super();
 
         this.input = input;

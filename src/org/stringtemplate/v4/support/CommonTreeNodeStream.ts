@@ -3,19 +3,20 @@
  * Licensed under the BSD-3 License. See License.txt in the project root for license information.
  */
 
-import { ParseTree, TokenStream } from "antlr4ng";
+import { CommonTokenStream, ParseTree, TokenStream } from "antlr4ng";
 
 import { TreeNodeStream } from "./TreeNodeStream.js";
 import { CommonTree } from "./CommonTree.js";
-import { TokenStreamV3 } from "./TokenStreamV3.js";
 import { TreeAdaptor } from "./TreeAdaptor.js";
 
 export class CommonTreeNodeStream implements TreeNodeStream {
+    #tokens!: CommonTokenStream;
+
     public constructor(private tree: ParseTree) {
     }
 
-    public getTokenStream(): TokenStreamV3 {
-        throw new Error("Method not implemented.");
+    public getTokenStream(): CommonTokenStream {
+        return this.#tokens;
     }
 
     public getTreeAdaptor(): TreeAdaptor {
@@ -61,6 +62,6 @@ export class CommonTreeNodeStream implements TreeNodeStream {
     }
 
     public setTokenStream(stream: TokenStream): void {
-        throw new Error("Method not implemented.");
+        this.#tokens = stream as CommonTokenStream;
     }
 }

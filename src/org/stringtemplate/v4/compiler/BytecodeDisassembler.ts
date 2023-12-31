@@ -139,7 +139,7 @@ export class BytecodeDisassembler {
         let addr = 0;
         for (const interval of this.code.sourceMap) {
             if (interval !== null) {
-                const chunk = this.code.template.substring(interval.a, interval.b + 1);
+                const chunk = this.code.template.substring(interval.start, interval.stop + 1);
                 buf += printf("%04d: %s\t\"%s\"\n", addr, interval, chunk);
             }
             addr++;

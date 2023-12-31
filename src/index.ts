@@ -19,7 +19,6 @@ export * from "./org/stringtemplate/v4/misc/ErrorBuffer.js";
 export * from "./org/stringtemplate/v4/misc/AmbiguousMatchException.js";
 export * from "./org/stringtemplate/v4/misc/STMessage.js";
 export * from "./org/stringtemplate/v4/misc/STRuntimeMessage.js";
-export * from "./org/stringtemplate/v4/misc/Interval.js";
 export * from "./org/stringtemplate/v4/misc/ObjectModelAdaptor.js";
 export * from "./org/stringtemplate/v4/misc/ErrorManager.js";
 export * from "./org/stringtemplate/v4/misc/Aggregate.js";

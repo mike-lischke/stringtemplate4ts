@@ -7,16 +7,13 @@
 
 /* eslint-disable jsdoc/require-param */
 
-import { Token } from "antlr4ng";
+import { Interval, ParseTree, Token, TokenStream } from "antlr4ng";
 
 import { ICompiledST, IFormalArgument, RegionType } from "./common.js";
 
-import { Interval } from "../misc/Interval.js";
 import { BytecodeDisassembler } from "./BytecodeDisassembler.js";
 import { STGroup } from "../STGroup.js";
 import { GroupParser } from "./generated/GroupParser.js";
-import { CommonTree } from "../support/CommonTree.js";
-import { TokenStreamV3 } from "../support/TokenStreamV3.js";
 import { Compiler } from "./Compiler.js";
 
 /**
@@ -26,7 +23,7 @@ import { Compiler } from "./Compiler.js";
  *  of the same template share a single implementation ({@link ST#impl} field).
  */
 export class CompiledST implements ICompiledST {
-    public name = "";
+    public name?: string;
 
     /**
      * Every template knows where it is relative to the group that loaded it.
@@ -57,10 +54,10 @@ export class CompiledST implements ICompiledST {
     public templateDefStartToken?: Token;
 
     /** Overall token stream for template (debug only). */
-    public tokens?: TokenStreamV3;
+    public tokens?: TokenStream;
 
     /** How do we interpret syntax of template? (debug only) */
-    public ast?: CommonTree;
+    public ast?: ParseTree;
 
     public formalArguments = new Map<string, IFormalArgument>();
 
@@ -149,7 +146,7 @@ export class CompiledST implements ICompiledST {
 
     public addImplicitlyDefinedTemplate(sub: CompiledST): void {
         sub.prefix = this.prefix;
-        if (sub.name.charAt(0) !== "/") {
+        if (sub.name!.charAt(0) !== "/") {
             sub.name = sub.prefix + sub.name;
         }
 
@@ -212,11 +209,13 @@ export class CompiledST implements ICompiledST {
         }
     }
 
-    public defineFormalArgs(args: IFormalArgument[]): void {
+    public defineFormalArgs(args?: IFormalArgument[]): void {
         this.hasFormalArgs = true; // even if no args; it's formally defined
         this.formalArguments = new Map();
-        for (const a of args) {
-            this.addArg(a);
+        if (args) {
+            for (const a of args) {
+                this.addArg(a);
+            }
         }
     }
 
@@ -233,18 +232,16 @@ export class CompiledST implements ICompiledST {
     }
 
     public defineImplicitlyDefinedTemplates(group: STGroup): void {
-        if (this.implicitlyDefinedTemplates !== null) {
-            for (const sub of this.implicitlyDefinedTemplates) {
-                group.rawDefineTemplate(sub.name, sub, sub.templateDefStartToken);
-                sub.defineImplicitlyDefinedTemplates(group);
-            }
+        for (const sub of this.implicitlyDefinedTemplates) {
+            group.rawDefineTemplate(sub.name!, sub, sub.templateDefStartToken);
+            sub.defineImplicitlyDefinedTemplates(group);
         }
     }
 
     public getTemplateSource(): string {
         const r = this.getTemplateRange();
 
-        return this.template.substring(r.a, r.b + 1);
+        return this.template.substring(r.start, r.stop + 1);
     }
 
     public getTemplateRange(): Interval {
@@ -256,8 +253,8 @@ export class CompiledST implements ICompiledST {
                     continue;
                 }
 
-                start = Math.min(start, interval.a);
-                stop = Math.max(stop, interval.b);
+                start = Math.min(start, interval.start);
+                stop = Math.max(stop, interval.stop);
             }
 
             if (start <= stop + 1) {

@@ -11,11 +11,10 @@
 
 /* eslint-disable @typescript-eslint/naming-convention, no-lone-blocks */
 
-import { BitSet, RecognitionException, Token } from "antlr4ng";
+import { ParseTree, RecognitionException, TerminalNode, Token, TokenStream } from "antlr4ng";
 
 import { IFormalArgument, RegionType } from "./common.js";
 
-import { STLexer } from "./STLexer.js";
 import { FormalArgument } from "./FormalArgument.js";
 import { CompiledST } from "./CompiledST.js";
 import { CompilationState } from "./CompilationState.js";
@@ -26,24 +25,17 @@ import { ErrorManager } from "../misc/ErrorManager.js";
 import { TreeParser } from "../support/TreeParser.js";
 import { TreeRuleReturnScope } from "../support/TreeRuleReturnScope.js";
 import { Stack } from "../support/Stack.js";
-import { CommonTree } from "../support/CommonTree.js";
-import { TreeNodeStream } from "../support/TreeNodeStream.js";
 import { Compiler } from "./Compiler.js";
 import { RecognizerSharedState } from "../support/RecognizerSharedState.js";
-import { EarlyExitException } from "../support/EarlyExitException.js";
-import { NoViableAltExceptionV3 } from "../support/NoViableAltExceptionV3.js";
+import {
+    AndConditionalContext, ArgContext, ArgsContext, CompoundElementContext, ConditionalContext, ElementContext,
+    ExprNoCommaContext, ExprOptionsContext, ExprTagContext, IfstatContext, IncludeExprContext, ListContext,
+    ListElementContext, MapExprContext, MapTemplateRefContext, MemberExprContext, NotConditionalContext, OptionContext,
+    PrimaryContext, QualifiedIdContext, RegionContext, SingleElementContext, SubtemplateContext, TemplateAndEOFContext,
+    TemplateContext,
+} from "./generated/STParser.js";
 
 export class CodeGenerator extends TreeParser {
-    public static readonly tokenNames = [
-        "<invalid>", "<EOR>", "<DOWN>", "<UP>", "IF", "ELSE", "ELSEIF", "ENDIF",
-        "SUPER", "SEMI", "BANG", "ELLIPSIS", "EQUALS", "COLON", "LPAREN", "RPAREN",
-        "LBRACK", "RBRACK", "COMMA", "DOT", "LCURLY", "RCURLY", "TEXT", "LDELIM",
-        "RDELIM", "ID", "STRING", "WS", "PIPE", "OR", "AND", "INDENT", "NEWLINE",
-        "AT", "END", "TRUE", "FALSE", "COMMENT", "SLASH", "EXPR", "OPTIONS", "PROP",
-        "PROP_IND", "INCLUDE", "INCLUDE_IND", "EXEC_FUNC", "INCLUDE_SUPER", "INCLUDE_SUPER_REGION",
-        "INCLUDE_REGION", "TO_STR", "LIST", "MAP", "ZIP", "SUBTEMPLATE", "ARGS",
-        "ELEMENTS", "REGION", "NULL", "INDENTED_EXPR",
-    ];
     public static readonly EOF = -1;
     public static readonly RBRACK = 17;
     public static readonly LBRACK = 16;
@@ -100,35 +92,24 @@ export class CodeGenerator extends TreeParser {
     public static readonly REGION = 56;
     public static readonly NULL = 57;
     public static readonly INDENTED_EXPR = 58;
-    // $ANTLR end "templateAndEOF"
 
     public static template_scope = class template_scope {
         public state!: CompilationState;
     };
 
-    // $ANTLR end "exprElement"
-
     public static region_return = class region_return extends TreeRuleReturnScope {
         public name!: string;
     };
-
-    // $ANTLR end "region"
 
     public static subtemplate_return = class subtemplate_return extends TreeRuleReturnScope {
         public name!: string;
     };
 
-    // $ANTLR end "ifstat"
-
     public static conditional_return = class conditional_return extends TreeRuleReturnScope {
     };
 
-    // $ANTLR end "conditional"
-
     public static exprOptions_return = class exprOptions_return extends TreeRuleReturnScope {
     };
-
-    // $ANTLR end "prop"
 
     public static mapTemplateRef_return = class mapTemplateRef_return extends TreeRuleReturnScope {
     };
@@ -168,187 +149,30 @@ export class CodeGenerator extends TreeParser {
 
     // $ANTLR end "listElement"
 
-    // Delegated rules
+    private outermostTemplateName?: string;	// name of overall template
+    private outermostImpl!: CompiledST;
+    private templateToken?: Token;			// overall template token
+    private errMgr?: ErrorManager;
+    private template_stack = new Stack<CodeGenerator.template_scope>();
 
-    public static readonly FOLLOW_template_in_templateAndEOF69 = new BitSet([0x0000000000000000n]);
-    public static readonly FOLLOW_EOF_in_templateAndEOF72 = new BitSet([0x0000000000000002n]);
-    public static readonly FOLLOW_chunk_in_template106 = new BitSet([0x0000000000000002n]);
-    public static readonly FOLLOW_element_in_chunk120 = new BitSet([0x0500008100400012n]);
-    public static readonly FOLLOW_INDENTED_EXPR_in_element143 = new BitSet([0x0000000000000004n]);
-    public static readonly FOLLOW_INDENT_in_element145 = new BitSet([0x0100000000000010n]);
-    public static readonly FOLLOW_compoundElement_in_element147 = new BitSet([0x0000000000000008n]);
-    public static readonly FOLLOW_compoundElement_in_element163 = new BitSet([0x0000000000000002n]);
-    public static readonly FOLLOW_INDENTED_EXPR_in_element182 = new BitSet([0x0000000000000004n]);
-    public static readonly FOLLOW_INDENT_in_element184 = new BitSet([0x0000008100400008n]);
-    public static readonly FOLLOW_singleElement_in_element188 = new BitSet([0x0000000000000008n]);
-    public static readonly FOLLOW_singleElement_in_element205 = new BitSet([0x0000000000000002n]);
-    public static readonly FOLLOW_exprElement_in_singleElement217 = new BitSet([0x0000000000000002n]);
-    public static readonly FOLLOW_TEXT_in_singleElement225 = new BitSet([0x0000000000000002n]);
-    public static readonly FOLLOW_NEWLINE_in_singleElement235 = new BitSet([0x0000000000000002n]);
-    public static readonly FOLLOW_ifstat_in_compoundElement250 = new BitSet([0x0000000000000002n]);
-    public static readonly FOLLOW_region_in_compoundElement259 = new BitSet([0x0000000000000002n]);
-    public static readonly FOLLOW_EXPR_in_exprElement282 = new BitSet([0x0000000000000004n]);
-    public static readonly FOLLOW_expr_in_exprElement284 = new BitSet([0x0000010000000008n]);
-    public static readonly FOLLOW_exprOptions_in_exprElement287 = new BitSet([0x0000000000000008n]);
-    public static readonly FOLLOW_REGION_in_region342 = new BitSet([0x0000000000000004n]);
-    public static readonly FOLLOW_ID_in_region344 = new BitSet([0x0500008100400010n]);
-    public static readonly FOLLOW_template_in_region348 = new BitSet([0x0000000000000008n]);
-    public static readonly FOLLOW_SUBTEMPLATE_in_subtemplate395 = new BitSet([0x0000000000000004n]);
-    public static readonly FOLLOW_ARGS_in_subtemplate399 = new BitSet([0x0000000000000004n]);
-    public static readonly FOLLOW_ID_in_subtemplate402 = new BitSet([0x0000000002000008n]);
-    public static readonly FOLLOW_template_in_subtemplate413 = new BitSet([0x0000000000000008n]);
-    public static readonly FOLLOW_SUBTEMPLATE_in_subtemplate430 = new BitSet([0x0000000000000002n]);
-    public static readonly FOLLOW_IF_in_ifstat482 = new BitSet([0x0000000000000004n]);
-    public static readonly FOLLOW_conditional_in_ifstat484 = new BitSet([0x0500008100400078n]);
-    public static readonly FOLLOW_chunk_in_ifstat488 = new BitSet([0x0000000000000068n]);
-    public static readonly FOLLOW_ELSEIF_in_ifstat526 = new BitSet([0x0000000000000004n]);
-    public static readonly FOLLOW_conditional_in_ifstat534 = new BitSet([0x0500008100400018n]);
-    public static readonly FOLLOW_chunk_in_ifstat538 = new BitSet([0x0000000000000008n]);
-    public static readonly FOLLOW_ELSE_in_ifstat601 = new BitSet([0x0000000000000004n]);
-    public static readonly FOLLOW_chunk_in_ifstat605 = new BitSet([0x0000000000000008n]);
-    public static readonly FOLLOW_OR_in_conditional651 = new BitSet([0x0000000000000004n]);
-    public static readonly FOLLOW_conditional_in_conditional653 = new BitSet([0x003FFE1866000400n]);
-    public static readonly FOLLOW_conditional_in_conditional655 = new BitSet([0x0000000000000008n]);
-    public static readonly FOLLOW_AND_in_conditional667 = new BitSet([0x0000000000000004n]);
-    public static readonly FOLLOW_conditional_in_conditional669 = new BitSet([0x003FFE1866000400n]);
-    public static readonly FOLLOW_conditional_in_conditional671 = new BitSet([0x0000000000000008n]);
-    public static readonly FOLLOW_BANG_in_conditional683 = new BitSet([0x0000000000000004n]);
-    public static readonly FOLLOW_conditional_in_conditional685 = new BitSet([0x0000000000000008n]);
-    public static readonly FOLLOW_expr_in_conditional696 = new BitSet([0x0000000000000002n]);
-    public static readonly FOLLOW_OPTIONS_in_exprOptions712 = new BitSet([0x0000000000000004n]);
-    public static readonly FOLLOW_option_in_exprOptions714 = new BitSet([0x0000000000001008n]);
-    public static readonly FOLLOW_EQUALS_in_option729 = new BitSet([0x0000000000000004n]);
-    public static readonly FOLLOW_ID_in_option731 = new BitSet([0x003FFE1806000000n]);
-    public static readonly FOLLOW_expr_in_option733 = new BitSet([0x0000000000000008n]);
-    public static readonly FOLLOW_ZIP_in_expr758 = new BitSet([0x0000000000000004n]);
-    public static readonly FOLLOW_ELEMENTS_in_expr761 = new BitSet([0x0000000000000004n]);
-    public static readonly FOLLOW_expr_in_expr764 = new BitSet([0x003FFE1806000008n]);
-    public static readonly FOLLOW_mapTemplateRef_in_expr771 = new BitSet([0x0000000000000008n]);
-    public static readonly FOLLOW_MAP_in_expr784 = new BitSet([0x0000000000000004n]);
-    public static readonly FOLLOW_expr_in_expr786 = new BitSet([0x0020180000000000n]);
-    public static readonly FOLLOW_mapTemplateRef_in_expr789 = new BitSet([0x0020180000000008n]);
-    public static readonly FOLLOW_prop_in_expr805 = new BitSet([0x0000000000000002n]);
-    public static readonly FOLLOW_includeExpr_in_expr813 = new BitSet([0x0000000000000002n]);
-    public static readonly FOLLOW_PROP_in_prop826 = new BitSet([0x0000000000000004n]);
-    public static readonly FOLLOW_expr_in_prop828 = new BitSet([0x0000000002000000n]);
-    public static readonly FOLLOW_ID_in_prop830 = new BitSet([0x0000000000000008n]);
-    public static readonly FOLLOW_PROP_IND_in_prop842 = new BitSet([0x0000000000000004n]);
-    public static readonly FOLLOW_expr_in_prop844 = new BitSet([0x003FFE1806000000n]);
-    public static readonly FOLLOW_expr_in_prop846 = new BitSet([0x0000000000000008n]);
-    public static readonly FOLLOW_INCLUDE_in_mapTemplateRef872 = new BitSet([0x0000000000000004n]);
-    public static readonly FOLLOW_qualifiedId_in_mapTemplateRef874 = new BitSet([0x003FFE1806001808n]);
-    public static readonly FOLLOW_args_in_mapTemplateRef878 = new BitSet([0x0000000000000008n]);
-    public static readonly FOLLOW_subtemplate_in_mapTemplateRef894 = new BitSet([0x0000000000000002n]);
-    public static readonly FOLLOW_INCLUDE_IND_in_mapTemplateRef914 = new BitSet([0x0000000000000004n]);
-    public static readonly FOLLOW_expr_in_mapTemplateRef916 = new BitSet([0x003FFE1806001808n]);
-    public static readonly FOLLOW_args_in_mapTemplateRef920 = new BitSet([0x0000000000000008n]);
-    public static readonly FOLLOW_EXEC_FUNC_in_includeExpr941 = new BitSet([0x0000000000000004n]);
-    public static readonly FOLLOW_ID_in_includeExpr943 = new BitSet([0x003FFE1806000008n]);
-    public static readonly FOLLOW_expr_in_includeExpr945 = new BitSet([0x0000000000000008n]);
-    public static readonly FOLLOW_INCLUDE_in_includeExpr958 = new BitSet([0x0000000000000004n]);
-    public static readonly FOLLOW_qualifiedId_in_includeExpr960 = new BitSet([0x003FFE1806001808n]);
-    public static readonly FOLLOW_args_in_includeExpr962 = new BitSet([0x0000000000000008n]);
-    public static readonly FOLLOW_INCLUDE_SUPER_in_includeExpr974 = new BitSet([0x0000000000000004n]);
-    public static readonly FOLLOW_ID_in_includeExpr976 = new BitSet([0x003FFE1806001808n]);
-    public static readonly FOLLOW_args_in_includeExpr978 = new BitSet([0x0000000000000008n]);
-    public static readonly FOLLOW_INCLUDE_REGION_in_includeExpr990 = new BitSet([0x0000000000000004n]);
-    public static readonly FOLLOW_ID_in_includeExpr992 = new BitSet([0x0000000000000008n]);
-    public static readonly FOLLOW_INCLUDE_SUPER_REGION_in_includeExpr1004 = new BitSet([0x0000000000000004n]);
-    public static readonly FOLLOW_ID_in_includeExpr1006 = new BitSet([0x0000000000000008n]);
-    public static readonly FOLLOW_primary_in_includeExpr1017 = new BitSet([0x0000000000000002n]);
-    public static readonly FOLLOW_ID_in_primary1029 = new BitSet([0x0000000000000002n]);
-    public static readonly FOLLOW_STRING_in_primary1039 = new BitSet([0x0000000000000002n]);
-    public static readonly FOLLOW_TRUE_in_primary1049 = new BitSet([0x0000000000000002n]);
-    public static readonly FOLLOW_FALSE_in_primary1059 = new BitSet([0x0000000000000002n]);
-    public static readonly FOLLOW_subtemplate_in_primary1069 = new BitSet([0x0000000000000002n]);
-    public static readonly FOLLOW_list_in_primary1084 = new BitSet([0x0000000000000002n]);
-    public static readonly FOLLOW_INCLUDE_IND_in_primary1102 = new BitSet([0x0000000000000004n]);
-    public static readonly FOLLOW_expr_in_primary1104 = new BitSet([0x003FFE1806001808n]);
-    public static readonly FOLLOW_args_in_primary1108 = new BitSet([0x0000000000000008n]);
-    public static readonly FOLLOW_TO_STR_in_primary1125 = new BitSet([0x0000000000000004n]);
-    public static readonly FOLLOW_expr_in_primary1127 = new BitSet([0x0000000000000008n]);
-    public static readonly FOLLOW_SLASH_in_qualifiedId1143 = new BitSet([0x0000000000000004n]);
-    public static readonly FOLLOW_qualifiedId_in_qualifiedId1145 = new BitSet([0x0000000002000000n]);
-    public static readonly FOLLOW_ID_in_qualifiedId1147 = new BitSet([0x0000000000000008n]);
-    public static readonly FOLLOW_SLASH_in_qualifiedId1157 = new BitSet([0x0000000000000004n]);
-    public static readonly FOLLOW_ID_in_qualifiedId1159 = new BitSet([0x0000000000000008n]);
-    public static readonly FOLLOW_ID_in_qualifiedId1168 = new BitSet([0x0000000000000002n]);
-    public static readonly FOLLOW_expr_in_arg1180 = new BitSet([0x0000000000000002n]);
-    public static readonly FOLLOW_arg_in_args1196 = new BitSet([0x003FFE1806000002n]);
-    public static readonly FOLLOW_EQUALS_in_args1225 = new BitSet([0x0000000000000004n]);
-    public static readonly FOLLOW_ID_in_args1227 = new BitSet([0x003FFE1806000000n]);
-    public static readonly FOLLOW_expr_in_args1229 = new BitSet([0x0000000000000008n]);
-    public static readonly FOLLOW_ELLIPSIS_in_args1242 = new BitSet([0x0000000000000002n]);
-    public static readonly FOLLOW_ELLIPSIS_in_args1254 = new BitSet([0x0000000000000002n]);
-    public static readonly FOLLOW_LIST_in_list1286 = new BitSet([0x0000000000000004n]);
-    public static readonly FOLLOW_listElement_in_list1289 = new BitSet([0x023FFE1806000008n]);
-    public static readonly FOLLOW_expr_in_listElement1311 = new BitSet([0x0000000000000002n]);
-    public static readonly FOLLOW_NULL_in_listElement1319 = new BitSet([0x0000000000000002n]);
+    // overall template text
+    #template?: string;
+    #tree: ParseTree;
 
-    protected outermostTemplateName?: string;	// name of overall template
-    protected outermostImpl!: CompiledST;
-    protected templateToken?: Token;			// overall template token
-    protected errMgr?: ErrorManager;
-    protected template_stack = new Stack<CodeGenerator.template_scope>();
+    #throwInternalError(): never {
+        throw new Error("Internal error: unexpected parse tree structure");
+    }
 
-    #template?: string;  				// overall template text
+    public constructor(input: TokenStream, tree: ParseTree, errMgr?: ErrorManager, name?: string, template?: string,
+        templateToken?: Token) {
+        super(input, new RecognizerSharedState());
 
-    // delegators
-
-    public constructor(input: TreeNodeStream);
-    public constructor(input: TreeNodeStream, state: RecognizerSharedState);
-    public constructor(input: TreeNodeStream, errMgr?: ErrorManager, name?: string, template?: string,
-        templateToken?: Token);
-    public constructor(...args: unknown[]) {
-        let input;
-        let state;
-        let errMgr;
-        let name;
-        let template;
-        let templateToken;
-
-        switch (args.length) {
-            case 1: {
-                [input] = args as [TreeNodeStream];
-                state = new RecognizerSharedState();
-
-                break;
-            }
-
-            case 2: {
-                [input, state] = args as [TreeNodeStream, RecognizerSharedState];
-
-                break;
-            }
-
-            case 5: {
-                [input, errMgr, name, template, templateToken] = args as [TreeNodeStream, ErrorManager, string, string,
-                    Token];
-                state = new RecognizerSharedState();
-
-                break;
-            }
-
-            default: {
-                throw new Error("Invalid number of arguments");
-            }
-        }
-
-        super(input, state);
-
+        this.#tree = tree;
         this.errMgr = errMgr;
         this.outermostTemplateName = name;
         this.#template = template;
         this.templateToken = templateToken;
     }
-
-    // delegates
-    public getDelegates(): TreeParser[] {
-        return [];
-    }
-
-    public getTokenNames(): string[] { return CodeGenerator.tokenNames; }
-    public override getGrammarFileName(): string { return "CodeGenerator.g"; }
 
     public addArgument(args: FormalArgument[], t: Token): void {
         const name = t.text!;
@@ -366,23 +190,23 @@ export class CodeGenerator extends TreeParser {
     // convenience funcs to hide offensive sending of emit messages to
     // CompilationState temp data object.
 
-    public emit1(opAST: CommonTree | null, opcode: number, arg: string | number): void {
-        this.template_stack.peek().state.emit1(opAST, opcode, arg);
+    public emit1(opNode: ParseTree | null, opcode: number, arg: string | number): void {
+        this.template_stack.peek().state.emit1(opNode, opcode, arg);
     }
 
-    public emit2(opAST: CommonTree | null, opcode: number, arg: number | string, arg2: number): void {
-        this.template_stack.peek().state.emit2(opAST, opcode, arg, arg2);
+    public emit2(opNode: ParseTree | null, opcode: number, arg: number | string, arg2: number): void {
+        this.template_stack.peek().state.emit2(opNode, opcode, arg, arg2);
     }
 
-    public emit(opAST: CommonTree | null, opcode: number): void {
-        this.template_stack.peek().state.emit(opAST, opcode);
+    public emit(opTree: ParseTree | null, opcode: number): void {
+        this.template_stack.peek().state.emit(opTree, opcode);
     }
 
     public insert(addr: number, opcode: number, s: string): void {
         this.template_stack.peek().state.insert(addr, opcode, s);
     }
 
-    public setOption(id: CommonTree): void {
+    public setOption(id: TerminalNode): void {
         this.template_stack.peek().state.setOption(id);
     }
 
@@ -390,33 +214,31 @@ export class CodeGenerator extends TreeParser {
         this.template_stack.peek().state.write(addr, value);
     }
 
-    public address(): number { return this.template_stack.peek().state.ip; }
-    public func(id: CommonTree | null): void { this.template_stack.peek().state.func(this.templateToken!, id); }
-    public refAttr(id: CommonTree | null): void { this.template_stack.peek().state.refAttr(this.templateToken!, id); }
-    public defineString(s: string): number { return this.template_stack.peek().state.defineString(s); }
+    public address(): number {
+        return this.template_stack.peek().state.ip;
+    }
 
-    public displayRecognitionError(tokenNames: string[], e: RecognitionException): void {
-        let tokenWithPosition = e.offendingToken;
-        if (!tokenWithPosition?.inputStream) {
-            tokenWithPosition = this.input.getTreeAdaptor().getToken(this.input.LT(-1));
-        }
+    public func(id: TerminalNode | null): void {
+        this.template_stack.peek().state.func(this.templateToken!, id);
+    }
 
-        const hdr = this.getErrorHeader(e);
-        const msg = this.getErrorMessage(e, tokenNames);
-        this.errMgr?.compileTimeError(ErrorType.SYNTAX_ERROR, this.templateToken, tokenWithPosition, hdr + " " + msg);
+    public refAttr(id: TerminalNode | null): void {
+        this.template_stack.peek().state.refAttr(this.templateToken!, id);
+    }
+
+    public defineString(s: string): number {
+        return this.template_stack.peek().state.defineString(s);
     }
 
     // $ANTLR start "templateAndEOF"
     // CodeGenerator.g:142:1: templateAndEOF : template[null,null] EOF ;
-    public templateAndEOF(): void {
+    public templateAndEOF(context: TemplateAndEOFContext): void {
         try {
             // CodeGenerator.g:142:15: ( template[null,null] EOF )
             // CodeGenerator.g:143:5: template[null,null] EOF
-            this.pushFollow(CodeGenerator.FOLLOW_template_in_templateAndEOF69);
-            this.template(null, []);
-            this.state._fsp--;
+            this.template(context.template());
 
-            this.match(this.input, CodeGenerator.EOF, CodeGenerator.FOLLOW_EOF_in_templateAndEOF72);
+            this.match(this.input, CodeGenerator.EOF);
         } catch (re) {
             if (re instanceof RecognitionException) {
                 this.reportError(re);
@@ -432,16 +254,16 @@ export class CodeGenerator extends TreeParser {
 
     // $ANTLR start "template"
     // CodeGenerator.g:146:1: template[String name, List<FormalArgument> args] returns [CompiledST impl] : chunk ;
-    public template(name: string | null, args: IFormalArgument[]): CompiledST {
+    public template(context: TemplateContext, name?: string, args?: IFormalArgument[]): CompiledST {
         this.template_stack.push(new CodeGenerator.template_scope());
-        this.template_stack.peek().state = new CompilationState(this.errMgr!, name ?? "", this.input.getTokenStream());
+        this.template_stack.peek().state = new CompilationState(this.errMgr!, name, this.input);
         const impl = this.template_stack.peek().state.impl;
         if (this.template_stack.size() === 1) {
             this.outermostImpl = impl;
         }
 
         impl.defineFormalArgs(args); // make sure args are defined prior to compilation
-        if (name !== null && name.startsWith(Compiler.SUBTEMPLATE_PREFIX)) {
+        if (name && name.startsWith(Compiler.SUBTEMPLATE_PREFIX)) {
             impl.addArg(new FormalArgument("i"));
             impl.addArg(new FormalArgument("i0"));
         }
@@ -450,12 +272,10 @@ export class CodeGenerator extends TreeParser {
         try {
             // CodeGenerator.g:160:2: ( chunk )
             // CodeGenerator.g:161:5: chunk
-            this.pushFollow(CodeGenerator.FOLLOW_chunk_in_template106);
-            this.chunk();
-            this.state._fsp--;
+            this.handleElements(context.element());
 
             // finish off the CompiledST result
-            if (this.template_stack.peek().state.stringTable !== null) {
+            if (this.template_stack.peek().state.stringTable) {
                 impl.strings = this.template_stack.peek().state.stringTable.toArray();
             }
 
@@ -479,7 +299,12 @@ export class CodeGenerator extends TreeParser {
 
     // $ANTLR start "chunk"
     // CodeGenerator.g:167:1: chunk : ( element )* ;
-    public chunk(): void {
+    public handleElements(list: ElementContext[]): void {
+        list.forEach((element) => {
+            this.element(element);
+        });
+
+        /*
         try {
             // CodeGenerator.g:167:6: ( ( element )* )
             // CodeGenerator.g:168:5: ( element )*
@@ -497,9 +322,7 @@ export class CodeGenerator extends TreeParser {
                 switch (alt1) {
                     case 1: {
                         // CodeGenerator.g:168:5: element
-                        this.pushFollow(CodeGenerator.FOLLOW_element_in_chunk120);
                         this.element();
-                        this.state._fsp--;
 
                         break;
                     }
@@ -517,21 +340,30 @@ export class CodeGenerator extends TreeParser {
             } else {
                 throw re;
             }
-        }
-        finally {
-            // do for sure before leaving
-        }
+        }*/
     }
-    // $ANTLR end "chunk"
 
-    // $ANTLR start "element"
     // CodeGenerator.g:171:1: element : ( ^( INDENTED_EXPR INDENT compoundElement[$INDENT] ) | compoundElement[null]
     // | ^( INDENTED_EXPR INDENT ( singleElement )? ) | singleElement );
-    public element(): void {
-        let INDENT1 = null;
-        let INDENT2 = null;
+    public element(context: ElementContext): void {
+        //const INDENT1 = null;
+        // const INDENT2 = null;
 
-        try {
+        if (context.COMMENT() !== null) {
+            // ignore
+        } else if (context.INDENT() !== null) {
+            this.template_stack.peek().state.indent(context.INDENT());
+            if (context.singleElement() !== null) {
+                this.singleElement(context.singleElement()!);
+            }
+            this.template_stack.peek().state.emit(Bytecode.INSTR_DEDENT);
+        } else if (context.singleElement() !== null) {
+            this.singleElement(context.singleElement()!);
+        } else if (context.compoundElement() !== null) {
+            this.compoundElement(context.compoundElement()!);
+        }
+
+        /*try {
             // CodeGenerator.g:171:8: ( ^( INDENTED_EXPR INDENT compoundElement[$INDENT] ) | compoundElement[null]
             // | ^( INDENTED_EXPR INDENT ( singleElement )? ) | singleElement )
             let alt3 = 4;
@@ -558,8 +390,8 @@ export class CodeGenerator extends TreeParser {
                                             for (let nvaeConsume = 0; nvaeConsume < 4 - 1; nvaeConsume++) {
                                                 this.input.consume();
                                             }
-                                            const nvae = new NoViableAltExceptionV3("", 3, 5, this.input);
-                                            throw nvae;
+                                            this.#throwInternalError();
+
                                         } finally {
                                             this.input.seek(nvaeMark);
                                         }
@@ -574,9 +406,8 @@ export class CodeGenerator extends TreeParser {
                                     for (let nvaeConsume = 0; nvaeConsume < 3 - 1; nvaeConsume++) {
                                         this.input.consume();
                                     }
-                                    const nvae =
-                                        new NoViableAltExceptionV3("", 3, 4, this.input);
-                                    throw nvae;
+                                    this.#throwInternalError();
+
                                 } finally {
                                     this.input.seek(nvaeMark);
                                 }
@@ -588,9 +419,8 @@ export class CodeGenerator extends TreeParser {
                             const nvaeMark = this.input.mark();
                             try {
                                 this.input.consume();
-                                const nvae =
-                                    new NoViableAltExceptionV3("", 3, 1, this.input);
-                                throw nvae;
+                                this.#throwInternalError();
+
                             } finally {
                                 this.input.seek(nvaeMark);
                             }
@@ -618,9 +448,8 @@ export class CodeGenerator extends TreeParser {
                 }
 
                 default: {
-                    const nvae =
-                        new NoViableAltExceptionV3("", 3, 0, this.input);
-                    throw nvae;
+                    this.#throwInternalError();
+
                 }
 
             }
@@ -628,16 +457,12 @@ export class CodeGenerator extends TreeParser {
                 case 1: {
                     // CodeGenerator.g:172:5: ^( INDENTED_EXPR INDENT compoundElement[$INDENT] )
                     {
-                        this.match(this.input, CodeGenerator.INDENTED_EXPR,
-                            CodeGenerator.FOLLOW_INDENTED_EXPR_in_element143);
-                        this.match(this.input, TreeParser.DOWN, null);
-                        INDENT1 = this.match(this.input, CodeGenerator.INDENT,
-                            CodeGenerator.FOLLOW_INDENT_in_element145);
-                        this.pushFollow(CodeGenerator.FOLLOW_compoundElement_in_element147);
+                        this.match(this.input, CodeGenerator.INDENTED_EXPR);
+                        this.match(this.input, TreeParser.DOWN);
+                        INDENT1 = this.match(this.input, CodeGenerator.INDENT);
                         this.compoundElement(INDENT1);
-                        this.state._fsp--;
 
-                        this.match(this.input, TreeParser.UP, null);
+                        this.match(this.input, TreeParser.UP);
 
                     }
                     break;
@@ -646,9 +471,7 @@ export class CodeGenerator extends TreeParser {
                 case 2: {
                     // CodeGenerator.g:175:7: compoundElement[null]
                     {
-                        this.pushFollow(CodeGenerator.FOLLOW_compoundElement_in_element163);
                         this.compoundElement(null);
-                        this.state._fsp--;
 
                     }
                     break;
@@ -657,11 +480,9 @@ export class CodeGenerator extends TreeParser {
                 case 3: {
                     // CodeGenerator.g:176:7: ^( INDENTED_EXPR INDENT ( singleElement )? )
                     {
-                        this.match(this.input, CodeGenerator.INDENTED_EXPR,
-                            CodeGenerator.FOLLOW_INDENTED_EXPR_in_element182);
-                        this.match(this.input, TreeParser.DOWN, null);
-                        INDENT2 = this.match(this.input, CodeGenerator.INDENT,
-                            CodeGenerator.FOLLOW_INDENT_in_element184);
+                        this.match(this.input, CodeGenerator.INDENTED_EXPR);
+                        this.match(this.input, TreeParser.DOWN);
+                        INDENT2 = this.match(this.input, CodeGenerator.INDENT);
                         this.template_stack.peek().state.indent(INDENT2);
                         // CodeGenerator.g:177:66: ( singleElement )?
                         let alt2 = 2;
@@ -674,9 +495,7 @@ export class CodeGenerator extends TreeParser {
                             case 1: {
                                 // CodeGenerator.g:177:66: singleElement
                                 {
-                                    this.pushFollow(CodeGenerator.FOLLOW_singleElement_in_element188);
                                     this.singleElement();
-                                    this.state._fsp--;
 
                                 }
                                 break;
@@ -687,7 +506,7 @@ export class CodeGenerator extends TreeParser {
                         }
 
                         this.template_stack.peek().state.emit(Bytecode.INSTR_DEDENT);
-                        this.match(this.input, TreeParser.UP, null);
+                        this.match(this.input, TreeParser.UP);
 
                     }
                     break;
@@ -696,9 +515,7 @@ export class CodeGenerator extends TreeParser {
                 case 4: {
                     // CodeGenerator.g:179:7: singleElement
                     {
-                        this.pushFollow(CodeGenerator.FOLLOW_singleElement_in_element205);
                         this.singleElement();
-                        this.state._fsp--;
 
                     }
                     break;
@@ -714,20 +531,28 @@ export class CodeGenerator extends TreeParser {
             } else {
                 throw re;
             }
-        }
-        finally {
-            // do for sure before leaving
-        }
+        }*/
     }
-    // $ANTLR end "element"
 
-    // $ANTLR start "singleElement"
     // CodeGenerator.g:182:1: singleElement : ( exprElement | TEXT | NEWLINE );
-    public singleElement(): void {
-        let TEXT3 = null;
-        let NEWLINE4 = null;
+    public singleElement(context: SingleElementContext): void {
+        //const TEXT3 = null;
+        //const NEWLINE4 = null;
 
-        try {
+        if (context.exprTag() !== null) {
+            this.exprTag(context.exprTag()!);
+        } else if (context.TEXT() !== null) {
+            const token = context.TEXT()!;
+
+            const text = token.getText();
+            if (text.length > 0) {
+                this.emit1(token, Bytecode.INSTR_WRITE_STR, text);
+            }
+        } else if (context.NEWLINE() !== null) {
+            this.emit(context.NEWLINE(), Bytecode.INSTR_NEWLINE);
+        }
+
+        /*try {
             // CodeGenerator.g:182:14: ( exprElement | TEXT | NEWLINE )
             let alt4 = 3;
             switch (this.input.LA(1)) {
@@ -753,9 +578,8 @@ export class CodeGenerator extends TreeParser {
                 }
 
                 default: {
-                    const nvae =
-                        new NoViableAltExceptionV3("", 4, 0, this.input);
-                    throw nvae;
+                    this.#throwInternalError();
+
                 }
 
             }
@@ -763,9 +587,7 @@ export class CodeGenerator extends TreeParser {
                 case 1: {
                     // CodeGenerator.g:183:5: exprElement
                     {
-                        this.pushFollow(CodeGenerator.FOLLOW_exprElement_in_singleElement217);
-                        this.exprElement();
-                        this.state._fsp--;
+                        this.exprTag();
 
                     }
                     break;
@@ -774,8 +596,7 @@ export class CodeGenerator extends TreeParser {
                 case 2: {
                     // CodeGenerator.g:184:7: TEXT
                     {
-                        TEXT3 = this.match(this.input, CodeGenerator.TEXT,
-                            CodeGenerator.FOLLOW_TEXT_in_singleElement225);
+                        TEXT3 = this.match(this.input, CodeGenerator.TEXT);
 
                         const text = TEXT3?.getText() ?? "";
                         if (text.length > 0) {
@@ -789,8 +610,7 @@ export class CodeGenerator extends TreeParser {
                 case 3: {
                     // CodeGenerator.g:189:7: NEWLINE
                     {
-                        NEWLINE4 = this.match(this.input, CodeGenerator.NEWLINE,
-                            CodeGenerator.FOLLOW_NEWLINE_in_singleElement235);
+                        NEWLINE4 = this.match(this.input, CodeGenerator.NEWLINE);
                         this.emit(NEWLINE4, Bytecode.INSTR_NEWLINE);
                     }
                     break;
@@ -806,17 +626,18 @@ export class CodeGenerator extends TreeParser {
             } else {
                 throw re;
             }
-        }
-        finally {
-            // do for sure before leaving
-        }
+        }*/
     }
-    // $ANTLR end "singleElement"
 
-    // $ANTLR start "compoundElement"
     // CodeGenerator.g:192:1: compoundElement[CommonTree indent] : ( ifstat[indent] | region[indent] );
-    public compoundElement(indent: CommonTree | null): void {
-        try {
+    public compoundElement(context: CompoundElementContext): void {
+        if (context.ifstat() !== null) {
+            this.ifstat(context.ifstat()!);
+        } else if (context.region() !== null) {
+            this.region(context.region()!);
+        }
+
+        /*try {
             // CodeGenerator.g:192:35: ( ifstat[indent] | region[indent] )
             let alt5 = 2;
             const LA5_0 = this.input.LA(1);
@@ -829,9 +650,8 @@ export class CodeGenerator extends TreeParser {
                 }
 
                 else {
-                    const nvae =
-                        new NoViableAltExceptionV3("", 5, 0, this.input);
-                    throw nvae;
+                    this.#throwInternalError();
+
                 }
             }
 
@@ -839,9 +659,7 @@ export class CodeGenerator extends TreeParser {
                 case 1: {
                     // CodeGenerator.g:193:5: ifstat[indent]
                     {
-                        this.pushFollow(CodeGenerator.FOLLOW_ifstat_in_compoundElement250);
                         this.ifstat(indent);
-                        this.state._fsp--;
 
                     }
                     break;
@@ -850,9 +668,7 @@ export class CodeGenerator extends TreeParser {
                 case 2: {
                     // CodeGenerator.g:194:7: region[indent]
                     {
-                        this.pushFollow(CodeGenerator.FOLLOW_region_in_compoundElement259);
                         this.region(indent);
-                        this.state._fsp--;
 
                     }
                     break;
@@ -868,28 +684,28 @@ export class CodeGenerator extends TreeParser {
             } else {
                 throw re;
             }
-        }
-        finally {
-            // do for sure before leaving
-        }
+        }*/
     }
-    // $ANTLR end "compoundElement"
 
-    // $ANTLR start "exprElement"
     // CodeGenerator.g:197:1: exprElement : ^( EXPR expr ( exprOptions )? ) ;
-    public exprElement(): void {
-        let EXPR5 = null;
+    public exprTag(context: ExprTagContext): void {
+        //let EXPR5 = null;
 
         let op = Bytecode.INSTR_WRITE;
-        try {
+        this.expr(context.expr().mapExpr());
+        if (context.exprOptions() !== null) {
+            this.exprOptions(context.exprOptions()!);
+            op = Bytecode.INSTR_WRITE_OPT;
+        }
+        this.emit(context.expr(), op);
+
+        /*try {
             // CodeGenerator.g:198:47: ( ^( EXPR expr ( exprOptions )? ) )
             // CodeGenerator.g:199:5: ^( EXPR expr ( exprOptions )? )
             {
-                EXPR5 = this.match(this.input, CodeGenerator.EXPR, CodeGenerator.FOLLOW_EXPR_in_exprElement282);
-                this.match(this.input, TreeParser.DOWN, null);
-                this.pushFollow(CodeGenerator.FOLLOW_expr_in_exprElement284);
+                EXPR5 = this.match(this.input, CodeGenerator.EXPR);
+                this.match(this.input, TreeParser.DOWN);
                 this.expr();
-                this.state._fsp--;
 
                 // CodeGenerator.g:199:17: ( exprOptions )?
                 let alt6 = 2;
@@ -901,9 +717,7 @@ export class CodeGenerator extends TreeParser {
                     case 1: {
                         // CodeGenerator.g:199:18: exprOptions
                         {
-                            this.pushFollow(CodeGenerator.FOLLOW_exprOptions_in_exprElement287);
                             this.exprOptions();
-                            this.state._fsp--;
 
                             op = Bytecode.INSTR_WRITE_OPT;
                         }
@@ -914,7 +728,7 @@ export class CodeGenerator extends TreeParser {
 
                 }
 
-                this.match(this.input, TreeParser.UP, null);
+                this.match(this.input, TreeParser.UP);
 
                 /*
                 CompilationState state = template_stack.peek().state;
@@ -925,7 +739,7 @@ export class CodeGenerator extends TreeParser {
                 else {
                     emit(EXPR5, op);
                 }
-                */
+                * /
                 this.emit(EXPR5, op);
 
             }
@@ -937,300 +751,366 @@ export class CodeGenerator extends TreeParser {
             } else {
                 throw re;
             }
-        }
-        finally {
-            // do for sure before leaving
-        }
+        }*/
     }
 
-    // $ANTLR start "region"
     // CodeGenerator.g:214:1: region[CommonTree indent] returns [String name] : ^( REGION ID template[$name,null] ) ;
-    public region(indent: CommonTree | null): CodeGenerator.region_return {
-        const retval = new CodeGenerator.region_return();
-        retval.start = this.input.LT(1);
+    public region(context: RegionContext): void {
+        //const retval = new CodeGenerator.region_return();
+        //retval.start = this.input.LT(1);
 
-        let ID6 = null;
-        let template7 = null;
+        //let ID6 = null;
+        //let template7 = null;
 
-        if (indent !== null) {
-            this.template_stack.peek().state.indent(indent);
-        }
+        this.template_stack.peek().state.indent(context);
 
-        try {
-            // CodeGenerator.g:221:2: ( ^( REGION ID template[$name,null] ) )
-            // CodeGenerator.g:222:5: ^( REGION ID template[$name,null] )
-            {
-                this.match(this.input, CodeGenerator.REGION, CodeGenerator.FOLLOW_REGION_in_region342);
-                this.match(this.input, TreeParser.DOWN, null);
-                ID6 = this.match(this.input, CodeGenerator.ID, CodeGenerator.FOLLOW_ID_in_region344);
-                retval.name = STGroup.getMangledRegionName(this.outermostTemplateName!, ID6?.getText() ?? "");
-                this.pushFollow(CodeGenerator.FOLLOW_template_in_region348);
-                template7 = this.template(retval.name, []);
-                this.state._fsp--;
+        const id = context.ID();
+        const name = STGroup.getMangledRegionName(this.outermostTemplateName!, id.getText() ?? "");
+        const template = this.template(context.template(), name, []);
 
-                const sub = template7;
-                sub.isRegion = true;
-                sub.regionDefType = RegionType.EMBEDDED;
-                sub.templateDefStartToken = ID6?.token;
+        template.isRegion = true;
+        template.regionDefType = RegionType.EMBEDDED;
+        template.templateDefStartToken = id.symbol;
 
-                this.outermostImpl.addImplicitlyDefinedTemplate(sub);
-                this.emit2((retval.start), Bytecode.INSTR_NEW, retval.name, 0);
-                this.emit((retval.start), Bytecode.INSTR_WRITE);
+        this.outermostImpl.addImplicitlyDefinedTemplate(template);
+        this.emit2(context, Bytecode.INSTR_NEW, name, 0);
+        this.emit(context, Bytecode.INSTR_WRITE);
 
-                this.match(this.input, TreeParser.UP, null);
+        this.template_stack.peek().state.emit(Bytecode.INSTR_DEDENT);
 
-            }
+        /* try {
+             // CodeGenerator.g:221:2: ( ^( REGION ID template[$name,null] ) )
+             // CodeGenerator.g:222:5: ^( REGION ID template[$name,null] )
+             {
+                 this.match(this.input, CodeGenerator.REGION);
+                 this.match(this.input, TreeParser.DOWN);
+                 ID6 = this.match(this.input, CodeGenerator.ID);
+                 retval.name = STGroup.getMangledRegionName(this.outermostTemplateName!, ID6?.getText() ?? "");
+                 template7 = this.template(retval.name, []);
 
-            if (indent !== null) {
-                this.template_stack.peek().state.emit(Bytecode.INSTR_DEDENT);
-            }
+                 const sub = template7;
+                 sub.isRegion = true;
+                 sub.regionDefType = RegionType.EMBEDDED;
+                 sub.templateDefStartToken = ID6?.token;
 
-        } catch (re) {
-            if (re instanceof RecognitionException) {
-                this.reportError(re);
-                this.recover(this.input, re);
-            } else {
-                throw re;
-            }
-        }
-        finally {
-            // do for sure before leaving
-        }
+                 this.outermostImpl.addImplicitlyDefinedTemplate(sub);
+                 this.emit2((retval.start), Bytecode.INSTR_NEW, retval.name, 0);
+                 this.emit((retval.start), Bytecode.INSTR_WRITE);
 
-        return retval;
+                 this.match(this.input, TreeParser.UP);
+
+             }
+
+             if (indent !== null) {
+                 this.template_stack.peek().state.emit(Bytecode.INSTR_DEDENT);
+             }
+
+         } catch (re) {
+             if (re instanceof RecognitionException) {
+                 this.reportError(re);
+                 this.recover(this.input, re);
+             } else {
+                 throw re;
+             }
+         }*/
+
+        //return retval;
     }
 
-    // $ANTLR start "subtemplate"
     // CodeGenerator.g:236:1: subtemplate returns [String name, int nargs] : ( ^( SUBTEMPLATE
     // ( ^( ARGS ( ID )+ ) )* template[$name,args] ) | SUBTEMPLATE );
-    public subtemplate(): CodeGenerator.subtemplate_return {
+    public subtemplate(context: SubtemplateContext): CodeGenerator.subtemplate_return {
         const retval = new CodeGenerator.subtemplate_return();
-        retval.start = this.input.LT(1);
+        retval.start = context;
 
-        let ID8 = null;
-        let SUBTEMPLATE10 = null;
-        let SUBTEMPLATE11 = null;
-        let template9 = null;
+        // let ID8 = null;
+        // let SUBTEMPLATE10 = null;
+        // let SUBTEMPLATE11 = null;
+        // let template9 = null;
 
         retval.name = Compiler.getNewSubtemplateName();
         const args = new Array<FormalArgument>();
 
-        try {
-            // CodeGenerator.g:241:2: ( ^( SUBTEMPLATE ( ^( ARGS ( ID )+ ) )* template[$name,args] ) | SUBTEMPLATE )
-            let alt9 = 2;
-            const LA9_0 = this.input.LA(1);
-            if ((LA9_0 === CodeGenerator.SUBTEMPLATE)) {
-                const LA9_1 = this.input.LA(2);
-                if ((LA9_1 === TreeParser.DOWN)) {
-                    alt9 = 1;
-                }
-                else {
-                    if (((LA9_1 >= TreeParser.UP && LA9_1 <= CodeGenerator.ELSEIF)
-                        || (LA9_1 >= CodeGenerator.BANG && LA9_1 <= CodeGenerator.EQUALS)
-                        || LA9_1 === CodeGenerator.TEXT || (LA9_1 >= CodeGenerator.ID && LA9_1 <= CodeGenerator.STRING)
-                        || (LA9_1 >= CodeGenerator.OR && LA9_1 <= CodeGenerator.AND) || LA9_1 === CodeGenerator.NEWLINE
-                        || (LA9_1 >= CodeGenerator.TRUE && LA9_1 <= CodeGenerator.FALSE) || (LA9_1 >= CodeGenerator.EXPR
-                            && LA9_1 <= CodeGenerator.SUBTEMPLATE) || (LA9_1 >= CodeGenerator.REGION
-                                && LA9_1 <= CodeGenerator.INDENTED_EXPR))) {
-                        alt9 = 2;
-                    }
+        if (context.ID().length === 0) {
+            // No arguments.
+            const sub = new CompiledST();
+            sub.name = retval.name;
+            sub.template = "";
+            sub.addArg(new FormalArgument("i"));
+            sub.addArg(new FormalArgument("i0"));
+            sub.isAnonSubtemplate = true;
+            sub.templateDefStartToken = context.start!;
+            sub.ast = context;
+            sub.tokens = this.input;
 
-                    else {
-                        const nvaeMark = this.input.mark();
-                        try {
-                            this.input.consume();
-                            const nvae =
-                                new NoViableAltExceptionV3("", 9, 1, this.input);
-                            throw nvae;
-                        } finally {
-                            this.input.seek(nvaeMark);
-                        }
-                    }
-                }
+            this.outermostImpl.addImplicitlyDefinedTemplate(sub);
+        } else {
+            context.ID().forEach((id) => {
+                this.addArgument(args, id.symbol);
+            });
 
-            }
+            retval.nargs = args.length;
+            const sub = this.template(context.template(), retval.name, args);
+            sub.isAnonSubtemplate = true;
+            sub.templateDefStartToken = context.template().start!;
+            sub.ast = context.template();
+            sub.tokens = this.input;
 
-            else {
-                const nvae =
-                    new NoViableAltExceptionV3("", 9, 0, this.input);
-                throw nvae;
-            }
-
-            switch (alt9) {
-                case 1: {
-                    // CodeGenerator.g:242:5: ^( SUBTEMPLATE ( ^( ARGS ( ID )+ ) )* template[$name,args] )
-                    {
-                        SUBTEMPLATE10 = this.match(this.input, CodeGenerator.SUBTEMPLATE,
-                            CodeGenerator.FOLLOW_SUBTEMPLATE_in_subtemplate395)!;
-                        if (this.input.LA(1) === TreeParser.DOWN) {
-                            this.match(this.input, TreeParser.DOWN, null);
-                            // CodeGenerator.g:243:21: ( ^( ARGS ( ID )+ ) )*
-                            loop8:
-                            while (true) {
-                                let alt8 = 2;
-                                const LA8_0 = this.input.LA(1);
-                                if ((LA8_0 === CodeGenerator.ARGS)) {
-                                    alt8 = 1;
-                                }
-
-                                switch (alt8) {
-                                    case 1: {
-                                        // CodeGenerator.g:243:22: ^( ARGS ( ID )+ )
-                                        {
-                                            this.match(this.input, CodeGenerator.ARGS,
-                                                CodeGenerator.FOLLOW_ARGS_in_subtemplate399);
-                                            this.match(this.input, TreeParser.DOWN, null);
-                                            // CodeGenerator.g:243:29: ( ID )+
-                                            let cnt7 = 0;
-                                            loop7:
-                                            while (true) {
-                                                let alt7 = 2;
-                                                const LA7_0 = this.input.LA(1);
-                                                if ((LA7_0 === CodeGenerator.ID)) {
-                                                    alt7 = 1;
-                                                }
-
-                                                switch (alt7) {
-                                                    case 1: {
-                                                        // CodeGenerator.g:243:30: ID
-                                                        {
-                                                            ID8 = this.match(this.input, CodeGenerator.ID,
-                                                                CodeGenerator.FOLLOW_ID_in_subtemplate402)!;
-                                                            this.addArgument(args, ID8.token);
-                                                        }
-                                                        break;
-                                                    }
-
-                                                    default: {
-                                                        if (cnt7 >= 1) {
-                                                            break loop7;
-                                                        }
-
-                                                        const eee = new EarlyExitException(7, this.input);
-                                                        throw eee;
-                                                    }
-
-                                                }
-                                                cnt7++;
-                                            }
-
-                                            this.match(this.input, TreeParser.UP, null);
-
-                                        }
-                                        break;
-                                    }
-
-                                    default: {
-                                        break loop8;
-                                    }
-
-                                }
-                            }
-
-                            retval.nargs = args.length;
-                            this.pushFollow(CodeGenerator.FOLLOW_template_in_subtemplate413);
-                            template9 = this.template(retval.name, args);
-                            this.state._fsp--;
-
-                            const sub = template9;
-                            sub.isAnonSubtemplate = true;
-                            sub.templateDefStartToken = SUBTEMPLATE10.token;
-                            sub.ast = SUBTEMPLATE10;
-                            sub.ast.setUnknownTokenBoundaries();
-                            sub.tokens = this.input.getTokenStream();
-
-                            this.outermostImpl.addImplicitlyDefinedTemplate(sub);
-
-                            this.match(this.input, TreeParser.UP, null);
-                        }
-
-                    }
-                    break;
-                }
-
-                case 2: {
-                    // CodeGenerator.g:254:7: SUBTEMPLATE
-                    {
-                        SUBTEMPLATE11 = this.match(this.input, CodeGenerator.SUBTEMPLATE,
-                            CodeGenerator.FOLLOW_SUBTEMPLATE_in_subtemplate430)!;
-
-                        const sub = new CompiledST();
-                        sub.name = retval.name;
-                        sub.template = "";
-                        sub.addArg(new FormalArgument("i"));
-                        sub.addArg(new FormalArgument("i0"));
-                        sub.isAnonSubtemplate = true;
-                        sub.templateDefStartToken = SUBTEMPLATE11.token;
-                        sub.ast = SUBTEMPLATE11;
-                        sub.ast.setUnknownTokenBoundaries();
-                        sub.tokens = this.input.getTokenStream();
-
-                        this.outermostImpl.addImplicitlyDefinedTemplate(sub);
-
-                    }
-                    break;
-                }
-
-                default:
-
-            }
-        } catch (re) {
-            if (re instanceof RecognitionException) {
-                this.reportError(re);
-                this.recover(this.input, re);
-            } else {
-                throw re;
-            }
+            this.outermostImpl.addImplicitlyDefinedTemplate(sub);
         }
-        finally {
-            // do for sure before leaving
-        }
+
+        /* try {
+             // CodeGenerator.g:241:2: ( ^( SUBTEMPLATE ( ^( ARGS ( ID )+ ) )* template[$name,args] ) | SUBTEMPLATE )
+             let alt9 = 2;
+             const LA9_0 = this.input.LA(1);
+             if ((LA9_0 === CodeGenerator.SUBTEMPLATE)) {
+                 const LA9_1 = this.input.LA(2);
+                 if ((LA9_1 === TreeParser.DOWN)) {
+                     alt9 = 1;
+                 }
+                 else {
+                     if (((LA9_1 >= TreeParser.UP && LA9_1 <= CodeGenerator.ELSEIF)
+                         || (LA9_1 >= CodeGenerator.BANG && LA9_1 <= CodeGenerator.EQUALS)
+                         || LA9_1 === CodeGenerator.TEXT || (LA9_1 >= CodeGenerator.ID && LA9_1 <= CodeGenerator.STRING)
+                         || (LA9_1 >= CodeGenerator.OR && LA9_1 <= CodeGenerator.AND) || LA9_1 === CodeGenerator.NEWLINE
+                         || (LA9_1 >= CodeGenerator.TRUE && LA9_1 <= CodeGenerator.FALSE)
+                         || (LA9_1 >= CodeGenerator.EXPR
+                             && LA9_1 <= CodeGenerator.SUBTEMPLATE) || (LA9_1 >= CodeGenerator.REGION
+                                 && LA9_1 <= CodeGenerator.INDENTED_EXPR))) {
+                         alt9 = 2;
+                     }
+
+                     else {
+                         const nvaeMark = this.input.mark();
+                         try {
+                             this.input.consume();
+                             this.#throwInternalError();
+
+                         } finally {
+                             this.input.seek(nvaeMark);
+                         }
+                     }
+                 }
+
+             }
+
+             else {
+                 this.#throwInternalError();
+
+             }
+
+             switch (alt9) {
+                 case 1: {
+                     // CodeGenerator.g:242:5: ^( SUBTEMPLATE ( ^( ARGS ( ID )+ ) )* template[$name,args] )
+                     {
+                         SUBTEMPLATE10 = this.match(this.input, CodeGenerator.SUBTEMPLATE)!;
+                         if (this.input.LA(1) === TreeParser.DOWN) {
+                             this.match(this.input, TreeParser.DOWN);
+                             // CodeGenerator.g:243:21: ( ^( ARGS ( ID )+ ) )*
+                             loop8:
+                             while (true) {
+                                 let alt8 = 2;
+                                 const LA8_0 = this.input.LA(1);
+                                 if ((LA8_0 === CodeGenerator.ARGS)) {
+                                     alt8 = 1;
+                                 }
+
+                                 switch (alt8) {
+                                     case 1: {
+                                         // CodeGenerator.g:243:22: ^( ARGS ( ID )+ )
+                                         {
+                                             this.match(this.input, CodeGenerator.ARGS);
+                                             this.match(this.input, TreeParser.DOWN);
+                                             // CodeGenerator.g:243:29: ( ID )+
+                                             let cnt7 = 0;
+                                             loop7:
+                                             while (true) {
+                                                 let alt7 = 2;
+                                                 const LA7_0 = this.input.LA(1);
+                                                 if ((LA7_0 === CodeGenerator.ID)) {
+                                                     alt7 = 1;
+                                                 }
+
+                                                 switch (alt7) {
+                                                     case 1: {
+                                                         // CodeGenerator.g:243:30: ID
+                                                         {
+                                                             ID8 = this.match(this.input, CodeGenerator.ID)!;
+                                                             this.addArgument(args, ID8.token);
+                                                         }
+                                                         break;
+                                                     }
+
+                                                     default: {
+                                                         if (cnt7 >= 1) {
+                                                             break loop7;
+                                                         }
+
+                                                         const eee = new EarlyExitException(7, this.input);
+                                                         throw eee;
+                                                     }
+
+                                                 }
+                                                 cnt7++;
+                                             }
+
+                                             this.match(this.input, TreeParser.UP);
+
+                                         }
+                                         break;
+                                     }
+
+                                     default: {
+                                         break loop8;
+                                     }
+
+                                 }
+                             }
+
+                             retval.nargs = args.length;
+                             template9 = this.template(retval.name, args);
+
+                             const sub = template9;
+                             sub.isAnonSubtemplate = true;
+                             sub.templateDefStartToken = SUBTEMPLATE10.token;
+                             sub.ast = SUBTEMPLATE10;
+                             sub.ast.setUnknownTokenBoundaries();
+                             sub.tokens = this.input.getTokenStream();
+
+                             this.outermostImpl.addImplicitlyDefinedTemplate(sub);
+
+                             this.match(this.input, TreeParser.UP);
+                         }
+
+                     }
+                     break;
+                 }
+
+                 case 2: {
+                     // CodeGenerator.g:254:7: SUBTEMPLATE
+                     {
+                         SUBTEMPLATE11 = this.match(this.input, CodeGenerator.SUBTEMPLATE)!;
+
+                         const sub = new CompiledST();
+                         sub.name = retval.name;
+                         sub.template = "";
+                         sub.addArg(new FormalArgument("i"));
+                         sub.addArg(new FormalArgument("i0"));
+                         sub.isAnonSubtemplate = true;
+                         sub.templateDefStartToken = SUBTEMPLATE11.token;
+                         sub.ast = SUBTEMPLATE11;
+                         sub.ast.setUnknownTokenBoundaries();
+                         sub.tokens = this.input.getTokenStream();
+
+                         this.outermostImpl.addImplicitlyDefinedTemplate(sub);
+
+                     }
+                     break;
+                 }
+
+                 default:
+
+             }
+         } catch (re) {
+             if (re instanceof RecognitionException) {
+                 this.reportError(re);
+                 this.recover(this.input, re);
+             } else {
+                 throw re;
+             }
+         }*/
 
         return retval;
     }
-    // $ANTLR end "subtemplate"
 
-    // $ANTLR start "ifstat"
     // CodeGenerator.g:271:1: ifstat[CommonTree indent] : ^(i= 'if' conditional chunk
     // ( ^(eif= 'elseif' ec= conditional chunk ) )* ( ^(el= 'else' chunk ) )? ) ;
-    public ifstat(indent: CommonTree | null): void {
-        let i = null;
-        let eif = null;
-        let el = null;
-        let ec = null;
+    public ifstat(context: IfstatContext): void {
+        // let i = null;
+        // let eif = null;
+        // let el = null;
+        // let ec = null;
 
         /**
          * Tracks address of branch operand (in code block).  It's how
          *  we backpatch forward references when generating code for IFs.
          */
         let prevBranchOperand = -1;
+
         /**
          * Branch instruction operands that are forward refs to end of IF.
          *  We need to update them once we see the endif.
          */
         const endRefs = new Array<number>();
-        if (indent !== null) {
-            this.template_stack.peek().state.indent(indent);
+        this.template_stack.peek().state.indent(context);
+
+        this.conditional(context.conditional(0)!);
+
+        prevBranchOperand = this.address() + 1;
+        this.emit1(context.IF(), Bytecode.INSTR_BRF, -1); // write placeholder as branch target
+
+        this.handleElements(context.template(0)!.element());
+
+        if (context.ELSEIF().length > 0) {
+            for (let i = 0; i < context.conditional().length; ++i) {
+                const eif = context.ELSEIF(i);
+                endRefs.push(this.address() + 1);
+                this.emit1(eif, Bytecode.INSTR_BR, -1); // br end
+
+                // update previous branch instruction
+                this.write(prevBranchOperand, this.address());
+                prevBranchOperand = -1;
+
+                const ec = context.conditional(i + 1)!; // +1 since we did first one already (for "if").
+                this.conditional(ec);
+                prevBranchOperand = this.address() + 1;
+
+                // write placeholder as branch target
+                this.emit1(ec, Bytecode.INSTR_BRF, -1);
+
+                this.handleElements(context.template(i)!.element());
+
+                prevBranchOperand = this.address() + 1;
+            }
         }
 
-        try {
+        if (context.ELSE() !== null) {
+            endRefs.push(this.address() + 1);
+            this.emit1(context.ELSE(), Bytecode.INSTR_BR, -1); // br end
+
+            // update previous branch instruction
+            this.write(prevBranchOperand, this.address());
+            prevBranchOperand = -1;
+
+            if (context.template().length > 0) {
+                this.handleElements(context.template(context.template().length - 1)!.element());
+            }
+        }
+
+        if (prevBranchOperand >= 0) {
+            this.write(prevBranchOperand, this.address());
+        }
+
+        for (const opnd of endRefs) {
+            this.write(opnd, this.address());
+        }
+
+        this.template_stack.peek().state.emit(Bytecode.INSTR_DEDENT);
+
+        /*try {
             // CodeGenerator.g:285:2: ( ^(i= 'if' conditional chunk ( ^(eif= 'elseif' ec= conditional chunk ) )*
             // ( ^(el= 'else' chunk ) )? ) )
             // CodeGenerator.g:286:5: ^(i= 'if' conditional chunk ( ^(eif= 'elseif' ec= conditional chunk ) )*
             // ( ^(el= 'else' chunk ) )? )
             {
-                i = this.match(this.input, CodeGenerator.IF, CodeGenerator.FOLLOW_IF_in_ifstat482);
-                this.match(this.input, TreeParser.DOWN, null);
-                this.pushFollow(CodeGenerator.FOLLOW_conditional_in_ifstat484);
+                i = this.match(this.input, CodeGenerator.IF);
+                this.match(this.input, TreeParser.DOWN);
                 this.conditional();
-                this.state._fsp--;
 
                 prevBranchOperand = this.address() + 1;
                 this.emit1(i, Bytecode.INSTR_BRF, -1); // write placeholder as branch target
 
-                this.pushFollow(CodeGenerator.FOLLOW_chunk_in_ifstat488);
-                this.chunk();
-                this.state._fsp--;
+                this.handleElements();
 
                 // CodeGenerator.g:290:12: ( ^(eif= 'elseif' ec= conditional chunk ) )*
                 loop10:
@@ -1245,8 +1125,7 @@ export class CodeGenerator extends TreeParser {
                         case 1: {
                             // CodeGenerator.g:291:13: ^(eif= 'elseif' ec= conditional chunk )
                             {
-                                eif = this.match(this.input, CodeGenerator.ELSEIF,
-                                    CodeGenerator.FOLLOW_ELSEIF_in_ifstat526);
+                                eif = this.match(this.input, CodeGenerator.ELSEIF);
 
                                 endRefs.push(this.address() + 1);
                                 this.emit1(eif, Bytecode.INSTR_BR, -1); // br end
@@ -1254,20 +1133,16 @@ export class CodeGenerator extends TreeParser {
                                 this.write(prevBranchOperand, this.address());
                                 prevBranchOperand = -1;
 
-                                this.match(this.input, TreeParser.DOWN, null);
-                                this.pushFollow(CodeGenerator.FOLLOW_conditional_in_ifstat534);
+                                this.match(this.input, TreeParser.DOWN);
                                 ec = this.conditional();
-                                this.state._fsp--;
 
                                 prevBranchOperand = this.address() + 1;
                                 // write placeholder as branch target
                                 this.emit1((ec !== null ? (ec.start as CommonTree) : null), Bytecode.INSTR_BRF, -1);
 
-                                this.pushFollow(CodeGenerator.FOLLOW_chunk_in_ifstat538);
-                                this.chunk();
-                                this.state._fsp--;
+                                this.handleElements();
 
-                                this.match(this.input, TreeParser.UP, null);
+                                this.match(this.input, TreeParser.UP);
 
                             }
                             break;
@@ -1290,7 +1165,7 @@ export class CodeGenerator extends TreeParser {
                     case 1: {
                         // CodeGenerator.g:305:13: ^(el= 'else' chunk )
                         {
-                            el = this.match(this.input, CodeGenerator.ELSE, CodeGenerator.FOLLOW_ELSE_in_ifstat601);
+                            el = this.match(this.input, CodeGenerator.ELSE);
 
                             endRefs.push(this.address() + 1);
                             this.emit1(el, Bytecode.INSTR_BR, -1); // br end
@@ -1299,12 +1174,10 @@ export class CodeGenerator extends TreeParser {
                             prevBranchOperand = -1;
 
                             if (this.input.LA(1) === TreeParser.DOWN) {
-                                this.match(this.input, TreeParser.DOWN, null);
-                                this.pushFollow(CodeGenerator.FOLLOW_chunk_in_ifstat605);
-                                this.chunk();
-                                this.state._fsp--;
+                                this.match(this.input, TreeParser.DOWN);
+                                this.handleElements();
 
-                                this.match(this.input, TreeParser.UP, null);
+                                this.match(this.input, TreeParser.UP);
                             }
 
                         }
@@ -1315,7 +1188,7 @@ export class CodeGenerator extends TreeParser {
 
                 }
 
-                this.match(this.input, TreeParser.UP, null);
+                this.match(this.input, TreeParser.UP);
 
                 if (prevBranchOperand >= 0) {
                     this.write(prevBranchOperand, this.address());
@@ -1337,180 +1210,192 @@ export class CodeGenerator extends TreeParser {
             } else {
                 throw re;
             }
-        }
-        finally {
-            // do for sure before leaving
-        }
+        }*/
     }
 
-    // $ANTLR start "conditional"
     // CodeGenerator.g:323:1: conditional : ( ^( OR conditional conditional ) | ^( AND conditional conditional )
     // | ^( BANG conditional ) | expr );
-    public conditional(): CodeGenerator.conditional_return {
-        const retval = new CodeGenerator.conditional_return();
-        retval.start = this.input.LT(1);
+    public conditional(context: ConditionalContext): void {
+        //const retval = new CodeGenerator.conditional_return();
+        //retval.start = this.input.LT(1);
 
-        let OR12 = null;
-        let AND13 = null;
-        let BANG14 = null;
+        // let OR12 = null;
+        // let AND13 = null;
+        // let BANG14 = null;
 
-        try {
-            // CodeGenerator.g:323:12: ( ^( OR conditional conditional ) | ^( AND conditional conditional )
-            // | ^( BANG conditional ) | expr )
-            let alt12 = 4;
-            switch (this.input.LA(1)) {
-                case STLexer.OR: {
-                    {
-                        alt12 = 1;
-                    }
-                    break;
-                }
-
-                case STLexer.AND: {
-                    {
-                        alt12 = 2;
-                    }
-                    break;
-                }
-
-                case STLexer.BANG: {
-                    {
-                        alt12 = 3;
-                    }
-                    break;
-                }
-
-                case STLexer.ID:
-                case STLexer.STRING:
-                case STLexer.TRUE:
-                case STLexer.FALSE:
-                case CodeGenerator.PROP:
-                case CodeGenerator.PROP_IND:
-                case CodeGenerator.INCLUDE:
-                case CodeGenerator.INCLUDE_IND:
-                case CodeGenerator.EXEC_FUNC:
-                case CodeGenerator.INCLUDE_SUPER:
-                case CodeGenerator.INCLUDE_SUPER_REGION:
-                case CodeGenerator.INCLUDE_REGION:
-                case CodeGenerator.TO_STR:
-                case CodeGenerator.LIST:
-                case CodeGenerator.MAP:
-                case CodeGenerator.ZIP:
-                case CodeGenerator.SUBTEMPLATE: {
-                    {
-                        alt12 = 4;
-                    }
-                    break;
-                }
-
-                default: {
-                    const nvae =
-                        new NoViableAltExceptionV3("", 12, 0, this.input);
-                    throw nvae;
-                }
-
-            }
-            switch (alt12) {
-                case 1: {
-                    // CodeGenerator.g:324:5: ^( OR conditional conditional )
-                    {
-                        OR12 = this.match(this.input, CodeGenerator.OR, CodeGenerator.FOLLOW_OR_in_conditional651);
-                        this.match(this.input, TreeParser.DOWN, null);
-                        this.pushFollow(CodeGenerator.FOLLOW_conditional_in_conditional653);
-                        this.conditional();
-                        this.state._fsp--;
-
-                        this.pushFollow(CodeGenerator.FOLLOW_conditional_in_conditional655);
-                        this.conditional();
-                        this.state._fsp--;
-
-                        this.match(this.input, TreeParser.UP, null);
-
-                        this.emit(OR12, Bytecode.INSTR_OR);
-                    }
-                    break;
-                }
-
-                case 2: {
-                    // CodeGenerator.g:325:7: ^( AND conditional conditional )
-                    {
-                        AND13 = this.match(this.input, CodeGenerator.AND, CodeGenerator.FOLLOW_AND_in_conditional667);
-                        this.match(this.input, TreeParser.DOWN, null);
-                        this.pushFollow(CodeGenerator.FOLLOW_conditional_in_conditional669);
-                        this.conditional();
-                        this.state._fsp--;
-
-                        this.pushFollow(CodeGenerator.FOLLOW_conditional_in_conditional671);
-                        this.conditional();
-                        this.state._fsp--;
-
-                        this.match(this.input, TreeParser.UP, null);
-
-                        this.emit(AND13, Bytecode.INSTR_AND);
-                    }
-                    break;
-                }
-
-                case 3: {
-                    // CodeGenerator.g:326:7: ^( BANG conditional )
-                    {
-                        BANG14 = this.match(this.input, CodeGenerator.BANG,
-                            CodeGenerator.FOLLOW_BANG_in_conditional683);
-                        this.match(this.input, TreeParser.DOWN, null);
-                        this.pushFollow(CodeGenerator.FOLLOW_conditional_in_conditional685);
-                        this.conditional();
-                        this.state._fsp--;
-
-                        this.match(this.input, TreeParser.UP, null);
-
-                        this.emit(BANG14, Bytecode.INSTR_NOT);
-                    }
-                    break;
-                }
-
-                case 4: {
-                    // CodeGenerator.g:327:7: expr
-                    {
-                        this.pushFollow(CodeGenerator.FOLLOW_expr_in_conditional696);
-                        this.expr();
-                        this.state._fsp--;
-
-                    }
-                    break;
-                }
-
-                default:
-
-            }
-        } catch (re) {
-            if (re instanceof RecognitionException) {
-                this.reportError(re);
-                this.recover(this.input, re);
-            } else {
-                throw re;
+        // Strange handling in the original code: a single AND expression is handled as `expr`, which misses
+        // handling for negation. This is fixed here.
+        this.andConditional(context.andConditional(0)!);
+        if (context.OR().length > 0) {
+            for (let i = 0; i < context.andConditional().length; ++i) {
+                this.andConditional(context.andConditional(i + 1)!);
+                this.emit(context.OR(i), Bytecode.INSTR_OR);
             }
         }
-        finally {
-            // do for sure before leaving
-        }
 
-        return retval;
+        /* try {
+             // CodeGenerator.g:323:12: ( ^( OR conditional conditional ) | ^( AND conditional conditional )
+             // | ^( BANG conditional ) | expr )
+             let alt12 = 4;
+             switch (this.input.LA(1)) {
+                 case STLexer.OR: {
+                     {
+                         alt12 = 1;
+                     }
+                     break;
+                 }
+
+                 case STLexer.AND: {
+                     {
+                         alt12 = 2;
+                     }
+                     break;
+                 }
+
+                 case STLexer.BANG: {
+                     {
+                         alt12 = 3;
+                     }
+                     break;
+                 }
+
+                 case STLexer.ID:
+                 case STLexer.STRING:
+                 case STLexer.TRUE:
+                 case STLexer.FALSE:
+                 case CodeGenerator.PROP:
+                 case CodeGenerator.PROP_IND:
+                 case CodeGenerator.INCLUDE:
+                 case CodeGenerator.INCLUDE_IND:
+                 case CodeGenerator.EXEC_FUNC:
+                 case CodeGenerator.INCLUDE_SUPER:
+                 case CodeGenerator.INCLUDE_SUPER_REGION:
+                 case CodeGenerator.INCLUDE_REGION:
+                 case CodeGenerator.TO_STR:
+                 case CodeGenerator.LIST:
+                 case CodeGenerator.MAP:
+                 case CodeGenerator.ZIP:
+                 case CodeGenerator.SUBTEMPLATE: {
+                     {
+                         alt12 = 4;
+                     }
+                     break;
+                 }
+
+                 default: {
+                     this.#throwInternalError();
+
+                 }
+
+             }
+             switch (alt12) {
+                 case 1: {
+                     // CodeGenerator.g:324:5: ^( OR conditional conditional )
+                     {
+                         OR12 = this.match(this.input, CodeGenerator.OR);
+                         this.match(this.input, TreeParser.DOWN);
+                         this.conditional();
+
+                         this.conditional();
+
+                         this.match(this.input, TreeParser.UP);
+
+                         this.emit(OR12, Bytecode.INSTR_OR);
+                     }
+                     break;
+                 }
+
+                 case 2: {
+                     // CodeGenerator.g:325:7: ^( AND conditional conditional )
+                     {
+                         AND13 = this.match(this.input, CodeGenerator.AND);
+                         this.match(this.input, TreeParser.DOWN);
+                         this.conditional();
+
+                         this.conditional();
+
+                         this.match(this.input, TreeParser.UP);
+
+                         this.emit(AND13, Bytecode.INSTR_AND);
+                     }
+                     break;
+                 }
+
+                 case 3: {
+                     // CodeGenerator.g:326:7: ^( BANG conditional )
+                     {
+                         BANG14 = this.match(this.input, CodeGenerator.BANG);
+                         this.match(this.input, TreeParser.DOWN);
+                         this.conditional();
+
+                         this.match(this.input, TreeParser.UP);
+
+                         this.emit(BANG14, Bytecode.INSTR_NOT);
+                     }
+                     break;
+                 }
+
+                 case 4: {
+                     // CodeGenerator.g:327:7: expr
+                     {
+                         this.expr();
+
+                     }
+                     break;
+                 }
+
+                 default:
+
+             }
+         } catch (re) {
+             if (re instanceof RecognitionException) {
+                 this.reportError(re);
+                 this.recover(this.input, re);
+             } else {
+                 throw re;
+             }
+         }*/
+
+        // return retval;
     }
 
-    // $ANTLR start "exprOptions"
-    // CodeGenerator.g:330:1: exprOptions : ^( OPTIONS ( option )* ) ;
-    public exprOptions(): CodeGenerator.exprOptions_return {
-        const retval = new CodeGenerator.exprOptions_return();
-        retval.start = this.input.LT(1);
+    public andConditional(context: AndConditionalContext): void {
+        this.notConditional(context.notConditional(0)!);
+        if (context.AND().length > 0) {
+            for (let i = 0; i < context.notConditional().length; ++i) {
+                this.notConditional(context.notConditional(i + 1)!);
+                this.emit(context.AND(i), Bytecode.INSTR_AND);
+            }
+        }
+    }
 
-        try {
+    public notConditional(context: NotConditionalContext): void {
+        if (context.BANG() !== null) {
+            this.notConditional(context.notConditional()!);
+            this.emit(context.BANG(), Bytecode.INSTR_NOT);
+        } else {
+            this.memberExpr(context.memberExpr()!);
+        }
+    }
+
+    // CodeGenerator.g:330:1: exprOptions : ^( OPTIONS ( option )* ) ;
+    public exprOptions(context: ExprOptionsContext): void {
+        //const retval = new CodeGenerator.exprOptions_return();
+        //retval.start = this.input.LT(1);
+
+        this.emit(context, Bytecode.INSTR_OPTIONS);
+        context.option().forEach((option) => {
+            this.option(option);
+        });
+
+        /*try {
             // CodeGenerator.g:330:12: ( ^( OPTIONS ( option )* ) )
             // CodeGenerator.g:331:5: ^( OPTIONS ( option )* )
             {
-                this.emit((retval.start), Bytecode.INSTR_OPTIONS);
-                this.match(this.input, CodeGenerator.OPTIONS, CodeGenerator.FOLLOW_OPTIONS_in_exprOptions712);
+                this.emit(context, Bytecode.INSTR_OPTIONS);
+                this.match(this.input, CodeGenerator.OPTIONS);
                 if (this.input.LA(1) === TreeParser.DOWN) {
-                    this.match(this.input, TreeParser.DOWN, null);
+                    this.match(this.input, TreeParser.DOWN);
                     // CodeGenerator.g:331:55: ( option )*
                     loop13:
                     while (true) {
@@ -1524,9 +1409,7 @@ export class CodeGenerator extends TreeParser {
                             case 1: {
                                 // CodeGenerator.g:331:55: option
                                 {
-                                    this.pushFollow(CodeGenerator.FOLLOW_option_in_exprOptions714);
                                     this.option();
-                                    this.state._fsp--;
 
                                 }
                                 break;
@@ -1539,7 +1422,7 @@ export class CodeGenerator extends TreeParser {
                         }
                     }
 
-                    this.match(this.input, TreeParser.UP, null);
+                    this.match(this.input, TreeParser.UP);
                 }
 
             }
@@ -1551,32 +1434,28 @@ export class CodeGenerator extends TreeParser {
             } else {
                 throw re;
             }
-        }
-        finally {
-            // do for sure before leaving
-        }
+        }*/
 
-        return retval;
+        //return retval;
     }
-    // $ANTLR end "exprOptions"
 
-    // $ANTLR start "option"
     // CodeGenerator.g:334:1: option : ^( '=' ID expr ) ;
-    public option(): void {
-        let ID15 = null;
+    public option(context: OptionContext): void {
+        //const ID15 = null;
 
-        try {
+        this.exprNoComma(context.exprNoComma()!);
+        this.setOption(context.ID());
+
+        /*try {
             // CodeGenerator.g:334:7: ( ^( '=' ID expr ) )
             // CodeGenerator.g:335:5: ^( '=' ID expr )
             {
-                this.match(this.input, CodeGenerator.EQUALS, CodeGenerator.FOLLOW_EQUALS_in_option729);
-                this.match(this.input, TreeParser.DOWN, null);
-                ID15 = this.match(this.input, CodeGenerator.ID, CodeGenerator.FOLLOW_ID_in_option731)!;
-                this.pushFollow(CodeGenerator.FOLLOW_expr_in_option733);
-                this.expr();
-                this.state._fsp--;
+                this.match(this.input, CodeGenerator.EQUALS);
+                this.match(this.input, TreeParser.DOWN);
+                ID15 = this.match(this.input, CodeGenerator.ID)!;
+                this.exprNoComma();
 
-                this.match(this.input, TreeParser.UP, null);
+                this.match(this.input, TreeParser.UP);
 
                 this.setOption(ID15);
             }
@@ -1588,23 +1467,47 @@ export class CodeGenerator extends TreeParser {
             } else {
                 throw re;
             }
-        }
-        finally {
-            // do for sure before leaving
-        }
+        }*/
     }
-    // $ANTLR end "option"
 
-    // $ANTLR start "expr"
     // CodeGenerator.g:338:1: expr : ( ^( ZIP ^( ELEMENTS ( expr )+ ) mapTemplateRef[ne] )
     // | ^( MAP expr ( mapTemplateRef[1] )+ ) | prop | includeExpr );
-    public expr(): void {
-        let ZIP16 = null;
-        let MAP17 = null;
+    public expr(context: MapExprContext): void {
+        //const ZIP16 = null;
+        //const MAP17 = null;
 
-        let nt = 0;
         let ne = 0;
-        try {
+        context.memberExpr().forEach((memberExpr) => {
+            this.memberExpr(memberExpr);
+            ne++;
+        });
+
+        const templateRefs = context.mapTemplateRef();
+        if (context.COMMA().length > 0) { // More than one member expression. Must have a template ref.
+            this.mapTemplateRef(templateRefs[0], ne);
+            this.emit1(context, Bytecode.INSTR_ZIP_MAP, ne);
+
+            templateRefs.shift(); // Remove first template ref.
+        }
+
+        if (templateRefs.length > 0) {
+            // Additional template refs here.
+            let nt = 0;
+            this.memberExpr(context.memberExpr(0)!);
+            templateRefs.forEach((templateRef) => {
+                this.mapTemplateRef(templateRef, 1);
+                nt++;
+            });
+
+            if (nt > 1) {
+                this.emit1(context, nt > 1 ? Bytecode.INSTR_ROT_MAP : Bytecode.INSTR_MAP, nt);
+            } else {
+                this.emit(context, Bytecode.INSTR_MAP);
+            }
+
+        }
+
+        /*try {
             // CodeGenerator.g:339:32: ( ^( ZIP ^( ELEMENTS ( expr )+ ) mapTemplateRef[ne] )
             // | ^( MAP expr ( mapTemplateRef[1] )+ ) | prop | includeExpr )
             let alt16 = 4;
@@ -1651,9 +1554,8 @@ export class CodeGenerator extends TreeParser {
                 }
 
                 default: {
-                    const nvae =
-                        new NoViableAltExceptionV3("", 16, 0, this.input);
-                    throw nvae;
+                    this.#throwInternalError();
+
                 }
 
             }
@@ -1661,10 +1563,10 @@ export class CodeGenerator extends TreeParser {
                 case 1: {
                     // CodeGenerator.g:340:5: ^( ZIP ^( ELEMENTS ( expr )+ ) mapTemplateRef[ne] )
                     {
-                        ZIP16 = this.match(this.input, CodeGenerator.ZIP, CodeGenerator.FOLLOW_ZIP_in_expr758);
-                        this.match(this.input, TreeParser.DOWN, null);
-                        this.match(this.input, CodeGenerator.ELEMENTS, CodeGenerator.FOLLOW_ELEMENTS_in_expr761);
-                        this.match(this.input, TreeParser.DOWN, null);
+                        ZIP16 = this.match(this.input, CodeGenerator.ZIP);
+                        this.match(this.input, TreeParser.DOWN);
+                        this.match(this.input, CodeGenerator.ELEMENTS);
+                        this.match(this.input, TreeParser.DOWN);
                         // CodeGenerator.g:340:22: ( expr )+
                         let cnt14 = 0;
                         loop14:
@@ -1681,9 +1583,7 @@ export class CodeGenerator extends TreeParser {
                                 case 1: {
                                     // CodeGenerator.g:340:23: expr
                                     {
-                                        this.pushFollow(CodeGenerator.FOLLOW_expr_in_expr764);
                                         this.expr();
-                                        this.state._fsp--;
 
                                         ne++;
                                     }
@@ -1703,13 +1603,11 @@ export class CodeGenerator extends TreeParser {
                             cnt14++;
                         }
 
-                        this.match(this.input, TreeParser.UP, null);
+                        this.match(this.input, TreeParser.UP);
 
-                        this.pushFollow(CodeGenerator.FOLLOW_mapTemplateRef_in_expr771);
                         this.mapTemplateRef(ne);
-                        this.state._fsp--;
 
-                        this.match(this.input, TreeParser.UP, null);
+                        this.match(this.input, TreeParser.UP);
 
                         this.emit1(ZIP16, Bytecode.INSTR_ZIP_MAP, ne);
                     }
@@ -1719,11 +1617,9 @@ export class CodeGenerator extends TreeParser {
                 case 2: {
                     // CodeGenerator.g:341:7: ^( MAP expr ( mapTemplateRef[1] )+ )
                     {
-                        MAP17 = this.match(this.input, CodeGenerator.MAP, CodeGenerator.FOLLOW_MAP_in_expr784);
-                        this.match(this.input, TreeParser.DOWN, null);
-                        this.pushFollow(CodeGenerator.FOLLOW_expr_in_expr786);
+                        MAP17 = this.match(this.input, CodeGenerator.MAP);
+                        this.match(this.input, TreeParser.DOWN);
                         this.expr();
-                        this.state._fsp--;
 
                         // CodeGenerator.g:341:18: ( mapTemplateRef[1] )+
                         let cnt15 = 0;
@@ -1740,9 +1636,7 @@ export class CodeGenerator extends TreeParser {
                                 case 1: {
                                     // CodeGenerator.g:341:19: mapTemplateRef[1]
                                     {
-                                        this.pushFollow(CodeGenerator.FOLLOW_mapTemplateRef_in_expr789);
                                         this.mapTemplateRef(1);
-                                        this.state._fsp--;
 
                                         nt++;
                                     }
@@ -1762,7 +1656,7 @@ export class CodeGenerator extends TreeParser {
                             cnt15++;
                         }
 
-                        this.match(this.input, TreeParser.UP, null);
+                        this.match(this.input, TreeParser.UP);
 
                         if (nt > 1) {
                             this.emit1(MAP17, nt > 1 ? Bytecode.INSTR_ROT_MAP : Bytecode.INSTR_MAP, nt);
@@ -1779,9 +1673,7 @@ export class CodeGenerator extends TreeParser {
                 case 3: {
                     // CodeGenerator.g:345:7: prop
                     {
-                        this.pushFollow(CodeGenerator.FOLLOW_prop_in_expr805);
                         this.prop();
-                        this.state._fsp--;
 
                     }
                     break;
@@ -1790,9 +1682,7 @@ export class CodeGenerator extends TreeParser {
                 case 4: {
                     // CodeGenerator.g:346:7: includeExpr
                     {
-                        this.pushFollow(CodeGenerator.FOLLOW_includeExpr_in_expr813);
                         this.includeExpr();
-                        this.state._fsp--;
 
                     }
                     break;
@@ -1808,21 +1698,45 @@ export class CodeGenerator extends TreeParser {
             } else {
                 throw re;
             }
+        }*/
+    }
+
+    public exprNoComma(context: ExprNoCommaContext): void {
+        this.memberExpr(context.memberExpr());
+        if (context.mapTemplateRef() !== null) {
+            this.mapTemplateRef(context.mapTemplateRef()!, 1);
         }
-        finally {
-            // do for sure before leaving
+
+    }
+
+    public memberExpr(context: MemberExprContext): void {
+        this.includeExpr(context.includeExpr()!);
+        if (context.children!.length > 1) {
+            // Some optional property accessors. They alway a pair (dot + expression/id).
+            for (let i = 2; i < context.children!.length; i += 2) {
+                this.prop(context.children![i]);
+            }
         }
     }
-    // $ANTLR end "expr"
 
-    // $ANTLR start "prop"
     // CodeGenerator.g:349:1: prop : ( ^( PROP expr ID ) | ^( PROP_IND expr expr ) );
-    public prop(): void {
-        let PROP18 = null;
-        let ID19 = null;
-        let PROP_IND20 = null;
+    public prop(context: ParseTree): void {
+        //let PROP18 = null;
+        //let ID19 = null;
+        //let PROP_IND20 = null;
 
-        try {
+        if (context instanceof TerminalNode) {
+            // Must be an ID.
+            this.emit1(context, Bytecode.INSTR_LOAD_PROP, context.getText() ?? "");
+        } else {
+            // A map expression.
+            const expression = context as MapExprContext;
+            this.expr(expression);
+            this.emit(expression, Bytecode.INSTR_LOAD_PROP_IND);
+
+        }
+
+        /*try {
             // CodeGenerator.g:349:5: ( ^( PROP expr ID ) | ^( PROP_IND expr expr ) )
             let alt17 = 2;
             const LA17_0 = this.input.LA(1);
@@ -1835,9 +1749,8 @@ export class CodeGenerator extends TreeParser {
                 }
 
                 else {
-                    const nvae =
-                        new NoViableAltExceptionV3("", 17, 0, this.input);
-                    throw nvae;
+                    this.#throwInternalError();
+
                 }
             }
 
@@ -1845,14 +1758,12 @@ export class CodeGenerator extends TreeParser {
                 case 1: {
                     // CodeGenerator.g:350:5: ^( PROP expr ID )
                     {
-                        PROP18 = this.match(this.input, CodeGenerator.PROP, CodeGenerator.FOLLOW_PROP_in_prop826);
-                        this.match(this.input, TreeParser.DOWN, null);
-                        this.pushFollow(CodeGenerator.FOLLOW_expr_in_prop828);
+                        PROP18 = this.match(this.input, CodeGenerator.PROP);
+                        this.match(this.input, TreeParser.DOWN);
                         this.expr();
-                        this.state._fsp--;
 
-                        ID19 = this.match(this.input, CodeGenerator.ID, CodeGenerator.FOLLOW_ID_in_prop830);
-                        this.match(this.input, TreeParser.UP, null);
+                        ID19 = this.match(this.input, CodeGenerator.ID);
+                        this.match(this.input, TreeParser.UP);
 
                         this.emit1(PROP18, Bytecode.INSTR_LOAD_PROP, ID19?.getText() ?? "");
                     }
@@ -1862,18 +1773,13 @@ export class CodeGenerator extends TreeParser {
                 case 2: {
                     // CodeGenerator.g:351:7: ^( PROP_IND expr expr )
                     {
-                        PROP_IND20 = this.match(this.input, CodeGenerator.PROP_IND,
-                            CodeGenerator.FOLLOW_PROP_IND_in_prop842);
-                        this.match(this.input, TreeParser.DOWN, null);
-                        this.pushFollow(CodeGenerator.FOLLOW_expr_in_prop844);
+                        PROP_IND20 = this.match(this.input, CodeGenerator.PROP_IND);
+                        this.match(this.input, TreeParser.DOWN);
                         this.expr();
-                        this.state._fsp--;
 
-                        this.pushFollow(CodeGenerator.FOLLOW_expr_in_prop846);
                         this.expr();
-                        this.state._fsp--;
 
-                        this.match(this.input, TreeParser.UP, null);
+                        this.match(this.input, TreeParser.UP);
 
                         this.emit(PROP_IND20, Bytecode.INSTR_LOAD_PROP_IND);
                     }
@@ -1890,27 +1796,65 @@ export class CodeGenerator extends TreeParser {
             } else {
                 throw re;
             }
-        }
-        finally {
-            // do for sure before leaving
-        }
+        }*/
     }
 
-    // $ANTLR start "mapTemplateRef"
     // CodeGenerator.g:354:1: mapTemplateRef[int num_exprs] : ( ^( INCLUDE qualifiedId args ) | subtemplate
     // | ^( INCLUDE_IND expr args ) );
-    public mapTemplateRef(num_exprs: number): CodeGenerator.mapTemplateRef_return {
-        const retval = new CodeGenerator.mapTemplateRef_return();
-        retval.start = this.input.LT(1);
+    public mapTemplateRef(context: MapTemplateRefContext, num_exprs: number): void {
+        //const retval = new CodeGenerator.mapTemplateRef_return();
+        //retval.start = this.input.LT(1);
 
-        let INCLUDE21 = null;
-        let INCLUDE_IND25 = null;
-        let args22 = null;
-        let qualifiedId23 = null;
-        let subtemplate24 = null;
-        let args26 = null;
+        // let INCLUDE21 = null;
+        // let INCLUDE_IND25 = null;
+        // let args22 = null;
+        // let qualifiedId23 = null;
+        // let subtemplate24 = null;
+        // let args26 = null;
 
-        try {
+        if (context.qualifiedId() !== null) {
+            for (let i = 1; i <= num_exprs; i++) {
+                this.emit(context.qualifiedId(), Bytecode.INSTR_NULL);
+            }
+
+            const args22 = this.args(context.args()!);
+
+            if (args22.passThru) {
+                this.emit1(context, Bytecode.INSTR_PASSTHRU, context.qualifiedId()?.getText() ?? "");
+            }
+
+            if (args22.namedArgs) {
+                this.emit1(context, Bytecode.INSTR_NEW_BOX_ARGS, context.qualifiedId()?.getText() ?? "");
+            } else {
+                this.emit2(context, Bytecode.INSTR_NEW, context.qualifiedId()?.getText() ?? "", args22.n + num_exprs);
+            }
+        } else if (context.subtemplate() !== null) {
+            const subtemplate24 = this.subtemplate(context.subtemplate()!);
+
+            if (subtemplate24.nargs !== num_exprs) {
+                this.errMgr?.compileTimeError(ErrorType.ANON_ARGUMENT_MISMATCH, this.templateToken,
+                    context.subtemplate()!.start ?? undefined, subtemplate24.nargs, num_exprs);
+            }
+
+            for (let i = 1; i <= num_exprs; i++) {
+                this.emit(context.subtemplate(), Bytecode.INSTR_NULL);
+            }
+
+            this.emit2(context.subtemplate(), Bytecode.INSTR_NEW, subtemplate24.name, num_exprs);
+        } else {
+            this.expr(context.mapExpr()!);
+
+            this.emit(context, Bytecode.INSTR_TOSTR);
+            for (let i = 1; i <= num_exprs; i++) {
+                this.emit(context, Bytecode.INSTR_NULL);
+            }
+
+            const args26 = this.args(context.args()!);
+
+            this.emit1(context, Bytecode.INSTR_NEW_IND, args26.n + num_exprs);
+        }
+
+        /*try {
             // CodeGenerator.g:354:30: ( ^( INCLUDE qualifiedId args ) | subtemplate | ^( INCLUDE_IND expr args ) )
             let alt18 = 3;
             switch (this.input.LA(1)) {
@@ -1936,9 +1880,8 @@ export class CodeGenerator extends TreeParser {
                 }
 
                 default: {
-                    const nvae =
-                        new NoViableAltExceptionV3("", 18, 0, this.input);
-                    throw nvae;
+                    this.#throwInternalError();
+
                 }
 
             }
@@ -1946,22 +1889,17 @@ export class CodeGenerator extends TreeParser {
                 case 1: {
                     // CodeGenerator.g:355:5: ^( INCLUDE qualifiedId args )
                     {
-                        INCLUDE21 = this.match(this.input, CodeGenerator.INCLUDE,
-                            CodeGenerator.FOLLOW_INCLUDE_in_mapTemplateRef872);
-                        this.match(this.input, TreeParser.DOWN, null);
-                        this.pushFollow(CodeGenerator.FOLLOW_qualifiedId_in_mapTemplateRef874);
+                        INCLUDE21 = this.match(this.input, CodeGenerator.INCLUDE);
+                        this.match(this.input, TreeParser.DOWN);
                         qualifiedId23 = this.qualifiedId();
-                        this.state._fsp--;
 
                         for (let i = 1; i <= num_exprs; i++) {
                             this.emit(INCLUDE21, Bytecode.INSTR_NULL);
                         }
 
-                        this.pushFollow(CodeGenerator.FOLLOW_args_in_mapTemplateRef878);
                         args22 = this.args();
-                        this.state._fsp--;
 
-                        this.match(this.input, TreeParser.UP, null);
+                        this.match(this.input, TreeParser.UP);
 
                         if ((args22 !== null ? (args22).passThru : false)) {
                             this.emit1((retval.start), Bytecode.INSTR_PASSTHRU,
@@ -1990,9 +1928,7 @@ export class CodeGenerator extends TreeParser {
                 case 2: {
                     // CodeGenerator.g:362:7: subtemplate
                     {
-                        this.pushFollow(CodeGenerator.FOLLOW_subtemplate_in_mapTemplateRef894);
                         subtemplate24 = this.subtemplate();
-                        this.state._fsp--;
 
                         if ((subtemplate24 !== null ? (subtemplate24).nargs : 0) !== num_exprs) {
                             this.errMgr?.compileTimeError(ErrorType.ANON_ARGUMENT_MISMATCH,
@@ -2015,25 +1951,20 @@ export class CodeGenerator extends TreeParser {
                 case 3: {
                     // CodeGenerator.g:372:7: ^( INCLUDE_IND expr args )
                     {
-                        INCLUDE_IND25 = this.match(this.input, CodeGenerator.INCLUDE_IND,
-                            CodeGenerator.FOLLOW_INCLUDE_IND_in_mapTemplateRef914);
-                        this.match(this.input, TreeParser.DOWN, null);
-                        this.pushFollow(CodeGenerator.FOLLOW_expr_in_mapTemplateRef916);
+                        INCLUDE_IND25 = this.match(this.input, CodeGenerator.INCLUDE_IND);
+                        this.match(this.input, TreeParser.DOWN);
                         this.expr();
-                        this.state._fsp--;
 
                         this.emit(INCLUDE_IND25, Bytecode.INSTR_TOSTR);
                         for (let i = 1; i <= num_exprs; i++) {
                             this.emit(INCLUDE_IND25, Bytecode.INSTR_NULL);
                         }
 
-                        this.pushFollow(CodeGenerator.FOLLOW_args_in_mapTemplateRef920);
                         args26 = this.args();
-                        this.state._fsp--;
 
                         this.emit1(INCLUDE_IND25, Bytecode.INSTR_NEW_IND, args26.n + num_exprs);
 
-                        this.match(this.input, TreeParser.UP, null);
+                        this.match(this.input, TreeParser.UP);
 
                     }
                     break;
@@ -2049,278 +1980,343 @@ export class CodeGenerator extends TreeParser {
             } else {
                 throw re;
             }
-        }
-        finally {
-            // do for sure before leaving
-        }
+        }*/
 
-        return retval;
+        // return retval;
     }
 
-    // $ANTLR start "includeExpr"
     // CodeGenerator.g:382:1: includeExpr : ( ^( EXEC_FUNC ID ( expr )? ) | ^( INCLUDE qualifiedId args )
     // | ^( INCLUDE_SUPER ID args ) | ^( INCLUDE_REGION ID ) | ^( INCLUDE_SUPER_REGION ID ) | primary );
-    public includeExpr(): CodeGenerator.includeExpr_return {
-        const retval = new CodeGenerator.includeExpr_return();
-        retval.start = this.input.LT(1);
+    public includeExpr(context: IncludeExprContext): void {
+        //const retval = new CodeGenerator.includeExpr_return();
+        //retval.start = this.input.LT(1);
 
-        let ID27 = null;
-        let INCLUDE30 = null;
-        let ID32 = null;
-        let INCLUDE_SUPER33 = null;
-        let ID34 = null;
-        let INCLUDE_REGION35 = null;
-        let ID36 = null;
-        let INCLUDE_SUPER_REGION37 = null;
-        let args28 = null;
-        let qualifiedId29 = null;
-        let args31 = null;
+        // let ID27 = null;
+        // let INCLUDE30 = null;
+        // let ID32 = null;
+        // let INCLUDE_SUPER33 = null;
+        // let ID34 = null;
+        // let INCLUDE_REGION35 = null;
+        // let ID36 = null;
+        // let INCLUDE_SUPER_REGION37 = null;
+        // let args28 = null;
+        // let qualifiedId29 = null;
+        // let args31 = null;
 
-        try {
-            // CodeGenerator.g:382:12: ( ^( EXEC_FUNC ID ( expr )? ) | ^( INCLUDE qualifiedId args )
-            // | ^( INCLUDE_SUPER ID args ) | ^( INCLUDE_REGION ID ) | ^( INCLUDE_SUPER_REGION ID ) | primary )
-            let alt20 = 6;
-            switch (this.input.LA(1)) {
-                case CodeGenerator.EXEC_FUNC: {
-                    {
-                        alt20 = 1;
+        if (context.ID() !== null) {
+            const id = context.ID()!;
+            if (context.SUPER() === null && context.AT() === null) {
+                // A function call.
+                this.expr(context.expr()!.mapExpr()!);
+                this.func(id);
+            } else if (context.SUPER() !== null) {
+                if (context.AT() === null) {
+                    // Include super ID.
+                    const args = this.args(context.args()!);
+
+                    if (args.passThru) {
+                        this.emit1(context, Bytecode.INSTR_PASSTHRU, id.getText() ?? "");
                     }
-                    break;
-                }
 
-                case CodeGenerator.INCLUDE: {
-                    {
-                        alt20 = 2;
+                    if ((args !== null ? (args).namedArgs : false)) {
+                        this.emit1(id, Bytecode.INSTR_SUPER_NEW_BOX_ARGS, id.getText() ?? "");
+                    } else {
+                        this.emit2(id, Bytecode.INSTR_SUPER_NEW, id.getText() ?? "", args.n);
                     }
-                    break;
+                } else {
+                    // Include super region ID.
+                    const mangled = STGroup.getMangledRegionName(this.outermostImpl.name!, id.getText() ?? "");
+                    this.emit2(id, Bytecode.INSTR_SUPER_NEW, mangled, 0);
                 }
+            } else if (context.AT() !== null) {
+                // Include region ID.
+                const impl = Compiler.defineBlankRegion(this.outermostImpl, id?.symbol);
 
-                case CodeGenerator.INCLUDE_SUPER: {
-                    {
-                        alt20 = 3;
-                    }
-                    break;
-                }
-
-                case CodeGenerator.INCLUDE_REGION: {
-                    {
-                        alt20 = 4;
-                    }
-                    break;
-                }
-
-                case CodeGenerator.INCLUDE_SUPER_REGION: {
-                    {
-                        alt20 = 5;
-                    }
-                    break;
-                }
-
-                case STLexer.ID:
-                case STLexer.STRING:
-                case STLexer.TRUE:
-                case STLexer.FALSE:
-                case CodeGenerator.INCLUDE_IND:
-                case CodeGenerator.TO_STR:
-                case CodeGenerator.LIST:
-                case CodeGenerator.SUBTEMPLATE: {
-                    {
-                        alt20 = 6;
-                    }
-                    break;
-                }
-
-                default: {
-                    const nvae =
-                        new NoViableAltExceptionV3("", 20, 0, this.input);
-                    throw nvae;
-                }
-
+                this.emit2(id, Bytecode.INSTR_NEW, impl.name!, 0);
             }
-            switch (alt20) {
-                case 1: {
-                    // CodeGenerator.g:383:5: ^( EXEC_FUNC ID ( expr )? )
-                    {
-                        this.match(this.input, CodeGenerator.EXEC_FUNC,
-                            CodeGenerator.FOLLOW_EXEC_FUNC_in_includeExpr941);
-                        this.match(this.input, TreeParser.DOWN, null);
-                        ID27 = this.match(this.input, CodeGenerator.ID, CodeGenerator.FOLLOW_ID_in_includeExpr943);
-                        // CodeGenerator.g:383:20: ( expr )?
-                        let alt19 = 2;
-                        const LA19_0 = this.input.LA(1);
-                        if (((LA19_0 >= CodeGenerator.ID && LA19_0 <= CodeGenerator.STRING)
-                            || (LA19_0 >= CodeGenerator.TRUE && LA19_0 <= CodeGenerator.FALSE)
-                            || (LA19_0 >= CodeGenerator.PROP && LA19_0 <= CodeGenerator.SUBTEMPLATE))) {
-                            alt19 = 1;
-                        }
-                        switch (alt19) {
-                            case 1: {
-                                // CodeGenerator.g:383:20: expr
-                                {
-                                    this.pushFollow(CodeGenerator.FOLLOW_expr_in_includeExpr945);
-                                    this.expr();
-                                    this.state._fsp--;
-
-                                }
-                                break;
-                            }
-
-                            default:
-
-                        }
-
-                        this.match(this.input, TreeParser.UP, null);
-
-                        this.func(ID27);
-                    }
-                    break;
-                }
-
-                case 2: {
-                    // CodeGenerator.g:384:7: ^( INCLUDE qualifiedId args )
-                    {
-                        INCLUDE30 = this.match(this.input, CodeGenerator.INCLUDE,
-                            CodeGenerator.FOLLOW_INCLUDE_in_includeExpr958);
-                        this.match(this.input, TreeParser.DOWN, null);
-                        this.pushFollow(CodeGenerator.FOLLOW_qualifiedId_in_includeExpr960);
-                        qualifiedId29 = this.qualifiedId();
-                        this.state._fsp--;
-
-                        this.pushFollow(CodeGenerator.FOLLOW_args_in_includeExpr962);
-                        args28 = this.args();
-                        this.state._fsp--;
-
-                        this.match(this.input, TreeParser.UP, null);
-
-                        if ((args28 !== null ? (args28).passThru : false)) {
-                            this.emit1((retval.start), Bytecode.INSTR_PASSTHRU,
-                                this.input.getTokenStream().toString(
-                                    this.input.getTreeAdaptor().getTokenStartIndex(qualifiedId29.start),
-                                    this.input.getTreeAdaptor().getTokenStopIndex(qualifiedId29.start)));
-                        }
-
-                        if (args28.namedArgs) {
-                            this.emit1(INCLUDE30, Bytecode.INSTR_NEW_BOX_ARGS,
-                                this.input.getTokenStream().toString(
-                                    this.input.getTreeAdaptor().getTokenStartIndex(qualifiedId29.start),
-                                    this.input.getTreeAdaptor().getTokenStopIndex(qualifiedId29.start)));
-                        } else {
-                            this.emit2(INCLUDE30, Bytecode.INSTR_NEW, this.input.getTokenStream().toString(
-                                this.input.getTreeAdaptor().getTokenStartIndex(qualifiedId29.start),
-                                this.input.getTreeAdaptor().getTokenStopIndex(qualifiedId29.start)), args28.n);
-                        }
-
-                    }
-                    break;
-                }
-
-                case 3: {
-                    // CodeGenerator.g:389:7: ^( INCLUDE_SUPER ID args )
-                    {
-                        INCLUDE_SUPER33 = this.match(this.input, CodeGenerator.INCLUDE_SUPER,
-                            CodeGenerator.FOLLOW_INCLUDE_SUPER_in_includeExpr974);
-                        this.match(this.input, TreeParser.DOWN, null);
-                        ID32 = this.match(this.input, CodeGenerator.ID, CodeGenerator.FOLLOW_ID_in_includeExpr976);
-                        this.pushFollow(CodeGenerator.FOLLOW_args_in_includeExpr978);
-                        args31 = this.args();
-                        this.state._fsp--;
-
-                        this.match(this.input, TreeParser.UP, null);
-
-                        if ((args31 !== null ? (args31).passThru : false)) {
-                            this.emit1((retval.start), Bytecode.INSTR_PASSTHRU, ID32?.getText() ?? "");
-                        }
-
-                        if ((args31 !== null ? (args31).namedArgs : false)) {
-                            this.emit1(INCLUDE_SUPER33, Bytecode.INSTR_SUPER_NEW_BOX_ARGS, ID32?.getText() ?? "");
-                        } else {
-                            this.emit2(INCLUDE_SUPER33, Bytecode.INSTR_SUPER_NEW, ID32?.getText() ?? "", args31.n);
-                        }
-
-                    }
-                    break;
-                }
-
-                case 4: {
-                    // CodeGenerator.g:394:7: ^( INCLUDE_REGION ID )
-                    {
-                        INCLUDE_REGION35 = this.match(this.input, CodeGenerator.INCLUDE_REGION,
-                            CodeGenerator.FOLLOW_INCLUDE_REGION_in_includeExpr990);
-                        this.match(this.input, TreeParser.DOWN, null);
-                        ID34 = this.match(this.input, CodeGenerator.ID, CodeGenerator.FOLLOW_ID_in_includeExpr992);
-                        this.match(this.input, TreeParser.UP, null);
-
-                        const impl = Compiler.defineBlankRegion(this.outermostImpl, ID34?.token);
-
-                        this.emit2(INCLUDE_REGION35, Bytecode.INSTR_NEW, impl.name, 0);
-
-                    }
-                    break;
-                }
-
-                case 5: {
-                    // CodeGenerator.g:400:7: ^( INCLUDE_SUPER_REGION ID )
-                    {
-                        INCLUDE_SUPER_REGION37 = this.match(this.input, CodeGenerator.INCLUDE_SUPER_REGION,
-                            CodeGenerator.FOLLOW_INCLUDE_SUPER_REGION_in_includeExpr1004);
-                        this.match(this.input, TreeParser.DOWN, null);
-                        ID36 = this.match(this.input, CodeGenerator.ID, CodeGenerator.FOLLOW_ID_in_includeExpr1006);
-                        this.match(this.input, TreeParser.UP, null);
-
-                        const mangled =
-                            STGroup.getMangledRegionName(this.outermostImpl.name, ID36?.getText() ?? "");
-                        this.emit2(INCLUDE_SUPER_REGION37, Bytecode.INSTR_SUPER_NEW, mangled, 0);
-
-                    }
-                    break;
-                }
-
-                case 6: {
-                    // CodeGenerator.g:405:7: primary
-                    {
-                        this.pushFollow(CodeGenerator.FOLLOW_primary_in_includeExpr1017);
-                        this.primary();
-                        this.state._fsp--;
-
-                    }
-                    break;
-                }
-
-                default:
-
-            }
-        } catch (re) {
-            if (re instanceof RecognitionException) {
-                this.reportError(re);
-                this.recover(this.input, re);
+        } else {
+            if (context.primary() !== null) {
+                this.primary(context.primary()!);
             } else {
-                throw re;
+                // Include qualified args.
+                const id = context.qualifiedId()!;
+                const args = this.args(context.args()!);
+
+                if (args.passThru) {
+                    this.emit1(context, Bytecode.INSTR_PASSTHRU, id.getText());
+                }
+
+                if (args.namedArgs) {
+                    this.emit1(id, Bytecode.INSTR_NEW_BOX_ARGS, id.getText());
+                } else {
+                    this.emit2(id, Bytecode.INSTR_NEW, id.getText(), args.n);
+                }
+
             }
         }
-        finally {
-            // do for sure before leaving
-        }
 
-        return retval;
+        /* try {
+             // CodeGenerator.g:382:12: ( ^( EXEC_FUNC ID ( expr )? ) | ^( INCLUDE qualifiedId args )
+             // | ^( INCLUDE_SUPER ID args ) | ^( INCLUDE_REGION ID ) | ^( INCLUDE_SUPER_REGION ID ) | primary )
+             let alt20 = 6;
+             switch (this.input.LA(1)) {
+                 case CodeGenerator.EXEC_FUNC: {
+                     {
+                         alt20 = 1;
+                     }
+                     break;
+                 }
+
+                 case CodeGenerator.INCLUDE: {
+                     {
+                         alt20 = 2;
+                     }
+                     break;
+                 }
+
+                 case CodeGenerator.INCLUDE_SUPER: {
+                     {
+                         alt20 = 3;
+                     }
+                     break;
+                 }
+
+                 case CodeGenerator.INCLUDE_REGION: {
+                     {
+                         alt20 = 4;
+                     }
+                     break;
+                 }
+
+                 case CodeGenerator.INCLUDE_SUPER_REGION: {
+                     {
+                         alt20 = 5;
+                     }
+                     break;
+                 }
+
+                 case STLexer.ID:
+                 case STLexer.STRING:
+                 case STLexer.TRUE:
+                 case STLexer.FALSE:
+                 case CodeGenerator.INCLUDE_IND:
+                 case CodeGenerator.TO_STR:
+                 case CodeGenerator.LIST:
+                 case CodeGenerator.SUBTEMPLATE: {
+                     {
+                         alt20 = 6;
+                     }
+                     break;
+                 }
+
+                 default: {
+                     this.#throwInternalError();
+
+                 }
+
+             }
+             switch (alt20) {
+                 case 1: {
+                     // CodeGenerator.g:383:5: ^( EXEC_FUNC ID ( expr )? )
+                     {
+                         this.match(this.input, CodeGenerator.EXEC_FUNC);
+                         this.match(this.input, TreeParser.DOWN);
+                         ID27 = this.match(this.input, CodeGenerator.ID);
+                         // CodeGenerator.g:383:20: ( expr )?
+                         let alt19 = 2;
+                         const LA19_0 = this.input.LA(1);
+                         if (((LA19_0 >= CodeGenerator.ID && LA19_0 <= CodeGenerator.STRING)
+                             || (LA19_0 >= CodeGenerator.TRUE && LA19_0 <= CodeGenerator.FALSE)
+                             || (LA19_0 >= CodeGenerator.PROP && LA19_0 <= CodeGenerator.SUBTEMPLATE))) {
+                             alt19 = 1;
+                         }
+                         switch (alt19) {
+                             case 1: {
+                                 // CodeGenerator.g:383:20: expr
+                                 {
+                                     this.expr();
+
+                                 }
+                                 break;
+                             }
+
+                             default:
+
+                         }
+
+                         this.match(this.input, TreeParser.UP);
+
+                         this.func(ID27);
+                     }
+                     break;
+                 }
+
+                 case 2: {
+                     // CodeGenerator.g:384:7: ^( INCLUDE qualifiedId args )
+                     {
+                         INCLUDE30 = this.match(this.input, CodeGenerator.INCLUDE);
+                         this.match(this.input, TreeParser.DOWN);
+                         qualifiedId29 = this.qualifiedId();
+
+                         args28 = this.args();
+
+                         this.match(this.input, TreeParser.UP);
+
+                         if ((args28 !== null ? (args28).passThru : false)) {
+                             this.emit1((retval.start), Bytecode.INSTR_PASSTHRU,
+                                 this.input.getTokenStream().toString(
+                                     this.input.getTreeAdaptor().getTokenStartIndex(qualifiedId29.start),
+                                     this.input.getTreeAdaptor().getTokenStopIndex(qualifiedId29.start)));
+                         }
+
+                         if (args28.namedArgs) {
+                             this.emit1(INCLUDE30, Bytecode.INSTR_NEW_BOX_ARGS,
+                                 this.input.getTokenStream().toString(
+                                     this.input.getTreeAdaptor().getTokenStartIndex(qualifiedId29.start),
+                                     this.input.getTreeAdaptor().getTokenStopIndex(qualifiedId29.start)));
+                         } else {
+                             this.emit2(INCLUDE30, Bytecode.INSTR_NEW, this.input.getTokenStream().toString(
+                                 this.input.getTreeAdaptor().getTokenStartIndex(qualifiedId29.start),
+                                 this.input.getTreeAdaptor().getTokenStopIndex(qualifiedId29.start)), args28.n);
+                         }
+
+                     }
+                     break;
+                 }
+
+                 case 3: {
+                     // CodeGenerator.g:389:7: ^( INCLUDE_SUPER ID args )
+                     {
+                         INCLUDE_SUPER33 = this.match(this.input, CodeGenerator.INCLUDE_SUPER);
+                         this.match(this.input, TreeParser.DOWN);
+                         ID32 = this.match(this.input, CodeGenerator.ID);
+                         args31 = this.args();
+
+                         this.match(this.input, TreeParser.UP);
+
+                         if ((args31 !== null ? (args31).passThru : false)) {
+                             this.emit1((retval.start), Bytecode.INSTR_PASSTHRU, ID32?.getText() ?? "");
+                         }
+
+                         if ((args31 !== null ? (args31).namedArgs : false)) {
+                             this.emit1(INCLUDE_SUPER33, Bytecode.INSTR_SUPER_NEW_BOX_ARGS, ID32?.getText() ?? "");
+                         } else {
+                             this.emit2(INCLUDE_SUPER33, Bytecode.INSTR_SUPER_NEW, ID32?.getText() ?? "", args31.n);
+                         }
+
+                     }
+                     break;
+                 }
+
+                 case 4: {
+                     // CodeGenerator.g:394:7: ^( INCLUDE_REGION ID )
+                     {
+                         INCLUDE_REGION35 = this.match(this.input, CodeGenerator.INCLUDE_REGION);
+                         this.match(this.input, TreeParser.DOWN);
+                         ID34 = this.match(this.input, CodeGenerator.ID);
+                         this.match(this.input, TreeParser.UP);
+
+                         const impl = Compiler.defineBlankRegion(this.outermostImpl, ID34?.token);
+
+                         this.emit2(INCLUDE_REGION35, Bytecode.INSTR_NEW, impl.name, 0);
+
+                     }
+                     break;
+                 }
+
+                 case 5: {
+                     // CodeGenerator.g:400:7: ^( INCLUDE_SUPER_REGION ID )
+                     {
+                         INCLUDE_SUPER_REGION37 = this.match(this.input, CodeGenerator.INCLUDE_SUPER_REGION);
+                         this.match(this.input, TreeParser.DOWN);
+                         ID36 = this.match(this.input, CodeGenerator.ID);
+                         this.match(this.input, TreeParser.UP);
+
+                         const mangled =
+                             STGroup.getMangledRegionName(this.outermostImpl.name, ID36?.getText() ?? "");
+                         this.emit2(INCLUDE_SUPER_REGION37, Bytecode.INSTR_SUPER_NEW, mangled, 0);
+
+                     }
+                     break;
+                 }
+
+                 case 6: {
+                     // CodeGenerator.g:405:7: primary
+                     {
+                         this.primary();
+
+                     }
+                     break;
+                 }
+
+                 default:
+
+             }
+         } catch (re) {
+             if (re instanceof RecognitionException) {
+                 this.reportError(re);
+                 this.recover(this.input, re);
+             } else {
+                 throw re;
+             }
+         }*/
+
+        //return retval;
     }
 
-    // $ANTLR start "primary"
     // CodeGenerator.g:408:1: primary : ( ID | STRING | TRUE | FALSE | subtemplate | list | ^( INCLUDE_IND expr args )
     // | ^( TO_STR expr ) );
-    public primary(): CodeGenerator.primary_return {
-        const retval = new CodeGenerator.primary_return();
-        retval.start = this.input.LT(1);
+    public primary(context: PrimaryContext): void {
+        //const retval = new CodeGenerator.primary_return();
+        //retval.start = this.input.LT(1);
 
-        let ID38 = null;
-        let STRING39 = null;
-        let TRUE40 = null;
-        let FALSE41 = null;
-        let INCLUDE_IND43 = null;
-        let TO_STR45 = null;
-        let subtemplate42 = null;
-        let args44 = null;
+        // let ID38 = null;
+        // let STRING39 = null;
+        // let TRUE40 = null;
+        // let FALSE41 = null;
+        // let INCLUDE_IND43 = null;
+        // let TO_STR45 = null;
+        // let subtemplate42 = null;
+        // let args44 = null;
 
-        try {
+        if (context.ID() !== null) {
+            this.refAttr(context.ID());
+        } else if (context.STRING() !== null) {
+            const s = context.STRING();
+            this.emit1(s, Bytecode.INSTR_LOAD_STR, s?.getText().substring(1) ?? "");
+        } else if (context.TRUE() !== null) {
+            this.emit(context.TRUE(), Bytecode.INSTR_TRUE);
+        } else if (context.FALSE() !== null) {
+            this.emit(context.FALSE(), Bytecode.INSTR_FALSE);
+        } else if (context.subtemplate() !== null) {
+            const subtemplate42 = this.subtemplate(context.subtemplate()!);
+            this.emit2(context, Bytecode.INSTR_NEW, subtemplate42.name, 0);
+        } else if (context.list() !== null) {
+            this.list(context.list()!);
+        } else if (context.conditional() !== null) {
+            // In the original code the branch for `conditional` was not handled. Instead using a conditional
+            // as primary threw an exception. So it's probably safe to handle it here as it should be.
+            this.conditional(context.conditional()!);
+        } else if (context.expr() !== null) {
+            this.expr(context.expr()!.mapExpr()!);
+            this.emit(context.expr(), Bytecode.INSTR_TOSTR);
+
+            if (context.argExprList() !== null) {
+                let count = 0;
+                context.argExprList()?.arg().forEach((arg) => {
+                    this.arg(arg);
+                    ++count;
+                });
+
+                this.emit1(context.expr(), Bytecode.INSTR_NEW_IND, count);
+            } else {
+                this.emit(context.expr(), Bytecode.INSTR_TOSTR);
+            }
+        } else {
+            this.#throwInternalError();
+        }
+
+        /*try {
             // CodeGenerator.g:408:8: ( ID | STRING | TRUE | FALSE | subtemplate | list | ^( INCLUDE_IND expr args )
             // | ^( TO_STR expr ) )
             let alt21 = 8;
@@ -2382,9 +2378,8 @@ export class CodeGenerator extends TreeParser {
                 }
 
                 default: {
-                    const nvae =
-                        new NoViableAltExceptionV3("", 21, 0, this.input);
-                    throw nvae;
+                    this.#throwInternalError();
+
                 }
 
             }
@@ -2392,7 +2387,7 @@ export class CodeGenerator extends TreeParser {
                 case 1: {
                     // CodeGenerator.g:409:5: ID
                     {
-                        ID38 = this.match(this.input, CodeGenerator.ID, CodeGenerator.FOLLOW_ID_in_primary1029);
+                        ID38 = this.match(this.input, CodeGenerator.ID);
                         this.refAttr(ID38);
                     }
                     break;
@@ -2401,8 +2396,7 @@ export class CodeGenerator extends TreeParser {
                 case 2: {
                     // CodeGenerator.g:410:7: STRING
                     {
-                        STRING39 = this.match(this.input, CodeGenerator.STRING,
-                            CodeGenerator.FOLLOW_STRING_in_primary1039);
+                        STRING39 = this.match(this.input, CodeGenerator.STRING);
                         this.emit1(STRING39, Bytecode.INSTR_LOAD_STR, STRING39?.getText().substring(1) ?? "");
                     }
                     break;
@@ -2411,7 +2405,7 @@ export class CodeGenerator extends TreeParser {
                 case 3: {
                     // CodeGenerator.g:411:7: TRUE
                     {
-                        TRUE40 = this.match(this.input, CodeGenerator.TRUE, CodeGenerator.FOLLOW_TRUE_in_primary1049);
+                        TRUE40 = this.match(this.input, CodeGenerator.TRUE);
                         this.emit(TRUE40, Bytecode.INSTR_TRUE);
                     }
                     break;
@@ -2420,8 +2414,7 @@ export class CodeGenerator extends TreeParser {
                 case 4: {
                     // CodeGenerator.g:412:7: FALSE
                     {
-                        FALSE41 = this.match(this.input, CodeGenerator.FALSE,
-                            CodeGenerator.FOLLOW_FALSE_in_primary1059);
+                        FALSE41 = this.match(this.input, CodeGenerator.FALSE);
                         this.emit(FALSE41, Bytecode.INSTR_FALSE);
                     }
                     break;
@@ -2430,9 +2423,7 @@ export class CodeGenerator extends TreeParser {
                 case 5: {
                     // CodeGenerator.g:413:7: subtemplate
                     {
-                        this.pushFollow(CodeGenerator.FOLLOW_subtemplate_in_primary1069);
                         subtemplate42 = this.subtemplate();
-                        this.state._fsp--;
 
                         this.emit2((retval.start), Bytecode.INSTR_NEW, subtemplate42.name, 0);
                     }
@@ -2442,9 +2433,7 @@ export class CodeGenerator extends TreeParser {
                 case 6: {
                     // CodeGenerator.g:415:7: list
                     {
-                        this.pushFollow(CodeGenerator.FOLLOW_list_in_primary1084);
                         this.list();
-                        this.state._fsp--;
 
                     }
                     break;
@@ -2453,20 +2442,15 @@ export class CodeGenerator extends TreeParser {
                 case 7: {
                     // CodeGenerator.g:416:7: ^( INCLUDE_IND expr args )
                     {
-                        INCLUDE_IND43 = this.match(this.input, CodeGenerator.INCLUDE_IND,
-                            CodeGenerator.FOLLOW_INCLUDE_IND_in_primary1102);
-                        this.match(this.input, TreeParser.DOWN, null);
-                        this.pushFollow(CodeGenerator.FOLLOW_expr_in_primary1104);
+                        INCLUDE_IND43 = this.match(this.input, CodeGenerator.INCLUDE_IND);
+                        this.match(this.input, TreeParser.DOWN);
                         this.expr();
-                        this.state._fsp--;
 
                         this.emit(INCLUDE_IND43, Bytecode.INSTR_TOSTR);
-                        this.pushFollow(CodeGenerator.FOLLOW_args_in_primary1108);
                         args44 = this.args();
-                        this.state._fsp--;
 
                         this.emit1(INCLUDE_IND43, Bytecode.INSTR_NEW_IND, (args44 !== null ? (args44).n : 0));
-                        this.match(this.input, TreeParser.UP, null);
+                        this.match(this.input, TreeParser.UP);
 
                     }
                     break;
@@ -2475,14 +2459,11 @@ export class CodeGenerator extends TreeParser {
                 case 8: {
                     // CodeGenerator.g:419:7: ^( TO_STR expr )
                     {
-                        TO_STR45 = this.match(this.input, CodeGenerator.TO_STR,
-                            CodeGenerator.FOLLOW_TO_STR_in_primary1125);
-                        this.match(this.input, TreeParser.DOWN, null);
-                        this.pushFollow(CodeGenerator.FOLLOW_expr_in_primary1127);
+                        TO_STR45 = this.match(this.input, CodeGenerator.TO_STR);
+                        this.match(this.input, TreeParser.DOWN);
                         this.expr();
-                        this.state._fsp--;
 
-                        this.match(this.input, TreeParser.UP, null);
+                        this.match(this.input, TreeParser.UP);
 
                         this.emit(TO_STR45, Bytecode.INSTR_TOSTR);
                     }
@@ -2499,21 +2480,19 @@ export class CodeGenerator extends TreeParser {
             } else {
                 throw re;
             }
-        }
-        finally {
-            // do for sure before leaving
-        }
+        }*/
 
-        return retval;
+        //return retval;
     }
 
-    // $ANTLR start "qualifiedId"
     // CodeGenerator.g:422:1: qualifiedId : ( ^( SLASH qualifiedId ID ) | ^( SLASH ID ) | ID );
-    public qualifiedId(): CodeGenerator.qualifiedId_return {
+    public qualifiedId(context: QualifiedIdContext): CodeGenerator.qualifiedId_return {
+        // Odd parsing here. The original tree grammar does not return anything from the qualifiedId rule, except its
+        // start. And it checks the syntax by matching the individual elements (slash and ID).
         const retval = new CodeGenerator.qualifiedId_return();
-        retval.start = this.input.LT(1);
+        retval.start = context;
 
-        try {
+        /*try {
             // CodeGenerator.g:422:12: ( ^( SLASH qualifiedId ID ) | ^( SLASH ID ) | ID )
             let alt22 = 3;
             const LA22_0 = this.input.LA(1);
@@ -2537,9 +2516,8 @@ export class CodeGenerator extends TreeParser {
                                     for (let nvaeConsume = 0; nvaeConsume < 4 - 1; nvaeConsume++) {
                                         this.input.consume();
                                     }
-                                    const nvae =
-                                        new NoViableAltExceptionV3("", 22, 4, this.input);
-                                    throw nvae;
+                                    this.#throwInternalError();
+
                                 } finally {
                                     this.input.seek(nvaeMark);
                                 }
@@ -2558,9 +2536,8 @@ export class CodeGenerator extends TreeParser {
                                 for (let nvaeConsume = 0; nvaeConsume < 3 - 1; nvaeConsume++) {
                                     this.input.consume();
                                 }
-                                const nvae =
-                                    new NoViableAltExceptionV3("", 22, 3, this.input);
-                                throw nvae;
+                                this.#throwInternalError();
+
                             } finally {
                                 this.input.seek(nvaeMark);
                             }
@@ -2573,9 +2550,8 @@ export class CodeGenerator extends TreeParser {
                     const nvaeMark = this.input.mark();
                     try {
                         this.input.consume();
-                        const nvae =
-                            new NoViableAltExceptionV3("", 22, 1, this.input);
-                        throw nvae;
+                        this.#throwInternalError();
+
                     } finally {
                         this.input.seek(nvaeMark);
                     }
@@ -2588,9 +2564,8 @@ export class CodeGenerator extends TreeParser {
                 }
 
                 else {
-                    const nvae =
-                        new NoViableAltExceptionV3("", 22, 0, this.input);
-                    throw nvae;
+                    this.#throwInternalError();
+
                 }
             }
 
@@ -2598,14 +2573,12 @@ export class CodeGenerator extends TreeParser {
                 case 1: {
                     // CodeGenerator.g:423:5: ^( SLASH qualifiedId ID )
                     {
-                        this.match(this.input, CodeGenerator.SLASH, CodeGenerator.FOLLOW_SLASH_in_qualifiedId1143);
-                        this.match(this.input, TreeParser.DOWN, null);
-                        this.pushFollow(CodeGenerator.FOLLOW_qualifiedId_in_qualifiedId1145);
+                        this.match(this.input, CodeGenerator.SLASH);
+                        this.match(this.input, TreeParser.DOWN);
                         this.qualifiedId();
-                        this.state._fsp--;
 
-                        this.match(this.input, CodeGenerator.ID, CodeGenerator.FOLLOW_ID_in_qualifiedId1147);
-                        this.match(this.input, TreeParser.UP, null);
+                        this.match(this.input, CodeGenerator.ID);
+                        this.match(this.input, TreeParser.UP);
 
                     }
                     break;
@@ -2614,10 +2587,10 @@ export class CodeGenerator extends TreeParser {
                 case 2: {
                     // CodeGenerator.g:424:7: ^( SLASH ID )
                     {
-                        this.match(this.input, CodeGenerator.SLASH, CodeGenerator.FOLLOW_SLASH_in_qualifiedId1157);
-                        this.match(this.input, TreeParser.DOWN, null);
-                        this.match(this.input, CodeGenerator.ID, CodeGenerator.FOLLOW_ID_in_qualifiedId1159);
-                        this.match(this.input, TreeParser.UP, null);
+                        this.match(this.input, CodeGenerator.SLASH);
+                        this.match(this.input, TreeParser.DOWN);
+                        this.match(this.input, CodeGenerator.ID);
+                        this.match(this.input, TreeParser.UP);
 
                     }
                     break;
@@ -2626,7 +2599,7 @@ export class CodeGenerator extends TreeParser {
                 case 3: {
                     // CodeGenerator.g:425:7: ID
                     {
-                        this.match(this.input, CodeGenerator.ID, CodeGenerator.FOLLOW_ID_in_qualifiedId1168);
+                        this.match(this.input, CodeGenerator.ID);
                     }
                     break;
                 }
@@ -2641,25 +2614,21 @@ export class CodeGenerator extends TreeParser {
             } else {
                 throw re;
             }
-        }
-        finally {
-            // do for sure before leaving
-        }
+        }*/
 
         return retval;
     }
-    // $ANTLR end "qualifiedId"
 
-    // $ANTLR start "arg"
     // CodeGenerator.g:428:1: arg : expr ;
-    public arg(): void {
-        try {
+    public arg(context: ArgContext): void {
+        this.exprNoComma(context.exprNoComma());
+
+        /*try {
+            ;
             // CodeGenerator.g:428:4: ( expr )
             // CodeGenerator.g:429:5: expr
             {
-                this.pushFollow(CodeGenerator.FOLLOW_expr_in_arg1180);
                 this.expr();
-                this.state._fsp--;
 
             }
 
@@ -2670,20 +2639,38 @@ export class CodeGenerator extends TreeParser {
             } else {
                 throw re;
             }
-        }
-        finally {
-            // do for sure before leaving
-        }
+        }*/
     }
 
     // $ANTLR start "args"
     // CodeGenerator.g:432:1: args returns [int n=0, boolean namedArgs=false, boolean passThru] : ( ( arg )+
     // | ( ^(eq= '=' ID expr ) )+ ( '...' )? | '...' |);
-    public args(): CodeGenerator.args_return {
+    public args(context: ArgsContext): CodeGenerator.args_return {
         const retval = new CodeGenerator.args_return();
-        retval.start = this.input.LT(1);
+        retval.start = context;
 
-        let eq = null;
+        if (context.argExprList() !== null) {
+            context.argExprList()?.arg().forEach((arg) => {
+                this.arg(arg);
+                retval.n++;
+            });
+        } else if (context.namedArg().length > 0) {
+            this.emit(context, Bytecode.INSTR_ARGS);
+            retval.namedArgs = true;
+
+            context.namedArg().forEach((namedArg) => {
+                this.arg(namedArg.arg());
+                this.emit1(namedArg.EQUALS(), Bytecode.INSTR_STORE_ARG,
+                    this.defineString(namedArg.ID().getText() ?? ""));
+                retval.n++;
+            });
+        }
+
+        if (context.ELLIPSIS() !== null) {
+            retval.passThru = true;
+        }
+
+        /*let eq = null;
         let ID46 = null;
 
         try {
@@ -2735,9 +2722,8 @@ export class CodeGenerator extends TreeParser {
                 }
 
                 default: {
-                    const nvae =
-                        new NoViableAltExceptionV3("", 26, 0, this.input);
-                    throw nvae;
+                    this.#throwInternalError();
+
                 }
 
             }
@@ -2761,9 +2747,7 @@ export class CodeGenerator extends TreeParser {
                                 case 1: {
                                     // CodeGenerator.g:433:67: arg
                                     {
-                                        this.pushFollow(CodeGenerator.FOLLOW_arg_in_args1196);
                                         this.arg();
-                                        this.state._fsp--;
 
                                         retval.n++;
                                     }
@@ -2805,16 +2789,12 @@ export class CodeGenerator extends TreeParser {
                                 case 1: {
                                     // CodeGenerator.g:435:9: ^(eq= '=' ID expr )
                                     {
-                                        eq = this.match(this.input, CodeGenerator.EQUALS,
-                                            CodeGenerator.FOLLOW_EQUALS_in_args1225);
-                                        this.match(this.input, TreeParser.DOWN, null);
-                                        ID46 = this.match(this.input, CodeGenerator.ID,
-                                            CodeGenerator.FOLLOW_ID_in_args1227);
-                                        this.pushFollow(CodeGenerator.FOLLOW_expr_in_args1229);
+                                        eq = this.match(this.input, CodeGenerator.EQUALS);
+                                        this.match(this.input, TreeParser.DOWN);
+                                        ID46 = this.match(this.input, CodeGenerator.ID);
                                         this.expr();
-                                        this.state._fsp--;
 
-                                        this.match(this.input, TreeParser.UP, null);
+                                        this.match(this.input, TreeParser.UP);
 
                                         retval.n++; this.emit1(eq, Bytecode.INSTR_STORE_ARG,
                                             this.defineString(ID46?.getText() ?? ""));
@@ -2845,8 +2825,7 @@ export class CodeGenerator extends TreeParser {
                             case 1: {
                                 // CodeGenerator.g:436:9: '...'
                                 {
-                                    this.match(this.input, CodeGenerator.ELLIPSIS,
-                                        CodeGenerator.FOLLOW_ELLIPSIS_in_args1242);
+                                    this.match(this.input, CodeGenerator.ELLIPSIS);
                                     retval.passThru = true;
                                 }
                                 break;
@@ -2863,7 +2842,7 @@ export class CodeGenerator extends TreeParser {
                 case 3: {
                     // CodeGenerator.g:437:7: '...'
                     {
-                        this.match(this.input, CodeGenerator.ELLIPSIS, CodeGenerator.FOLLOW_ELLIPSIS_in_args1254);
+                        this.match(this.input, CodeGenerator.ELLIPSIS);
                         retval.passThru = true; this.emit((retval.start), Bytecode.INSTR_ARGS); retval.namedArgs = true;
                     }
                     break;
@@ -2887,30 +2866,32 @@ export class CodeGenerator extends TreeParser {
             } else {
                 throw re;
             }
-        }
-        finally {
-            // do for sure before leaving
-        }
+        }*/
 
         return retval;
     }
 
-    // $ANTLR start "list"
     // CodeGenerator.g:441:1: list : ^( LIST ( listElement )* ) ;
-    public list(): CodeGenerator.list_return {
-        const retval = new CodeGenerator.list_return();
-        retval.start = this.input.LT(1);
+    public list(context: ListContext): void {
+        //const retval = new CodeGenerator.list_return();
+        //retval.start = context;
 
-        let listElement47 = null;
+        //let listElement47 = null;
 
-        try {
+        this.emit(context, Bytecode.INSTR_LIST);
+        context.listElement().forEach((listElement) => {
+            this.listElement(listElement);
+            this.emit(listElement, Bytecode.INSTR_ADD);
+        });
+
+        /*try {
             // CodeGenerator.g:441:5: ( ^( LIST ( listElement )* ) )
             // CodeGenerator.g:442:5: ^( LIST ( listElement )* )
             {
                 this.emit((retval.start), Bytecode.INSTR_LIST);
-                this.match(this.input, CodeGenerator.LIST, CodeGenerator.FOLLOW_LIST_in_list1286);
+                this.match(this.input, CodeGenerator.LIST);
                 if (this.input.LA(1) === TreeParser.DOWN) {
-                    this.match(this.input, TreeParser.DOWN, null);
+                    this.match(this.input, TreeParser.DOWN);
                     // CodeGenerator.g:443:14: ( listElement )*
                     loop27:
                     while (true) {
@@ -2927,9 +2908,7 @@ export class CodeGenerator extends TreeParser {
                             case 1: {
                                 // CodeGenerator.g:443:15: listElement
                                 {
-                                    this.pushFollow(CodeGenerator.FOLLOW_listElement_in_list1289);
                                     listElement47 = this.listElement();
-                                    this.state._fsp--;
 
                                     this.emit(listElement47.start, Bytecode.INSTR_ADD);
                                 }
@@ -2943,7 +2922,7 @@ export class CodeGenerator extends TreeParser {
                         }
                     }
 
-                    this.match(this.input, TreeParser.UP, null);
+                    this.match(this.input, TreeParser.UP);
                 }
 
             }
@@ -2955,23 +2934,25 @@ export class CodeGenerator extends TreeParser {
             } else {
                 throw re;
             }
-        }
-        finally {
-            // do for sure before leaving
-        }
+        }*/
 
-        return retval;
+        //return retval;
     }
 
-    // $ANTLR start "listElement"
     // CodeGenerator.g:447:1: listElement : ( expr | NULL );
-    public listElement(): CodeGenerator.listElement_return {
-        const retval = new CodeGenerator.listElement_return();
-        retval.start = this.input.LT(1);
+    public listElement(context: ListElementContext): void {
+        //const retval = new CodeGenerator.listElement_return();
+        //retval.start = this.input.LT(1);
 
-        let NULL48 = null;
+        //let NULL48 = null;
 
-        try {
+        if (context.exprNoComma() !== null) {
+            this.exprNoComma(context.exprNoComma()!);
+        } else {
+            this.emit(context, Bytecode.INSTR_NULL);
+        }
+
+        /*try {
             // CodeGenerator.g:447:12: ( expr | NULL )
             let alt28 = 2;
             const LA28_0 = this.input.LA(1);
@@ -2986,9 +2967,8 @@ export class CodeGenerator extends TreeParser {
                 }
 
                 else {
-                    const nvae =
-                        new NoViableAltExceptionV3("", 28, 0, this.input);
-                    throw nvae;
+                    this.#throwInternalError();
+
                 }
             }
 
@@ -2996,9 +2976,7 @@ export class CodeGenerator extends TreeParser {
                 case 1: {
                     // CodeGenerator.g:448:5: expr
                     {
-                        this.pushFollow(CodeGenerator.FOLLOW_expr_in_listElement1311);
                         this.expr();
-                        this.state._fsp--;
 
                     }
                     break;
@@ -3007,8 +2985,7 @@ export class CodeGenerator extends TreeParser {
                 case 2: {
                     // CodeGenerator.g:449:7: NULL
                     {
-                        NULL48 = this.match(this.input, CodeGenerator.NULL,
-                            CodeGenerator.FOLLOW_NULL_in_listElement1319);
+                        NULL48 = this.match(this.input, CodeGenerator.NULL);
                         this.emit(NULL48, Bytecode.INSTR_NULL);
                     }
                     break;
@@ -3024,12 +3001,9 @@ export class CodeGenerator extends TreeParser {
             } else {
                 throw re;
             }
-        }
-        finally {
-            // do for sure before leaving
-        }
+        }*/
 
-        return retval;
+        //return retval;
     }
 }
 

@@ -28,6 +28,13 @@ export class TestAggregates extends BaseTest {
     };
 
     @Test
+    public simpleTemplate(): void {
+        const hello = new ST("Hello, <name>");
+        hello.add("name", "World");
+        assertEquals("Hello, World", hello.render());
+    }
+
+    @Test
     public testApplyAnonymousTemplateToAggregateAttribute(): void {
         const st = new ST("<items:{it|<it.id>: <it.lastName>, <it.firstName>\n}>");
         // also testing wacky spaces in aggregate spec

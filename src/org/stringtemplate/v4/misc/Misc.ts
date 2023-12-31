@@ -8,7 +8,7 @@
 /* eslint-disable jsdoc/require-param, jsdoc/require-returns */
 
 import * as os from "os";
-import { basename, dirname, extname } from "path";
+import { basename, extname } from "path";
 
 import { Coordinate } from "./Coordinate.js";
 
@@ -18,7 +18,7 @@ export class Misc {
     /**
       Makes it clear when a comparison is intended as reference equality.
      */
-    public static referenceEquals(x: Object, y: Object): boolean {
+    public static referenceEquals(x: unknown, y: unknown): boolean {
         return x === y;
     }
 
@@ -76,18 +76,31 @@ export class Misc {
         return basename(fullFileName);
     }
 
-    public static getParent(name: string): string {
-        return dirname(name);
+    public static getParent(name?: string): string | undefined {
+        if (!name) {
+            return undefined;
+        }
+
+        const lastSlash = name.lastIndexOf("/");
+        if (lastSlash > 0) {
+            return name.substring(0, lastSlash);
+        }
+
+        if (lastSlash === 0) {
+            return "/";
+        }
+
+        return "";
     }
 
-    public static getPrefix(name: string | null): string {
-        if (name === null) {
+    public static getPrefix(name?: string): string {
+        if (!name) {
             return "/";
         }
 
         const parent = Misc.getParent(name);
-        let prefix = parent;
-        if (!parent.endsWith("/")) {
+        let prefix = parent ?? "";
+        if (!parent?.endsWith("/")) {
             prefix += "/";
         }
 

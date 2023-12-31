@@ -5,8 +5,9 @@
 
 /* eslint-disable jsdoc/no-undefined-types */
 
+import { ParseTree } from "antlr4ng";
+
 import { RuleReturnScope } from "./RuleReturnScope.js";
-import { CommonTree } from "./CommonTree.js";
 
 /**
  * This is identical to the {@link ParserRuleReturnScope} except that
@@ -14,13 +15,13 @@ import { CommonTree } from "./CommonTree.js";
  *  when you are parsing trees.  To be generic the tree node types
  *  have to be {@link Object}.
  */
-export class TreeRuleReturnScope extends RuleReturnScope<CommonTree> {
+export class TreeRuleReturnScope extends RuleReturnScope<ParseTree> {
     /** First node or root node of tree matched for this rule. */
-    public start: CommonTree | null = null;
+    public start: ParseTree | null = null;
 
     public nargs = 0;
 
-    public override getStart(): CommonTree | null {
+    public override getStart(): ParseTree | null {
         return this.start;
     }
 }

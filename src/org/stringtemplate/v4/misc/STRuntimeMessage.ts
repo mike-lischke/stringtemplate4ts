@@ -108,7 +108,7 @@ export class STRuntimeMessage extends STMessage {
         }
 
         // get left edge and get line/col
-        const i = interval.a;
+        const i = interval.start;
         const loc = Misc.getLineCharPosition(this.self.impl.template, i);
 
         return loc.toString();

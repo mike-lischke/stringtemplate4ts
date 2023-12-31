@@ -268,9 +268,9 @@ export class Interpreter {
             return null;
         }
 
-        const it = this.convertAnythingIteratableToIterator(scope, v);
-        if (it) {
-            const [r] = it;
+        v = this.convertAnythingIteratableToIterator(scope, v);
+        if (isIterator(v)) {
+            const [r] = v;
 
             return r;
         }
@@ -287,22 +287,22 @@ export class Interpreter {
      * {@code <names:last()>}.</p>
      */
     public last(scope: InstanceScope, v: unknown): unknown {
-        if (!v) {
-            return null;
+        if (v == null) {
+            return v;
         }
 
         if (Array.isArray(v)) {
             return v[v.length - 1];
         }
 
-        const it = this.convertAnythingIteratableToIterator(scope, v);
-        if (!it) {
+        v = this.convertAnythingIteratableToIterator(scope, v);
+        if (!isIterator(v)) {
             return v;
         }
 
         // Return the last value from the iterator.
         let r;
-        for (const e of it) {
+        for (const e of v) {
             r = e;
         }
 
@@ -314,8 +314,8 @@ export class Interpreter {
      * {@code null} if single-valued.
      */
     public rest(scope: InstanceScope, v: unknown): unknown {
-        if (!v) {
-            return undefined;
+        if (v == null) {
+            return v;
         }
 
         if (Array.isArray(v)) {
@@ -326,19 +326,19 @@ export class Interpreter {
             return v.slice(1);
         }
 
-        const it = this.convertAnythingIteratableToIterator(scope, v);
-        if (!it) {
-            return undefined;
+        v = this.convertAnythingIteratableToIterator(scope, v);
+        if (!isIterator(v)) {
+            return v;
         }
 
         const a = new Array<unknown>();
-        const [first] = it;
-        if (!first) {
+        const [first] = v;
+        if (first == null) {
             // if not even one value return null
             return undefined;
         }
 
-        for (const o of it) {
+        for (const o of v) {
             a.push(o);
         }
 
@@ -349,18 +349,18 @@ export class Interpreter {
      * Return all but the last element. <code>trunc(<i>x</i>)==null</code> if <code><i>x</i></code> is single-valued.
      */
     public trunc(scope: InstanceScope, v: unknown): unknown {
-        if (!v) {
-            return null;
+        if (v == null) {
+            return v;
         }
 
         let a;
         if (!Array.isArray(v)) {
-            const it = this.convertAnythingIteratableToIterator(scope, v);
-            if (!it) {
-                return undefined;
+            v = this.convertAnythingIteratableToIterator(scope, v);
+            if (!isIterator(v)) {
+                return v;
             }
 
-            a = Array.from(it);
+            a = Array.from(v);
         } else {
             a = v;
         }
@@ -376,16 +376,16 @@ export class Interpreter {
      * Return a new list without {@code null} values.
      */
     public strip(scope: InstanceScope, v: unknown): unknown {
-        if (!v) {
-            return null;
+        if (v == null) {
+            return v;
         }
 
-        const it = this.convertAnythingIteratableToIterator(scope, v);
-        if (!it) {
+        v = this.convertAnythingIteratableToIterator(scope, v);
+        if (!isIterator(v)) {
             return v; // strip(x)==x when x single-valued attribute
         }
 
-        const a = Array.from(it);
+        const a = Array.from(v);
 
         return a.filter((e) => {
             return e != null;
@@ -399,20 +399,20 @@ export class Interpreter {
      * {@code reverse(strip(v))} to do that.</p>
      */
     public reverse(scope: InstanceScope, v: unknown): unknown {
-        if (!v) {
-            return undefined;
+        if (v == null) {
+            return v;
         }
 
         if (Array.isArray(v)) {
             return v.reverse();
         }
 
-        const it = this.convertAnythingIteratableToIterator(scope, v);
-        if (!it) {
+        v = this.convertAnythingIteratableToIterator(scope, v);
+        if (!isIterator(v)) {
             return v; // reverse(x)==x when x single-valued attribute
         }
 
-        return Array.from(it).reverse();
+        return Array.from(v).reverse();
     }
 
     /**
@@ -423,7 +423,7 @@ export class Interpreter {
      * special cases for speed.</p>
      */
     public length(v: unknown): number {
-        if (!v) {
+        if (v == null) {
             return 0;
         }
 
@@ -432,12 +432,12 @@ export class Interpreter {
         } else {
             let a;
             if (!Array.isArray(v)) {
-                const it = this.convertAnythingIteratableToIterator(null, v);
-                if (!it) {
+                v = this.convertAnythingIteratableToIterator(null, v);
+                if (!isIterator(v)) {
                     return 1; // length(x)==1 when x single-valued attribute
                 }
 
-                a = Array.from(it);
+                a = Array.from(v);
             } else {
                 a = v;
             }
@@ -447,14 +447,13 @@ export class Interpreter {
 
     }
 
-    public convertAnythingIteratableToIterator(_scope: InstanceScope | null,
-        o: unknown): IterableIterator<unknown> | undefined {
-        if (!o) {
-            return undefined;
+    public convertAnythingIteratableToIterator(_scope: InstanceScope | null, o: unknown): unknown {
+        if (o == null) {
+            return o;
         }
 
         if (typeof o !== "object") {
-            return undefined;
+            return o;
         }
 
         // Is the object itself iterable?
@@ -477,7 +476,7 @@ export class Interpreter {
             return iterableIterator;
         }
 
-        return undefined;
+        return o;
     }
 
     public convertAnythingToIterator(scope: InstanceScope, o: unknown): Iterator<unknown> {
@@ -1417,7 +1416,7 @@ export class Interpreter {
                 n += out.writeSeparator(separator ?? "");
             }
 
-            const nw = this.writeObject(out, scope, iterValue, options);
+            const nw = this.writeObject(out, scope, iterValue.value, options);
             if (nw > 0) {
                 seenAValue = true;
             }
@@ -1435,7 +1434,7 @@ export class Interpreter {
         }
 
         // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-        const v = this.renderObject(scope, formatString, o, constructorFromUnknown(0)!);
+        const v = this.renderObject(scope, formatString, o, constructorFromUnknown(o)!);
         let n: number;
         if (options && options[InterpreterOption.WRAP]) {
             n = out.write(v, options[InterpreterOption.WRAP]);
@@ -1449,7 +1448,7 @@ export class Interpreter {
     protected getExprStartChar(scope: InstanceScope): number {
         const templateLocation = scope.st?.impl?.sourceMap[scope.ip];
         if (templateLocation) {
-            return templateLocation.a;
+            return templateLocation.start;
         }
 
         return -1;
@@ -1458,7 +1457,7 @@ export class Interpreter {
     protected getExprStopChar(scope: InstanceScope): number {
         const templateLocation = scope.st?.impl?.sourceMap[scope.ip];
         if (templateLocation) {
-            return templateLocation.b;
+            return templateLocation.stop;
         }
 
         return -1;
@@ -1525,7 +1524,7 @@ export class Interpreter {
             ti++;
             const proto = prototypes[templateIndex];
             const st = this.group.createStringTemplateInternally(proto);
-            this.setFirstArgument(scope, st, iterValue);
+            this.setFirstArgument(scope, st, iterValue.value);
             if (st.impl?.isAnonSubtemplate) {
                 st.rawSetAttribute("i0", i0);
                 st.rawSetAttribute("i", i);
@@ -1717,7 +1716,7 @@ export class Interpreter {
 
         try {
             const self = scope.st!;
-            const adapter = self.groupThatCreatedThisInstance.getModelAdaptor(o as Constructor);
+            const adapter = self.groupThatCreatedThisInstance.getModelAdaptor(o.constructor as Constructor<unknown>);
 
             return adapter.getProperty(this, self, o, property, this.toString(out, scope, property));
         } catch (e) {

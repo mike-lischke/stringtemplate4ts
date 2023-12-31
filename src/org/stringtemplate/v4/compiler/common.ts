@@ -3,11 +3,9 @@
  * Licensed under the BSD-3 License. See License.txt in the project root for license information.
  */
 
-import { Token } from "antlr4ng";
+import { Interval, ParseTree, Token } from "antlr4ng";
 
 import { TokenStreamV3 } from "../support/TokenStreamV3.js";
-import { CommonTree } from "../support/CommonTree.js";
-import { Interval } from "../misc/Interval.js";
 import { Constructor } from "../reflection/IMember.js";
 import { AttributeRenderer } from "../AttributeRenderer.js";
 import { DebugState } from "../DebugState.js";
@@ -224,7 +222,7 @@ export interface ISTGroup {
  *  of the same template share a single implementation ({@link ST#impl} field).
  */
 export interface ICompiledST {
-    name: string;
+    name?: string;
 
     /**
      * Every template knows where it is relative to the group that loaded it.
@@ -258,7 +256,7 @@ export interface ICompiledST {
     tokens?: TokenStreamV3;
 
     /** How do we interpret syntax of template? (debug only) */
-    ast?: CommonTree;
+    ast?: ParseTree;
 
     formalArguments: Map<string, IFormalArgument>;
 

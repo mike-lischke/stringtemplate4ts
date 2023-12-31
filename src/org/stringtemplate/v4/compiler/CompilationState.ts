@@ -7,7 +7,7 @@
 
 /* eslint-disable jsdoc/require-param */
 
-import { CommonToken, Token } from "antlr4ng";
+import { Interval, ParseTree, TerminalNode, Token, TokenStream } from "antlr4ng";
 
 import { StringTable } from "./StringTable.js";
 import { CompiledST } from "./CompiledST.js";
@@ -15,12 +15,9 @@ import { BytecodeDisassembler } from "./BytecodeDisassembler.js";
 import { Bytecode } from "./Bytecode.js";
 import { Interpreter } from "../Interpreter.js";
 import { Misc } from "../misc/Misc.js";
-import { Interval } from "../misc/Interval.js";
 import { ErrorType } from "../misc/ErrorType.js";
 import { ErrorManager } from "../misc/ErrorManager.js";
-import { CommonTree } from "../support/CommonTree.js";
 import { Compiler } from "./Compiler.js";
-import { TokenStreamV3 } from "../support/TokenStreamV3.js";
 
 /**
  * Temporary data used during construction and functions that fill it / use it.
@@ -40,10 +37,10 @@ export class CompilationState {
     /** Track unique strings; copy into {@link CompiledST#strings} after compilation. */
     public stringTable = new StringTable();
 
-    protected tokens: TokenStreamV3;
+    protected tokens: TokenStream;
     protected errMgr: ErrorManager;
 
-    public constructor(errMgr: ErrorManager, name: string, tokens: TokenStreamV3) {
+    public constructor(errMgr: ErrorManager, name: string | undefined, tokens: TokenStream) {
         this.errMgr = errMgr;
         this.tokens = tokens;
         this.impl.name = name;
@@ -63,7 +60,7 @@ export class CompilationState {
         return this.stringTable.add(s);
     }
 
-    public refAttr(templateToken: Token, id: CommonTree | null): void {
+    public refAttr(templateToken: Token, id: TerminalNode | null): void {
         const name = id?.getText() ?? "";
         if (this.impl.formalArguments?.has(name)) {
             const arg = this.impl.formalArguments.get(name)!;
@@ -72,7 +69,7 @@ export class CompilationState {
         } else {
             if (Interpreter.predefinedAnonSubtemplateAttributes.has(name)) {
                 this.errMgr.compileTimeError(ErrorType.REF_TO_IMPLICIT_ATTRIBUTE_OUT_OF_SCOPE,
-                    templateToken, id?.token);
+                    templateToken, id?.getSymbol());
                 this.emit(id, Bytecode.INSTR_NULL);
             } else {
                 this.emit1(id, Bytecode.INSTR_LOAD_ATTR, name);
@@ -80,15 +77,15 @@ export class CompilationState {
         }
     }
 
-    public setOption(id: CommonTree): void {
+    public setOption(id: TerminalNode): void {
         const option = Interpreter.supportedOptions.get(id.getText())!;
         this.emit1(id, Bytecode.INSTR_STORE_OPTION, option);
     }
 
-    public func(templateToken: Token, id: CommonTree | null): void {
+    public func(templateToken: Token, id: TerminalNode | null): void {
         const funcBytecode = Compiler.funcs.get(id?.getText() ?? "");
         if (funcBytecode == null) {
-            this.errMgr.compileTimeError(ErrorType.NO_SUCH_FUNCTION, templateToken, id?.token);
+            this.errMgr.compileTimeError(ErrorType.NO_SUCH_FUNCTION, templateToken, id?.getSymbol());
             this.emit(id, Bytecode.INSTR_POP);
         } else {
             this.emit(id, funcBytecode);
@@ -96,7 +93,7 @@ export class CompilationState {
     }
 
     public emit(opcode: number): void;
-    public emit(opAST: CommonTree | null, opcode: number): void;
+    public emit(opNode: ParseTree | null, opcode: number): void;
     public emit(...args: unknown[]): void {
         switch (args.length) {
             case 1: {
@@ -108,14 +105,13 @@ export class CompilationState {
             }
 
             case 2: {
-                const [opAST, opcode] = args as [CommonTree, number];
+                const [opNode, opcode] = args as [ParseTree, number];
 
                 this.ensureCapacity(1);
-                if (opAST !== null) {
-                    const i = opAST.getTokenStartIndex();
-                    const j = opAST.getTokenStopIndex();
-                    const p = (this.tokens.get(i) as CommonToken).start;
-                    const q = (this.tokens.get(j) as CommonToken).stop;
+                if (opNode) {
+                    const interval = opNode.getSourceInterval();
+                    const p = this.tokens.get(interval.start).start;
+                    const q = this.tokens.get(interval.stop).stop;
                     if (!(p < 0 || q < 0)) {
                         this.impl.sourceMap[this.ip] = new Interval(p, q);
                     }
@@ -132,8 +128,8 @@ export class CompilationState {
         }
     }
 
-    public emit1(opAST: CommonTree | null, opcode: number, arg: number | string): void {
-        this.emit(opAST, opcode);
+    public emit1(opNode: ParseTree | null, opcode: number, arg: number | string): void {
+        this.emit(opNode, opcode);
 
         let index;
         if (typeof arg === "string") {
@@ -147,7 +143,7 @@ export class CompilationState {
         this.ip += Bytecode.OPERAND_SIZE_IN_BYTES;
     }
 
-    public emit2(opAST: CommonTree | null, opcode: number, arg: number | string, arg2: number): void {
+    public emit2(opAST: ParseTree | null, opcode: number, arg: number | string, arg2: number): void {
         let index;
         if (typeof arg === "string") {
             index = this.defineString(arg);
@@ -190,7 +186,7 @@ export class CompilationState {
         CompilationState.writeShort(this.impl.instructions, addr, value);
     }
 
-    public indent(indent: CommonTree | null): void {
+    public indent(indent: ParseTree | null): void {
         this.emit1(indent, Bytecode.INSTR_INDENT, indent?.getText() ?? "");
     }
 

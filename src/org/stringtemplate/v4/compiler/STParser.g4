@@ -46,9 +46,9 @@ import { ErrorType } from "../../misc/ErrorType.js";
 
 @members {
 private errMgr!: ErrorManager;
-private templateToken!: Token;
+private templateToken?: Token;
 
-public static create(input: antlr.TokenStream, errMgr: ErrorManager, templateToken: antlr.Token): STParser {
+public static create(input: antlr.TokenStream, errMgr: ErrorManager, templateToken?: antlr.Token): STParser {
     const result = new STParser(input);
     result.errMgr = errMgr;
     result.templateToken = templateToken;
@@ -199,7 +199,8 @@ mapTemplateRef:
     | lp = '(' mapExpr rp = ')' '(' argExprList? ')' /* -> ^(INCLUDE_IND mapExpr argExprList? ) */
 ;
 
-memberExpr: (includeExpr /* -> includeExpr */) (
+memberExpr:
+    (includeExpr /* -> includeExpr */) (
         p = '.' ID /* -> ^(PROP[$p,"PROP"] $memberExpr ID) */
         | p = '.' '(' mapExpr ')' /* -> ^(PROP_IND[$p,"PROP_IND"] $ memberExpr mapExpr) */
     )*

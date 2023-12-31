@@ -122,7 +122,7 @@ export class STGroup {
      *  <p>
      *  This structure is synchronized.</p>
      */
-    protected renderers = new TypeRegistry<Constructor, AttributeRenderer<unknown>>();
+    protected renderers = new Map<Constructor, AttributeRenderer<unknown>>();
 
     /**
      * A dictionary that allows people to register a model adaptor for
@@ -173,9 +173,8 @@ export class STGroup {
      * The {@code "foo"} of {@code t() ::= "<@foo()>"} is mangled to
      *  {@code "/region__/t__foo"}
      */
-    public static getMangledRegionName(enclosingTemplateName: string,
-        name: string): string {
-        if (enclosingTemplateName.charAt(0) !== "/") {
+    public static getMangledRegionName(enclosingTemplateName: string, name: string): string {
+        if (enclosingTemplateName[0] !== "/") {
             enclosingTemplateName = "/" + enclosingTemplateName;
         }
 

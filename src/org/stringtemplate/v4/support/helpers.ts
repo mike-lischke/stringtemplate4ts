@@ -54,9 +54,10 @@ export const constructorFromUnknown = (obj: unknown): Constructor | undefined =>
  *
  * @returns true if the object is an iterator.
  */
-export const isIterator = (obj: unknown): obj is Iterator<unknown> => {
+export const isIterator = (obj: unknown): obj is IterableIterator<unknown> => {
     // Iterator is an interface, so use duck typing.
-    return (obj != null && typeof obj === "object" && "next" in obj && "return" in obj);
+    return (obj != null) && (typeof obj === "object") && (Symbol.iterator in obj)
+        && (typeof obj[Symbol.iterator] === "function") && ("next" in obj) && (typeof obj.next === "function");
 };
 
 /**
