@@ -1,3 +1,5 @@
+[![GitHub Workflow Status (with event)](https://img.shields.io/github/actions/workflow/status/mike-lischke/stringtemplate4-ts/nodejs.yml?style=for-the-badge&logo=github)](https://github.com/mike-lischke/stringtemplate4-ts/actions/workflows/nodejs.yml)
+
 This repository contains a TypeScript port of the StringTemplate 4 template engine. It's released under the BSD license, like the original code. The original README is included below, for reference.
 
 # StringTemplate 4 Original README
