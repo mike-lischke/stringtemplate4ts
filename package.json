@@ -42,7 +42,7 @@
         "typescript": "5.3.3"
     },
     "dependencies": {
-        "antlr4ng": "^2.0.4",
+        "antlr4ng": "2.0.5",
         "fast-printf": "1.6.9",
         "he": "1.2.0"
     }
