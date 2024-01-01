@@ -173,4 +173,12 @@ export class Misc {
 
         return new Coordinate(line, charPos);
     }
+
+    public static strip(s: string | undefined | null, n: number): string {
+        if (!s) {
+            return "";
+        }
+
+        return s.substring(n, s.length - n);
+    }
 }

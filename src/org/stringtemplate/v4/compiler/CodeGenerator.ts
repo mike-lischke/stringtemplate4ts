@@ -34,6 +34,7 @@ import {
     PrimaryContext, QualifiedIdContext, RegionContext, SingleElementContext, SubtemplateContext, TemplateAndEOFContext,
     TemplateContext,
 } from "./generated/STParser.js";
+import { Misc } from "../misc/Misc.js";
 
 export class CodeGenerator extends TreeParser {
     public static readonly EOF = -1;
@@ -276,7 +277,7 @@ export class CodeGenerator extends TreeParser {
 
             // finish off the CompiledST result
             if (this.template_stack.peek().state.stringTable) {
-                impl.strings = this.template_stack.peek().state.stringTable.toArray();
+                impl.strings.push(...this.template_stack.peek().state.stringTable);
             }
 
             impl.codeSize = this.template_stack.peek().state.ip;
@@ -1817,7 +1818,7 @@ export class CodeGenerator extends TreeParser {
                 this.emit(context.qualifiedId(), Bytecode.INSTR_NULL);
             }
 
-            const args22 = this.args(context.args()!);
+            const args22 = this.args(context.args());
 
             if (args22.passThru) {
                 this.emit1(context, Bytecode.INSTR_PASSTHRU, context.qualifiedId()?.getText() ?? "");
@@ -1849,7 +1850,7 @@ export class CodeGenerator extends TreeParser {
                 this.emit(context, Bytecode.INSTR_NULL);
             }
 
-            const args26 = this.args(context.args()!);
+            const args26 = this.args(context.args());
 
             this.emit1(context, Bytecode.INSTR_NEW_IND, args26.n + num_exprs);
         }
@@ -2012,7 +2013,7 @@ export class CodeGenerator extends TreeParser {
             } else if (context.SUPER() !== null) {
                 if (context.AT() === null) {
                     // Include super ID.
-                    const args = this.args(context.args()!);
+                    const args = this.args(context.args());
 
                     if (args.passThru) {
                         this.emit1(context, Bytecode.INSTR_PASSTHRU, id.getText() ?? "");
@@ -2040,7 +2041,7 @@ export class CodeGenerator extends TreeParser {
             } else {
                 // Include qualified args.
                 const id = context.qualifiedId()!;
-                const args = this.args(context.args()!);
+                const args = this.args(context.args());
 
                 if (args.passThru) {
                     this.emit1(context, Bytecode.INSTR_PASSTHRU, id.getText());
@@ -2283,7 +2284,7 @@ export class CodeGenerator extends TreeParser {
             this.refAttr(context.ID());
         } else if (context.STRING() !== null) {
             const s = context.STRING();
-            this.emit1(s, Bytecode.INSTR_LOAD_STR, s?.getText().substring(1) ?? "");
+            this.emit1(s, Bytecode.INSTR_LOAD_STR, Misc.strip(s?.getText(), 1));
         } else if (context.TRUE() !== null) {
             this.emit(context.TRUE(), Bytecode.INSTR_TRUE);
         } else if (context.FALSE() !== null) {
@@ -2645,9 +2646,13 @@ export class CodeGenerator extends TreeParser {
     // $ANTLR start "args"
     // CodeGenerator.g:432:1: args returns [int n=0, boolean namedArgs=false, boolean passThru] : ( ( arg )+
     // | ( ^(eq= '=' ID expr ) )+ ( '...' )? | '...' |);
-    public args(context: ArgsContext): CodeGenerator.args_return {
+    public args(context?: ArgsContext | null): CodeGenerator.args_return {
         const retval = new CodeGenerator.args_return();
-        retval.start = context;
+        retval.start = context ?? null;
+
+        if (!context) {
+            return retval;
+        }
 
         if (context.argExprList() !== null) {
             context.argExprList()?.arg().forEach((arg) => {

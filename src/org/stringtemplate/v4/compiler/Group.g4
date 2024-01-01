@@ -181,7 +181,7 @@ this.currentGroup.errMgr.groupSyntaxError(ErrorType.SYNTAX_ERROR, this.getSource
 }
     ) {
 if ($name.index >= 0) { // if ID missing
-    template = template.substring(n);
+    template = Misc.strip(template, n);
     let templateName = $name.text;
     if (prefix.length > 0 ) {
         templateName = prefix + $name.text;
@@ -255,7 +255,7 @@ defaultValuePair[mapping: Map<string, unknown>]:
 ;
 
 keyValuePair[Map<string, unknown> mapping]:
-    STRING ':' keyValue {mapping.set(Misc.replaceEscapes($STRING.text.substring(1)), $keyValue.value);}
+    STRING ':' keyValue {mapping.set(Misc.replaceEscapes(Misc.strip($STRING.text, 1)), $keyValue.value);}
 ;
 
 keyValue
@@ -263,7 +263,7 @@ keyValue
     BIGSTRING {$value = this.currentGroup.createSingleton($BIGSTRING);}
     | BIGSTRING_NO_NL {$value = this.currentGroup.createSingleton($BIGSTRING_NO_NL);}
     | ANONYMOUS_TEMPLATE {$value = this.currentGroup.createSingleton($ANONYMOUS_TEMPLATE);}
-    | STRING {$value = Misc.replaceEscapes($STRING.text.substring(1));}
+    | STRING {$value = Misc.replaceEscapes(Misc.strip($STRING.text, 1));}
     | TRUE {$value = true;}
     | FALSE {$value = false;}
     | '[' ']' {$value = [];}

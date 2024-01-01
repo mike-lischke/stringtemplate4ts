@@ -12,13 +12,11 @@
 */
 
 /**
- * This file contains the decorators for the test framework as they are defined in the TC39 proposal
- * (https://github.com/tc39/proposal-decorators). They cannot be used with Node.js currently, so we have to
- * use the legacy decorators for now.
+ * This file contains the decorators for the test framework.
  */
 
 /**
- * Parameters for the @test decorator.
+ * Parameters for the Test decorator.
  */
 export interface ITestParameters {
     /** The name of the test. Used for result output, if given and no description is specified. */
@@ -91,8 +89,7 @@ export function DataProvider(param: IDataProviderParameters): Function;
 /**
  * Mark a method as supplying data for a test method.
  *
- * This decorator mimics the base functionality of the TestNG DataProvider annotation, but doesn't really do
- * anything. It only exists to allow taking over the Java annotation.
+ * This decorator mimics the base functionality of the TestNG DataProvider annotation.
  *
  * @param args Either a single parameter object or the target method and the context of the decorator.
  *

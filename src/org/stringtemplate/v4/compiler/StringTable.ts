@@ -15,6 +15,10 @@ export class StringTable {
     protected table = new Map<string, number>();
     protected i = -1;
 
+    public [Symbol.iterator](): IterableIterator<string> {
+        return this.table.keys();
+    }
+
     public add(s: string): number {
         const index = this.table.get(s);
         if (index !== undefined) {
@@ -26,7 +30,4 @@ export class StringTable {
         return this.i;
     }
 
-    public toArray(): string[] {
-        return [...this.table.keys()];
-    }
 }

@@ -115,7 +115,7 @@ export class STGroupString extends STGroup {
         }
     }
 
-    public override  getFileName(): string {
+    public override getFileName(): string {
         return "<string>";
     }
 }

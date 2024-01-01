@@ -15,6 +15,7 @@ import { BytecodeDisassembler } from "./BytecodeDisassembler.js";
 import { STGroup } from "../STGroup.js";
 import { GroupParser } from "./generated/GroupParser.js";
 import { Compiler } from "./Compiler.js";
+import { Misc } from "../misc/Misc.js";
 
 /**
  * The result of compiling an {@link ST}.  Contains all the bytecode instructions,
@@ -93,9 +94,9 @@ export class CompiledST implements ICompiledST {
 
     public isAnonSubtemplate = false; // {...}
 
-    public strings: string[] = [];     // string operands of instructions
+    public readonly strings: string[] = [];     // string operands of instructions
     public codeSize: number = 0;
-    public sourceMap: Interval[] = []; // maps IP to range in template pattern
+    public readonly sourceMap: Interval[] = []; // maps IP to range in template pattern
 
     public instructions: Int8Array;    // byte-addressable code memory.
 
@@ -136,9 +137,9 @@ export class CompiledST implements ICompiledST {
         clone.isRegion = this.isRegion;
         clone.regionDefType = this.regionDefType;
         clone.isAnonSubtemplate = this.isAnonSubtemplate;
-        clone.strings = [...this.strings];
+        clone.strings.push(...this.strings);
         clone.codeSize = this.codeSize;
-        clone.sourceMap = [...this.sourceMap];
+        clone.sourceMap.push(...this.sourceMap);
         clone.instructions = new Int8Array(this.instructions);
 
         return clone;
@@ -165,7 +166,7 @@ export class CompiledST implements ICompiledST {
                     case GroupParser.ANONYMOUS_TEMPLATE: {
                         const argSTname = fa.name + "_default_value";
                         const c2 = new Compiler(group);
-                        const defArgTemplate = fa.defaultValueToken?.text!.substring(1);
+                        const defArgTemplate = Misc.strip(fa.defaultValueToken?.text, 1);
                         fa.compiledDefaultValue = c2.compile({
                             srcName: group.getFileName(),
                             name: argSTname,
@@ -182,7 +183,7 @@ export class CompiledST implements ICompiledST {
                     }
 
                     case GroupParser.STRING: {
-                        fa.defaultValue = fa.defaultValueToken?.text!.substring(1);
+                        fa.defaultValue = Misc.strip(fa.defaultValueToken?.text, 1);
 
                         break;
                     }

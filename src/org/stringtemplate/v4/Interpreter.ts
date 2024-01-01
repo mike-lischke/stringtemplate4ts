@@ -862,7 +862,9 @@ export class Interpreter {
                     }
 
                     case Bytecode.INSTR_OPTIONS: {
-                        this.operands[++this.sp] = new Array<unknown>(Interpreter.supportedOptions.size);
+                        const options = new Array<unknown>(Interpreter.supportedOptions.size);
+                        options.fill(null);
+                        this.operands[++this.sp] = options;
 
                         break;
                     }
@@ -884,7 +886,7 @@ export class Interpreter {
                     }
 
                     case Bytecode.INSTR_LIST: {
-                        this.operands[++this.sp] = new Array<Object>();
+                        this.operands[++this.sp] = [];
 
                         break;
                     }

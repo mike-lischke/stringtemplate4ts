@@ -60,30 +60,18 @@ export class ObjectModelAdaptor implements ModelAdaptor<Constructor> {
     }
 
     protected static tryGetMethod(clazz: Constructor, methodName: string): Method | undefined {
-        const members = Object.getOwnPropertyNames(clazz.prototype);
-        for (const member of members) {
-            if (member === methodName) {
-                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-                const method = clazz.prototype[member] as Function;
-                if (typeof method === "function") {
-                    return new Method(clazz, method);
-                }
-            }
+        const method = (clazz as never)[methodName];
+        if (typeof method === "function") {
+            return new Method(clazz, method);
         }
 
         return undefined;
     }
 
     protected static tryGetField(clazz: Constructor, fieldName: string): Field | undefined {
-        const members = Object.getOwnPropertyNames(clazz.prototype);
-        for (const member of members) {
-            if (member === fieldName) {
-                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-                const field = clazz.prototype[member] as unknown;
-                if (typeof field !== "function" && typeof field !== "object") {
-                    return new Field(clazz, member);
-                }
-            }
+        const field = (clazz as never)[fieldName];
+        if (typeof field !== "function" && typeof field !== "object") {
+            return new Field(clazz, field);
         }
 
         return undefined;

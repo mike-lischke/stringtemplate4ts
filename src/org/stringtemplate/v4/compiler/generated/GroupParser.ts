@@ -537,7 +537,7 @@ export class GroupParser extends antlr.Parser {
                 }
 
                 if ((localContext._name?.tokenIndex ?? 0) >= 0) { // if ID missing
-                    template = template.substring(n);
+                    template = Misc.strip(template, n);
                     let templateName = (localContext._name?.text ?? '');
                     if (prefix.length > 0 ) {
                         templateName = prefix + (localContext._name?.text ?? '');
@@ -882,7 +882,7 @@ export class GroupParser extends antlr.Parser {
             this.match(GroupParser.T__3);
             this.state = 185;
             localContext._keyValue = this.keyValue();
-            mapping.set(Misc.replaceEscapes((localContext._STRING?.text ?? '').substring(1)), localContext._keyValue.value);
+            mapping.set(Misc.replaceEscapes(Misc.strip((localContext._STRING?.text ?? ''), 1)), localContext._keyValue.value);
             }
         }
         catch (re) {
@@ -935,7 +935,7 @@ export class GroupParser extends antlr.Parser {
                 {
                 this.state = 194;
                 localContext._STRING = this.match(GroupParser.STRING);
-                localContext!.value =  Misc.replaceEscapes((localContext._STRING?.text ?? '').substring(1));
+                localContext!.value =  Misc.replaceEscapes(Misc.strip((localContext._STRING?.text ?? ''), 1));
                 }
                 break;
             case GroupParser.TRUE:

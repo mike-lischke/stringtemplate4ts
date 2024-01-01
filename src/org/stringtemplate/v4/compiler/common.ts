@@ -3,9 +3,8 @@
  * Licensed under the BSD-3 License. See License.txt in the project root for license information.
  */
 
-import { Interval, ParseTree, Token } from "antlr4ng";
+import { Interval, ParseTree, Token, TokenStream } from "antlr4ng";
 
-import { TokenStreamV3 } from "../support/TokenStreamV3.js";
 import { Constructor } from "../reflection/IMember.js";
 import { AttributeRenderer } from "../AttributeRenderer.js";
 import { DebugState } from "../DebugState.js";
@@ -253,12 +252,12 @@ export interface ICompiledST {
     templateDefStartToken?: Token;
 
     /** Overall token stream for template (debug only). */
-    tokens?: TokenStreamV3;
+    tokens?: TokenStream;
 
     /** How do we interpret syntax of template? (debug only) */
     ast?: ParseTree;
 
-    formalArguments: Map<string, IFormalArgument>;
+    readonly formalArguments: Map<string, IFormalArgument>;
 
     hasFormalArgs: boolean;
 
@@ -292,11 +291,12 @@ export interface ICompiledST {
 
     isAnonSubtemplate: boolean;
 
-    strings: string[];     // string operands of instructions
+    readonly strings: string[];     // string operands of instructions
+
     codeSize: number;
     sourceMap: Interval[]; // maps IP to range in template pattern
 
-    instructions: Int8Array;    // byte-addressable code memory.
+    readonly instructions: Int8Array;    // byte-addressable code memory.
 
     clone(): ICompiledST;
 

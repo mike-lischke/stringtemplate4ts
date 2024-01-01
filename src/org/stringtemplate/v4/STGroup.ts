@@ -224,9 +224,9 @@ export class STGroup {
     public createSingleton(templateToken: Token): IST {
         let template: string;
         if (templateToken.type === GroupParser.BIGSTRING || templateToken.type === GroupParser.BIGSTRING_NO_NL) {
-            template = templateToken.text!.substring(2);
+            template = Misc.strip(templateToken.text, 2);
         } else {
-            template = templateToken.text!.substring(1);
+            template = Misc.strip(templateToken.text, 1);
         }
 
         const impl = this.compile({ srcName: this.getFileName(), template, templateToken })!;
@@ -396,7 +396,7 @@ export class STGroup {
             }
 
             case 5: {
-                [fullyQualifiedTemplateName, nameT, args, template, templateToken] =
+                [fullyQualifiedTemplateName, nameT, compileArgs, template, templateToken] =
                     args as [string, Token, FormalArgument[], string, Token];
 
                 break;
@@ -617,7 +617,7 @@ export class STGroup {
                         return;
                     }
 
-                    fileName = fileName.substring(1);
+                    fileName = Misc.strip(fileName, 1);
 
                     const isGroupFile = fileName.endsWith(STGroup.GROUP_FILE_EXTENSION);
                     const isTemplateFile = fileName.endsWith(STGroup.TEMPLATE_FILE_EXTENSION);

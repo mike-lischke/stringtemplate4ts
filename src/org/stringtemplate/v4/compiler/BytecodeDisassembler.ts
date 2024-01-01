@@ -119,16 +119,14 @@ export class BytecodeDisassembler {
     public strings(): string {
         let buf = "";
         let addr = 0;
-        if (this.code.strings !== null) {
-            for (const o of this.code.strings) {
-                if (typeof o === "string") {
-                    const s = Misc.replaceEscapes(o);
-                    buf += printf("%04d: \"%s\"\n", addr, s);
-                } else {
-                    buf += printf("%04d: %s\n", addr, o);
-                }
-                addr++;
+        for (const o of this.code.strings) {
+            if (typeof o === "string") {
+                const s = Misc.replaceEscapes(o);
+                buf += printf("%04d: \"%s\"\n", addr, s);
+            } else {
+                buf += printf("%04d: %s\n", addr, o);
             }
+            addr++;
         }
 
         return buf;

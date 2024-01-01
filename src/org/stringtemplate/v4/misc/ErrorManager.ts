@@ -28,16 +28,16 @@ export class ErrorManager {
 
         public runTimeError(msg: STMessage): void {
             if (msg.error !== ErrorType.NO_SUCH_PROPERTY) { // ignore these
-                console.error(msg);
+                console.error(msg.toString());
             }
         }
 
         public iOError(msg: STMessage): void {
-            console.error(msg);
+            console.error(msg.toString());
         }
 
         public internalError(msg: STMessage): void {
-            console.error(msg);
+            console.error(msg.toString());
         }
 
         public error(s: string, e?: Error): void {
