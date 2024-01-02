@@ -8,7 +8,7 @@
 /* eslint-disable jsdoc/require-returns, jsdoc/require-param */
 
 import {
-    CharStreams, CommonTokenStream, NoViableAltException, Parser, RecognitionException, Token, TokenStream,
+    BaseErrorListener, CharStreams, CommonTokenStream, NoViableAltException, RecognitionException, Token, TokenStream,
 } from "antlr4ng";
 
 import { STLexer } from "./STLexer.js";
@@ -99,12 +99,27 @@ export class Compiler {
 
         const tokens = new CommonTokenStream(lexer);
         const p = STParser.create(tokens, this.group.errMgr, values.templateToken);
+        p.removeErrorListeners();
+
+        // Redirection of syntax errors to STException
+        // eslint-disable-next-line @typescript-eslint/no-this-alias
+        const host = this;
+        p.addErrorListener(
+            new class extends BaseErrorListener {
+                public override syntaxError(_recognizer: unknown,
+                    offendingSymbol: Token | null, line: number, column: number, msg: string,
+                    e: RecognitionException | null): void {
+                    host.reportMessageAndThrowSTException(tokens, values.templateToken, offendingSymbol, e, msg);
+                }
+            }(),
+        );
+
         let r;
         try {
             r = p.templateAndEOF();
         } catch (re) {
             if (re instanceof RecognitionException) {
-                this.reportMessageAndThrowSTException(tokens, values.templateToken, p, re);
+                this.reportMessageAndThrowSTException(tokens, values.templateToken, null, re, re.message);
             } else {
                 throw re;
             }
@@ -143,10 +158,11 @@ export class Compiler {
     }
 
     protected reportMessageAndThrowSTException(tokens: TokenStream, templateToken: Token | undefined,
-        parser: Parser, re: RecognitionException): never {
-        if (re.offendingToken?.type === Token.EOF) {
+        offendingToken: Token | null, re: RecognitionException | null, message: string): never {
+        offendingToken ??= re?.offendingToken ?? null;
+        if (offendingToken?.type === Token.EOF) {
             const msg = "premature EOF";
-            this.group.errMgr.compileTimeError(ErrorType.SYNTAX_ERROR, templateToken, re.offendingToken, msg);
+            this.group.errMgr.compileTimeError(ErrorType.SYNTAX_ERROR, templateToken, offendingToken, msg);
         } else {
             if (re instanceof NoViableAltException) {
                 const msg = "'" + re.offendingToken?.text + "' came as a complete surprise to me";
@@ -156,16 +172,15 @@ export class Compiler {
                 if (tokens.index === 0) { // couldn't parse anything
                     const msg = "this doesn't look like a template";
                     this.group.errMgr.compileTimeError(ErrorType.SYNTAX_ERROR, templateToken,
-                        re.offendingToken ?? undefined, msg);
+                        offendingToken ?? undefined, msg);
                 } else {
                     if (tokens.LA(1) === STLexer.LDELIM) { // couldn't parse expr
                         const msg = "doesn't look like an expression";
                         this.group.errMgr.compileTimeError(ErrorType.SYNTAX_ERROR, templateToken,
-                            re.offendingToken ?? undefined, msg);
+                            offendingToken ?? undefined, msg);
                     } else {
-                        const msg = re.message;
                         this.group.errMgr.compileTimeError(ErrorType.SYNTAX_ERROR, templateToken,
-                            re.offendingToken ?? undefined, msg);
+                            offendingToken ?? undefined, message);
                     }
                 }
 

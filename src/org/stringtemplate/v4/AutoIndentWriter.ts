@@ -7,6 +7,8 @@
 
 /* eslint-disable jsdoc/no-undefined-types, jsdoc/require-returns , jsdoc/require-param */
 
+import * as os from "os";
+
 import { STWriter } from "./STWriter.js";
 import { Writer } from "./support/Writer.js";
 
@@ -63,7 +65,7 @@ export class AutoIndentWriter implements STWriter {
     public lineWidth = STWriter.NO_WRAP;
 
     public constructor(out: Writer, newline?: string) {
-        newline ??= "\n";
+        newline ??= os.EOL;
         this.out = out;
         this.indents.push(null);
         this.newline = newline;

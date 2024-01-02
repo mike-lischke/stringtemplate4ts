@@ -43,7 +43,8 @@
         "subdir",
         "testng",
         "unmocked",
-        "userid"
+        "userid",
+        "xdescribe"
     ],
     "import": []
 }

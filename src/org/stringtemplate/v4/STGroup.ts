@@ -264,7 +264,7 @@ export class STGroup {
         }
 
         let code = this.rawGetTemplate(name);
-        if (code === null) {
+        if (code === null) { // Note: null is used to indicate a previous failed lookup.
             if (STGroup.verbose) {
                 console.log(name + " previously seen as not found");
             }
@@ -332,7 +332,7 @@ export class STGroup {
     public load(name?: string): ICompiledST | undefined | null | void {
         // Force a load if it makes sense for the group, if no name is given.
         if (name) {
-            return undefined;
+            return null;
         }
     }
 

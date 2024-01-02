@@ -31,6 +31,7 @@ export class ErrorBuffer implements STErrorListener {
     public internalError(msg: STMessage): void {
         this.errors.push(msg);
     }
+
     public toString(): string {
         let buf = "";
         for (const m of this.errors) {

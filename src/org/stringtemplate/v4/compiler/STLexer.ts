@@ -39,7 +39,7 @@ export class STLexer implements TokenSource {
      */
     public static STToken = class STToken extends CommonToken {
         public constructor(type: number, text: string);
-        public constructor(input: CharStream, type: number, start: number, stop: number);
+        public constructor(tokenSource: TokenSource, input: CharStream, type: number, start: number, stop: number);
         public constructor(...args: unknown[]) {
             switch (args.length) {
                 case 2: {
@@ -51,10 +51,11 @@ export class STLexer implements TokenSource {
                     break;
                 }
 
-                case 4: {
-                    const [input, type, start, stop] = args as [CharStream, number, number, number];
+                case 5: {
+                    const [source, input, type, start, stop]
+                        = args as [TokenSource, CharStream, number, number, number];
 
-                    super([null, input], type, Token.DEFAULT_CHANNEL, start, stop);
+                    super([source, input], type, Token.DEFAULT_CHANNEL, start, stop);
 
                     break;
                 }
@@ -136,7 +137,10 @@ export class STLexer implements TokenSource {
      */
     public subtemplateDepth = 0;
 
+    // Line of the current token.
     public line = 1;
+
+    // Column of the current token.
     public _tokenStartColumn = 0;
 
     public sourceName = "";
@@ -177,6 +181,14 @@ export class STLexer implements TokenSource {
      *  buffer everything through this list.
      */
     protected tokens = new Array<Token>();
+
+    // Updated column while consuming input.
+    #currentColumn = 0;
+
+    // Updated line while consuming input.
+    #currentLine = 1;
+
+    #currentIndex = 0;
 
     public constructor(inputOrErrMgr: ErrorManager | CharStream, input?: CharStream, templateToken?: Token,
         delimiterStartChar?: string, delimiterStopChar?: string) {
@@ -225,6 +237,8 @@ export class STLexer implements TokenSource {
     public _nextToken(): Token {
         while (true) { // lets us avoid recursion when skipping stuff
             this.startCharIndex = this.inputStream.index;
+            this.line = this.#currentLine;
+            this._tokenStartColumn = this.#currentColumn;
 
             if (this.c === Token.EOF) {
                 return this.newToken(Token.EOF);
@@ -240,7 +254,6 @@ export class STLexer implements TokenSource {
             if (t !== STLexer.SKIP) {
                 return t;
             }
-
         }
     }
 
@@ -248,38 +261,37 @@ export class STLexer implements TokenSource {
         let t;
 
         if (!text) {
-            t = new STLexer.STToken(this.inputStream, tokenType, this.startCharIndex, this.inputStream.index - 1);
-            t.line = this.line;
-            t.setCharPositionInLine(this._tokenStartColumn);
+            t = new STLexer.STToken(this, this.inputStream, tokenType, this.startCharIndex,
+                this.inputStream.index - 1);
         } else {
             t = new STLexer.STToken(tokenType, text);
-            if (pos !== undefined) {
-                t.column = pos;
-            }
+            t.column = pos ?? this._tokenStartColumn;
+            t.start = this.startCharIndex;
+            t.stop = this.inputStream.index - 1;
+            t.line = this.line;
         }
 
-        t.start = this.startCharIndex;
-        t.stop = this.inputStream.index - 1;
-        t.line = this.line;
+        t.tokenIndex = this.#currentIndex++;
 
         return t;
     }
 
     public newTokenFromPreviousChar(tokenType: number): Token {
-        const t = new STLexer.STToken(this.inputStream, tokenType, this.inputStream.index - 1,
+        this._tokenStartColumn = this.#currentColumn - 1;
+        const t = new STLexer.STToken(this, this.inputStream, tokenType, this.inputStream.index - 1,
             this.inputStream.index - 1);
-        t.line = this.line;
-        t.column = this._tokenStartColumn - 1;
+
+        t.tokenIndex = this.#currentIndex++;
 
         return t;
     }
 
     protected consume(): void {
-        if (this.c === "\n".codePointAt(0)) {
-            this.line += 1;
-            this._tokenStartColumn = 0;
+        if (this.c === 0x10) { // \n
+            this.#currentLine += 1;
+            this.#currentColumn = 0;
         } else {
-            this._tokenStartColumn += 1;
+            this.#currentColumn += 1;
         }
 
         this.inputStream.consume();
@@ -287,7 +299,7 @@ export class STLexer implements TokenSource {
     }
 
     protected outside(): Token {
-        if (this._tokenStartColumn === 0 && this.currentCharMatchesOneOf(" ", "\t")) {
+        if (this.#currentColumn === 0 && this.currentCharMatchesOneOf(" ", "\t")) {
             while (this.currentCharMatchesOneOf(" ", "\t")) {
                 this.consume();
             } // scarf indent
@@ -519,9 +531,13 @@ export class STLexer implements TokenSource {
     }
 
     protected subTemplate(): Token {
+        // Keep current input stream state, in case we need to backtrack.
+        const currentStreamIndex = this.inputStream.index;
+        const currentLine = this.#currentLine;
+        const currentColumn = this.#currentColumn;
+
         // look for "{ args ID (',' ID)* '|' ..."
         this.subtemplateDepth++;
-        const m = this.inputStream.mark();
         const curlyStartChar = this.startCharIndex;
         const curlyLine = this.line;
         const curlyPos = this._tokenStartColumn;
@@ -555,7 +571,6 @@ export class STLexer implements TokenSource {
                 this.emit(t);
             }
 
-            this.inputStream.release(m);
             this.scanningInsideExpr = false;
             this.startCharIndex = curlyStartChar; // reset state
             this.line = curlyLine;
@@ -564,8 +579,13 @@ export class STLexer implements TokenSource {
             return curly;
         }
 
-        this.inputStream.release(m);
-        this.startCharIndex = curlyStartChar; // reset state
+        // Reset the input stream to where it was before we tried to match.
+        this.inputStream.index = currentStreamIndex;
+        this.#currentLine = currentLine;
+        this.#currentColumn = currentColumn;
+
+        // Reset the state of the lexer.
+        this.startCharIndex = curlyStartChar;
         this.line = curlyLine;
         this._tokenStartColumn = curlyPos;
         this.consume();
@@ -576,6 +596,7 @@ export class STLexer implements TokenSource {
 
     protected matchESCAPE(): Token {
         this.startCharIndex = this.inputStream.index;
+        this._tokenStartColumn = this.#currentColumn;
         this.consume(); // jump over \
         if (this.currentCharMatchesOneOf("u")) {
             return this.matchHexNumber();
@@ -736,6 +757,8 @@ export class STLexer implements TokenSource {
     protected mID(): Token {
         // called from subTemplate; so keep resetting position during speculation
         this.startCharIndex = this.inputStream.index;
+        this.line = this.#currentLine;
+        this._tokenStartColumn = this.#currentColumn;
         this.consume();
 
         while (this.currentCharIsIDLetter()) {

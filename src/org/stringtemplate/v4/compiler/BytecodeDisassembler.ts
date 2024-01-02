@@ -67,7 +67,7 @@ export class BytecodeDisassembler {
         }
 
         const instruction = Bytecode.instructions[opcode];
-        if (instruction === null) {
+        if (!instruction) {
             throw new Error("no such instruction " + opcode + " at address " + values.ip);
         }
 
@@ -136,7 +136,7 @@ export class BytecodeDisassembler {
         let buf = "";
         let addr = 0;
         for (const interval of this.code.sourceMap) {
-            if (interval !== null) {
+            if (interval) {
                 const chunk = this.code.template.substring(interval.start, interval.stop + 1);
                 buf += printf("%04d: %s\t\"%s\"\n", addr, interval, chunk);
             }
@@ -150,7 +150,7 @@ export class BytecodeDisassembler {
         let buf = "#" + poolIndex;
         let s = "<bad string index>";
         if (poolIndex < this.code.strings.length) {
-            if (this.code.strings[poolIndex] === null || this.code.strings[poolIndex] === undefined) {
+            if (this.code.strings[poolIndex] == null) {
                 s = "null";
             } else {
                 s = this.code.strings[poolIndex];

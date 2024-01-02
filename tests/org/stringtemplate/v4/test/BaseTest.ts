@@ -7,15 +7,15 @@
 
 // cspell: disable
 
-import * as fs from "fs";
 import path from "path";
 import os from "os";
+import { existsSync, mkdirSync, rmSync, statSync, unlinkSync, writeFileSync } from "fs";
+
+import { CharStreams, CommonToken, CommonTokenStream, Token } from "antlr4ng";
 
 import { Compiler, ST, STGroup, STLexer } from "../../../../../src/index.js";
-import { existsSync, mkdirSync, writeFileSync } from "fs";
-import { CharStreams, CommonTokenStream, Token } from "antlr4ng";
 import { assertEquals } from "../../../../junit.js";
-import { Before } from "../../../../decorators.js";
+import { After, Before } from "../../../../decorators.js";
 
 export abstract class BaseTest {
     public static readonly pathSep = path.delimiter;
@@ -94,13 +94,13 @@ export abstract class BaseTest {
         }
     };
 
-    public tmpdir = "";
+    #tmpdir = ""; // Set in `setUp()`.
 
     public static writeFile(dir: string, fileName: string, content: string): void {
         try {
             const f = path.join(dir, fileName);
-            if (!existsSync(f)) {
-                mkdirSync(f, { recursive: true });
+            if (!existsSync(dir)) {
+                mkdirSync(dir, { recursive: true });
             }
 
             writeFileSync(f, content);
@@ -121,12 +121,20 @@ export abstract class BaseTest {
      * @param file the file or directory to remove
      */
     public static deleteFile(file: string): void {
-        const stat = fs.statSync(file);
-        if (stat.isDirectory()) {
-            fs.rmSync(file, { recursive: true, force: true });
-        } else {
-            fs.unlinkSync(file);
+        if (!existsSync(file)) {
+            return;
         }
+
+        const stat = statSync(file);
+        if (stat.isDirectory()) {
+            rmSync(file, { recursive: true, force: true });
+        } else {
+            unlinkSync(file);
+        }
+    }
+
+    public get tmpdir(): string {
+        return this.#tmpdir;
     }
 
     @Before
@@ -136,7 +144,7 @@ export abstract class BaseTest {
 
         const baseTestDirectory = os.tmpdir();
         const testDirectory = this.constructor.name + "-" + new Date().getMilliseconds();
-        this.tmpdir = path.resolve(baseTestDirectory, testDirectory);
+        this.#tmpdir = path.resolve(baseTestDirectory, testDirectory);
     };
 
     /**
@@ -247,110 +255,112 @@ export abstract class BaseTest {
 
         const lexer = new STLexer(STGroup.DEFAULT_ERR_MGR, CharStreams.fromString(template), undefined,
             delimiterStartChar, delimiterStopChar);
-        const tokens = new CommonTokenStream(lexer);
-        let buf = "[";
-        let i = 1;
-        let t = tokens.LT(i);
-        while (t && t.type !== Token.EOF) {
-            if (i > 1) {
-                buf += ", ";
+        const tokenStream = new CommonTokenStream(lexer);
+        tokenStream.fill();
+        const tokens = tokenStream.getTokens() as CommonToken[];
+
+        const entries: string[] = [];
+        for (const token of tokens) {
+            if (token.type !== Token.EOF) {
+                entries.push(token.toString());
             }
-
-            buf += t.text;
-            i++;
-            t = tokens.LT(i);
         }
+        const result = "[" + entries.join(", ") + "]";
+        assertEquals(expected, result);
+    }
 
-        buf += "]";
-        assertEquals(expected, buf);
+    public getRandomDir(): string {
+        const randomDir = path.join(this.#tmpdir, "dir" + Math.trunc(Math.random() * 100000));
+        mkdirSync(randomDir, { recursive: true });
+
+        return randomDir;
     }
 
     /*
-        public getRandomDir(): string {
-            let randomDir = new File(this.tmpdir, "dir" + string.valueOf(Number((Math.random() * 100000))));
-            randomDir.mkdirs();
-            return randomDir.getAbsolutePath();
-        }
+            protected addJarFile(file: File, workingDir: File, stream: JarOutputStream): void {
+                let name = workingDir.toURI().relativize(file.toURI()).getPath().replace("\\", "/");
+                if (file.isDirectory()) {
+                    if (!name.isEmpty()) {
+                        if (!name.endsWith("/")) {
+                            // the entry for a folder must end with "/"
+                            name += "/";
+                        }
 
-        protected addJarFile(file: File, workingDir: File, stream: JarOutputStream): void {
-            let name = workingDir.toURI().relativize(file.toURI()).getPath().replace("\\", "/");
-            if (file.isDirectory()) {
-                if (!name.isEmpty()) {
-                    if (!name.endsWith("/")) {
-                        // the entry for a folder must end with "/"
-                        name += "/";
+                        let entry = new JarEntry(name);
+                        entry.setTime(file.lastModified());
+                        stream.putNextEntry(entry);
+                        stream.closeEntry();
                     }
 
-                    let entry = new JarEntry(name);
-                    entry.setTime(file.lastModified());
-                    stream.putNextEntry(entry);
+                    for (let child of file.listFiles()) {
+                        this.addJarFile(child, workingDir, stream);
+                    }
+
+                    return;
+                }
+
+                let entry = new JarEntry(name);
+                entry.setTime(file.lastModified());
+                stream.putNextEntry(entry);
+
+                let input = new BufferedInputStream(new FileInputStream(file));
+                try {
+                    let buffer = new Int8Array(16 * 1024);
+                    while (true) {
+                        let count = input.read(buffer);
+                        if (count === -1) {
+                            break;
+                        }
+
+                        stream.write(buffer, 0, count);
+                    }
+
                     stream.closeEntry();
                 }
-
-                for (let child of file.listFiles()) {
-                    this.addJarFile(child, workingDir, stream);
+                finally {
+                    input.close();
                 }
-
-                return;
             }
 
-            let entry = new JarEntry(name);
-            entry.setTime(file.lastModified());
-            stream.putNextEntry(entry);
+            protected compile(fileName: string, workingDirName: string): void {
+                let files = new Array<File>();
+                files.add(new File(workingDirName, fileName));
 
-            let input = new BufferedInputStream(new FileInputStream(file));
-            try {
-                let buffer = new Int8Array(16 * 1024);
-                while (true) {
-                    let count = input.read(buffer);
-                    if (count === -1) {
-                        break;
+                let compiler = java.util.spi.ToolProvider.getSystemJavaCompiler();
+
+                let fileManager =
+                    compiler.getStandardFileManager(null, null, null);
+
+                let compilationUnits =
+                    fileManager.getJavaFileObjectsFromFiles(files);
+
+                let compileOptions =
+                    Arrays.asList("-g", "-source", "1.6", "-target", "1.6", "-implicit:class", "-Xlint:-options", "-d",
+                    workingDirName, "-cp", workingDirName + BaseTest.pathSep + BaseTest.CLASSPATH);
+
+                let task =
+                    compiler.getTask(null, fileManager, null, compileOptions, null,
+                        compilationUnits);
+                let ok = task.call();
+
+                try {
+                    fileManager.close();
+                } catch (ioe) {
+                    if (ioe instanceof IOException) {
+                        ioe.printStackTrace(System.err);
+                    } else {
+                        throw ioe;
                     }
-
-                    stream.write(buffer, 0, count);
                 }
 
-                stream.closeEntry();
+                assertTrue(ok);
             }
-            finally {
-                input.close();
-            }
-        }
+        */
 
-        protected compile(fileName: string, workingDirName: string): void {
-            let files = new Array<File>();
-            files.add(new File(workingDirName, fileName));
-
-            let compiler = java.util.spi.ToolProvider.getSystemJavaCompiler();
-
-            let fileManager =
-                compiler.getStandardFileManager(null, null, null);
-
-            let compilationUnits =
-                fileManager.getJavaFileObjectsFromFiles(files);
-
-            let compileOptions =
-                Arrays.asList("-g", "-source", "1.6", "-target", "1.6", "-implicit:class", "-Xlint:-options", "-d",
-                workingDirName, "-cp", workingDirName + BaseTest.pathSep + BaseTest.CLASSPATH);
-
-            let task =
-                compiler.getTask(null, fileManager, null, compileOptions, null,
-                    compilationUnits);
-            let ok = task.call();
-
-            try {
-                fileManager.close();
-            } catch (ioe) {
-                if (ioe instanceof IOException) {
-                    ioe.printStackTrace(System.err);
-                } else {
-                    throw ioe;
-                }
-            }
-
-            assertTrue(ok);
-        }
-    */
+    @After
+    public shutDown(): void {
+        BaseTest.deleteFile(this.#tmpdir);
+    }
 }
 
 // eslint-disable-next-line @typescript-eslint/no-namespace, no-redeclare

@@ -274,12 +274,8 @@ export class CompiledST implements ICompiledST {
 
     public dump(): void {
         const dis = new BytecodeDisassembler(this);
-        console.log(this.name + ":");
-        console.log(dis.disassemble());
-        console.log("Strings:");
-        console.log(dis.strings());
-        console.log("Bytecode to template map:");
-        console.log(dis.sourceMap());
+        console.log(`${this.name}:${dis.disassemble()}Strings:${dis.strings()}Bytecode to template map:` +
+            `${dis.sourceMap()}`);
     }
 
     public disassembled(): string {

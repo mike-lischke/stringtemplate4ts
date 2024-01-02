@@ -17,7 +17,23 @@ interface IPropertyDescriptorParams {
     timeout?: number;
 
     isBeforeAll?: boolean;
+    isAfterAll?: boolean;
 }
+
+/**
+ * @returns All property descriptors for the given target, including those from the prototype chain.
+ *
+ * @param target The target to get the property descriptors for.
+ */
+const getAllPropertyDescriptors = (target: unknown): PropertyDescriptorMap => {
+    let descriptors: PropertyDescriptorMap = {};
+    while (target != null) {
+        descriptors = { ...descriptors, ...Object.getOwnPropertyDescriptors(target) };
+        target = Object.getPrototypeOf(target);
+    }
+
+    return descriptors;
+};
 
 /**
  * This class is the main entry point for running tests similar like in the TestNG framework.
@@ -27,7 +43,7 @@ interface IPropertyDescriptorParams {
 export class TestNG {
     public run<T>(testClass: Constructor<T>, params: unknown[] = []): void {
         // Get all properties of the given class.
-        const descriptors = Object.getOwnPropertyDescriptors(testClass.prototype);
+        const descriptors = getAllPropertyDescriptors(testClass.prototype);
 
         // Check if there is a static main method. If so, call it to start the tests.
         if ("constructor" in descriptors && "value" in descriptors.constructor) {
@@ -44,6 +60,7 @@ export class TestNG {
 
         const instance = new testClass();
         let beforeAll: TestFunction | undefined;
+        let afterAll: TestFunction | undefined;
 
         const testMethods = Object.entries(descriptors).filter(([, descriptor]) => {
             const value = descriptor.value as IPropertyDescriptorParams;
@@ -53,35 +70,43 @@ export class TestNG {
                 return false;
             }
 
+            if (value?.isAfterAll) {
+                afterAll = descriptor.value as TestFunction;
+
+                return false;
+            }
+
             return value?.isTest;
         });
 
         if (beforeAll) {
+            // This adds a beforeAll hook to the current test case.
             beforeAll.call(instance);
         }
 
-        testMethods.forEach(([entry, descriptor]) => {
-            const value = descriptor.value as IPropertyDescriptorParams;
-            describe(value?.description ?? entry, () => {
-                try {
-                    const method = descriptor.value as TestFunction;
-                    if (method.isTest) {
-                        method.call(instance);
-                    }
-                } catch (error) {
-                    if (error instanceof TestException) {
-                        // Unfold the test exception to get to the real cause.
-                        const cause = error.cause;
-                        if (cause) {
-                            throw cause;
-                        }
+        if (afterAll) {
+            afterAll.call(instance);
+        }
 
-                        throw error;
-                    } else {
-                        throw error;
-                    }
+        testMethods.forEach(([entry, descriptor]) => {
+            try {
+                const method = descriptor.value as TestFunction;
+                if (method.isTest) {
+                    method.call(instance);
                 }
-            });
+            } catch (error) {
+                if (error instanceof TestException) {
+                    // Unfold the test exception to get to the real cause.
+                    const cause = error.cause;
+                    if (cause) {
+                        throw cause;
+                    }
+
+                    throw error;
+                } else {
+                    throw error;
+                }
+            }
         });
     }
 }

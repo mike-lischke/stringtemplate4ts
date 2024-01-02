@@ -108,7 +108,14 @@ export class STGroupDir extends STGroup {
         }
 
         const fullPath = path.join(this.groupDirName, prefix, unqualifiedFileName);
-        const content = fs.readFileSync(fullPath, this.encoding as BufferEncoding);
+
+        let content;
+        try {
+            content = fs.readFileSync(fullPath, this.encoding as BufferEncoding);
+        } catch {
+            return undefined;
+        }
+
         const stream = CharStreams.fromString(content);
         stream.name = unqualifiedFileName;
 
@@ -138,16 +145,15 @@ export class STGroupDir extends STGroup {
         }
 
         if (STGroupDir.verbose) {
-            console.log("STGroupDir.loa(" + name + ")");
+            console.log("STGroupDir.load(" + name + ")");
         }
 
-        const parent = path.dirname(name); // must have parent; it's fully-qualified
+        const parent = Misc.getParent(name); // must have parent; it's fully-qualified
         const prefix = Misc.getPrefix(name);
-        const groupFile = path.join(this.groupDirName, parent + STGroupDir.GROUP_FILE_EXTENSION);
 
-        // try as file then as group
-        const stat = fs.statSync(groupFile);
-        if (stat.isFile()) {
+        // see if parent of template name is a group file
+        const groupFile = path.join(this.groupDirName, parent + STGroupDir.GROUP_FILE_EXTENSION);
+        if (fs.existsSync(groupFile)) {
             this.loadGroupFile(prefix, groupFile);
 
             return this.rawGetTemplate(name);

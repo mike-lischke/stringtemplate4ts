@@ -113,42 +113,27 @@ export class STGroupFile extends STGroup {
 
     public override load(): void;
     public override load(name: string): ICompiledST | null | undefined;
-    public override load(...args: unknown[]): void | ICompiledST | null | undefined {
-        if (!this.alreadyLoaded) {
-            this.load();
+    public override load(name?: string): void | ICompiledST | null | undefined {
+        if (this.alreadyLoaded) {
+            return;
         }
 
         this.alreadyLoaded = true; // do before actual load to say we're doing it
-        switch (args.length) {
-            case 0: {
-                if (this.alreadyLoaded) {
-                    return;
-                }
 
-                // no prefix since this group file is the entire group, nothing lives
-                // beneath it.
-                if (STGroupFile.verbose) {
-                    console.log("loading group file " + this.fileName);
-                }
+        // no prefix since this group file is the entire group, nothing lives
+        // beneath it.
+        if (STGroupFile.verbose) {
+            console.log("loading group file " + this.fileName);
+        }
 
-                this.loadGroupFile("/", this.fileName);
-                if (STGroupFile.verbose) {
-                    console.log("found " + this.templates.size + " templates in " + this.fileName + " = " +
-                        [...this.templates.keys()].join(", "));
-                }
+        this.loadGroupFile("/", this.fileName);
+        if (STGroupFile.verbose) {
+            console.log("found " + this.templates.size + " templates in " + this.fileName + " = " +
+                [...this.templates.keys()].join(", "));
+        }
 
-                break;
-            }
-
-            case 1: {
-                const [name] = args as [string];
-
-                return this.rawGetTemplate(name);
-            }
-
-            default: {
-                throw new Error("Invalid number of arguments");
-            }
+        if (name) {
+            return this.rawGetTemplate(name);
         }
     }
 

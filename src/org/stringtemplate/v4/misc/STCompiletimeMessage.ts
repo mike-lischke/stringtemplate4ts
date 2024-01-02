@@ -26,27 +26,10 @@ export class STCompiletimeMessage extends STMessage {
 
     public constructor(error: ErrorType, srcName: string, templateToken?: Token, t?: Token,
         cause?: Error, arg?: string | number, arg2?: string | number) {
-        if (!cause) {
-            super(error);
-            this.templateToken = templateToken;
-            this.token = t;
-            this.srcName = srcName;
-        } else if (!arg) {
-            super(error, undefined, cause);
-            this.templateToken = templateToken;
-            this.token = t;
-            this.srcName = srcName;
-        } else if (!arg2) {
-            super(error, undefined, cause, arg);
-            this.templateToken = templateToken;
-            this.token = t;
-            this.srcName = srcName;
-        } else {
-            super(error, undefined, cause, arg, arg2);
-            this.templateToken = templateToken;
-            this.token = t;
-            this.srcName = srcName;
-        }
+        super(error, undefined, cause, arg, arg2);
+        this.templateToken = templateToken;
+        this.token = t;
+        this.srcName = srcName;
     }
 
     public override toString(): string {

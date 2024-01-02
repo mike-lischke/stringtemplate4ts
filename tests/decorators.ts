@@ -287,3 +287,28 @@ export function Before<This, Args extends unknown[], Return>(
 
     return result;
 }
+
+/**
+ * Decorator function for the Before annotation.
+ *
+ * @param target The target method.
+ * @param context The context of the decorator.
+ *
+ * @returns a method decorator.
+ */
+export function After<This, Args extends unknown[], Return>(
+    target: DecoratorTargetFunction<This, Args, Return>,
+    context: ClassMethodDecoratorContext<This, DecoratorTargetFunction<This, Args, Return>>,
+): DecoratorTargetFunction<This, Args, Return> {
+
+    const result = function (this: This, ...args: Args): Return {
+        afterAll(() => {
+            target.call(this, ...args);
+        });
+
+        return void 0 as Return;
+    };
+    Object.defineProperty(result, "isAfterAll", { value: true });
+
+    return result;
+}
