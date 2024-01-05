@@ -181,8 +181,10 @@ mapExpr:
         (c = ',' memberExpr)+ col = ':' mapTemplateRef /* -> ^(ZIP[$col] ^(ELEMENTS memberExpr+ ) mapTemplateRef) */
         | /*-> memberExpr */
     ) (
-        {if ($x!=null) $x.splice(0);} col = ':' x += mapTemplateRef (
-            {$c === null}? ',' x += mapTemplateRef
+        {$x.splice(0);} // don't keep queueing x; new list for each iteration
+        col = ':' x += mapTemplateRef (
+            // In the origional grammar this part used a syntactic predicate to stop parsing if we already saw a comma.
+            /*{$c === null}? =>*/ ',' x += mapTemplateRef
         )* /*-> ^(MAP[$col] $mapExpr $x+ ) */
     )*
 ;
@@ -223,8 +225,8 @@ primary:
     | FALSE
     | subtemplate
     | list
-    | /* {$conditional.size()>0}? */ '(' /* ! */ conditional ')' /* ! */
-    | /* {$conditional.size()==0}? */ lp = '(' expr ')' (
+    //| /* {$conditional.size()>0}?=> */ '(' /* ! */ conditional ')' /* ! */
+    | /* {$conditional.size()==0}?=> */ lp = '(' expr ')' (
         '(' argExprList? ')' /* -> ^(INCLUDE_IND[$lp] expr argExprList? ) */
         | /* -> ^(TO_STR[$lp] expr) */
     )

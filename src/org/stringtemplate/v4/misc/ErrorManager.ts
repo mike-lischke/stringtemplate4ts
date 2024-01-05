@@ -56,13 +56,13 @@ export class ErrorManager {
 
     public compileTimeError(error: ErrorType, templateToken?: Token, t?: Token, arg?: string | number,
         arg2?: string | number): void {
-        const srcName = this.sourceName(t) ?? "<unknown>";
+        const srcName = this.sourceName(t);
 
-        if (!arg) {
+        if (arg == null) {
             this.listener.compileTimeError(
                 new STCompiletimeMessage(error, srcName, templateToken, t, undefined, t?.text ?? undefined),
             );
-        } else if (!arg2) {
+        } else if (arg2 == null) {
             this.listener.compileTimeError(
                 new STCompiletimeMessage(error, srcName, templateToken, t, undefined, arg),
             );
@@ -166,16 +166,18 @@ export class ErrorManager {
         this.listener.internalError(new STMessage(ErrorType.INTERNAL_ERROR, self, e, msg));
     }
 
-    private sourceName(t?: Token): string | null {
+    private sourceName(t?: Token): string | undefined {
         const input = t?.inputStream;
-        if (input == null) {
-            return null;
+        if (!input) {
+            return undefined;
         }
 
         let srcName = input.getSourceName();
-        if (srcName !== null) {
-            srcName = Misc.getFileName(srcName);
+        if (srcName === "<unknown>") { // It's tested in the unit tests that we have an empty string here.
+            return undefined;
         }
+
+        srcName = Misc.getFileName(srcName);
 
         return srcName;
     }

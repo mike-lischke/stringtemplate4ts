@@ -22,9 +22,9 @@ export class STCompiletimeMessage extends STMessage {
 
     /** token inside template */
     public token?: Token;
-    public srcName: string;
+    public srcName?: string;
 
-    public constructor(error: ErrorType, srcName: string, templateToken?: Token, t?: Token,
+    public constructor(error: ErrorType, srcName?: string, templateToken?: Token, t?: Token,
         cause?: Error, arg?: string | number, arg2?: string | number) {
         super(error, undefined, cause, arg, arg2);
         this.templateToken = templateToken;

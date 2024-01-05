@@ -289,7 +289,7 @@ export function Before<This, Args extends unknown[], Return>(
 }
 
 /**
- * Decorator function for the Before annotation.
+ * Decorator function for the After annotation.
  *
  * @param target The target method.
  * @param context The context of the decorator.

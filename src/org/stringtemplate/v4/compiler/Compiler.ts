@@ -74,10 +74,14 @@ export class Compiler {
         return Compiler.SUBTEMPLATE_PREFIX + count;
     }
 
+    public static resetSubtemplateCount(): void {
+        Compiler.subtemplateCount = 0;
+    }
+
     /** Compile full template with known or unknown formal arguments. */
     public compile(values: ICompilerParameters): CompiledST | undefined {
         const is = CharStreams.fromString(values.template);
-        is.name = values.srcName ?? values.name ?? "<anonymous>";
+        is.name = values.srcName ?? values.name ?? "";
 
         let lexer: STLexer;
         if (values.templateToken?.type === GroupParser.BIGSTRING_NO_NL) {
@@ -125,6 +129,7 @@ export class Compiler {
             }
         }
 
+        //console.log(r.toStringTree(p.ruleNames, p));
         if (p.numberOfSyntaxErrors > 0) {
             const impl = new CompiledST();
             impl.defineFormalArgs(values.args);

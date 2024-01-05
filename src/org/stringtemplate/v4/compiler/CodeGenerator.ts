@@ -35,6 +35,7 @@ import {
     TemplateContext,
 } from "./generated/STParser.js";
 import { Misc } from "../misc/Misc.js";
+import { STLexer } from "./STLexer.js";
 
 export class CodeGenerator extends TreeParser {
     public static readonly EOF = -1;
@@ -296,9 +297,7 @@ export class CodeGenerator extends TreeParser {
 
         return impl;
     }
-    // $ANTLR end "template"
 
-    // $ANTLR start "chunk"
     // CodeGenerator.g:167:1: chunk : ( element )* ;
     public handleElements(list: ElementContext[]): void {
         list.forEach((element) => {
@@ -763,8 +762,6 @@ export class CodeGenerator extends TreeParser {
         //let ID6 = null;
         //let template7 = null;
 
-        this.template_stack.peek().state.indent(context);
-
         const id = context.ID();
         const name = STGroup.getMangledRegionName(this.outermostTemplateName!, id.getText() ?? "");
         const template = this.template(context.template(), name, []);
@@ -776,8 +773,6 @@ export class CodeGenerator extends TreeParser {
         this.outermostImpl.addImplicitlyDefinedTemplate(template);
         this.emit2(context, Bytecode.INSTR_NEW, name, 0);
         this.emit(context, Bytecode.INSTR_WRITE);
-
-        this.template_stack.peek().state.emit(Bytecode.INSTR_DEDENT);
 
         /* try {
              // CodeGenerator.g:221:2: ( ^( REGION ID template[$name,null] ) )
@@ -1043,17 +1038,16 @@ export class CodeGenerator extends TreeParser {
          *  We need to update them once we see the endif.
          */
         const endRefs = new Array<number>();
-        this.template_stack.peek().state.indent(context);
 
         this.conditional(context.conditional(0)!);
 
         prevBranchOperand = this.address() + 1;
         this.emit1(context.IF(), Bytecode.INSTR_BRF, -1); // write placeholder as branch target
 
-        this.handleElements(context.template(0)!.element());
+        this.handleElements(context._t1!.element());
 
         if (context.ELSEIF().length > 0) {
-            for (let i = 0; i < context.conditional().length; ++i) {
+            for (let i = 0; i < context.ELSEIF().length; ++i) {
                 const eif = context.ELSEIF(i);
                 endRefs.push(this.address() + 1);
                 this.emit1(eif, Bytecode.INSTR_BR, -1); // br end
@@ -1069,9 +1063,7 @@ export class CodeGenerator extends TreeParser {
                 // write placeholder as branch target
                 this.emit1(ec, Bytecode.INSTR_BRF, -1);
 
-                this.handleElements(context.template(i)!.element());
-
-                prevBranchOperand = this.address() + 1;
+                this.handleElements(context._t2[i]!.element());
             }
         }
 
@@ -1083,9 +1075,7 @@ export class CodeGenerator extends TreeParser {
             this.write(prevBranchOperand, this.address());
             prevBranchOperand = -1;
 
-            if (context.template().length > 0) {
-                this.handleElements(context.template(context.template().length - 1)!.element());
-            }
+            this.handleElements(context._t3!.element());
         }
 
         if (prevBranchOperand >= 0) {
@@ -1095,8 +1085,6 @@ export class CodeGenerator extends TreeParser {
         for (const opnd of endRefs) {
             this.write(opnd, this.address());
         }
-
-        this.template_stack.peek().state.emit(Bytecode.INSTR_DEDENT);
 
         /*try {
             // CodeGenerator.g:285:2: ( ^(i= 'if' conditional chunk ( ^(eif= 'elseif' ec= conditional chunk ) )*
@@ -1444,8 +1432,15 @@ export class CodeGenerator extends TreeParser {
     public option(context: OptionContext): void {
         //const ID15 = null;
 
-        this.exprNoComma(context.exprNoComma()!);
-        this.setOption(context.ID());
+        const id = context.ID();
+        if (context.exprNoComma()) {
+            this.exprNoComma(context.exprNoComma()!);
+        } else {
+            // If no value is given use the default. The parser takes care not to allow invalid options.
+            const defVal = Compiler.defaultOptionValues.get(id.getText());
+            this.emit1(id, Bytecode.INSTR_LOAD_STR, defVal!);
+        }
+        this.setOption(id);
 
         /*try {
             // CodeGenerator.g:334:7: ( ^( '=' ID expr ) )
@@ -1478,34 +1473,56 @@ export class CodeGenerator extends TreeParser {
         //const MAP17 = null;
 
         let ne = 0;
+        let colonIndex = -1;
         context.memberExpr().forEach((memberExpr) => {
             this.memberExpr(memberExpr);
             ne++;
         });
 
-        const templateRefs = context.mapTemplateRef();
-        if (context.COMMA().length > 0) { // More than one member expression. Must have a template ref.
-            this.mapTemplateRef(templateRefs[0], ne);
+        if (ne > 1) { // More than one member expression. Must be a ZIP map.
+            this.mapTemplateRef(context.mapTemplateRef(0)!, ne);
             this.emit1(context, Bytecode.INSTR_ZIP_MAP, ne);
 
-            templateRefs.shift(); // Remove first template ref.
+            // Jump over the initial member expression and any following comma/member expression pair.
+            // This takes us to the first colon token, which is followed by the first template ref.
+            // Jump over these 2 too.
+            colonIndex = 2 * (ne - 1) + 1 + 2;
+        } else if (context.COLON().length > 0) {
+            colonIndex = 1; // Must directly follow the (only) member expression.
         }
 
-        if (templateRefs.length > 0) {
-            // Additional template refs here.
-            let nt = 0;
-            this.memberExpr(context.memberExpr(0)!);
-            templateRefs.forEach((templateRef) => {
-                this.mapTemplateRef(templateRef, 1);
-                nt++;
-            });
+        // In the next step we need to count the template refs between colon tokens.
+        if (colonIndex < 0 || colonIndex >= context.getChildCount()) {
+            // No (more) colon tokens found, so we're done.
+            return;
+        }
 
+        // Now walk over all child nodes, starting at the first colon, and handle the template refs.
+        let nt = 0;
+        for (let i = colonIndex + 1; i < context.getChildCount(); ++i) {
+            const child = context.getChild(i);
+            if (child instanceof TerminalNode) {
+                if (child.symbol.type === STLexer.COLON) {
+                    if (nt > 1) {
+                        this.emit1(context, Bytecode.INSTR_ROT_MAP, nt);
+                    } else {
+                        this.emit(context, Bytecode.INSTR_MAP);
+                    }
+
+                    nt = 0;
+                } // Otherwise it's a comma, which we can ignore.
+            } else {
+                this.mapTemplateRef(child as MapTemplateRefContext, 1);
+                ++nt;
+            }
+        }
+
+        if (nt > 0) {
             if (nt > 1) {
-                this.emit1(context, nt > 1 ? Bytecode.INSTR_ROT_MAP : Bytecode.INSTR_MAP, nt);
+                this.emit1(context, Bytecode.INSTR_ROT_MAP, nt);
             } else {
                 this.emit(context, Bytecode.INSTR_MAP);
             }
-
         }
 
         /*try {
@@ -1706,6 +1723,7 @@ export class CodeGenerator extends TreeParser {
         this.memberExpr(context.memberExpr());
         if (context.mapTemplateRef() !== null) {
             this.mapTemplateRef(context.mapTemplateRef()!, 1);
+            this.emit(context, Bytecode.INSTR_MAP);
         }
 
     }
@@ -1850,9 +1868,13 @@ export class CodeGenerator extends TreeParser {
                 this.emit(context, Bytecode.INSTR_NULL);
             }
 
-            const args26 = this.args(context.args());
+            let count = 0;
+            context.argExprList()?.arg().forEach((arg) => {
+                this.arg(arg);
+                ++count;
+            });
 
-            this.emit1(context, Bytecode.INSTR_NEW_IND, args26.n + num_exprs);
+            this.emit1(context, Bytecode.INSTR_NEW_IND, count + num_exprs);
         }
 
         /*try {
@@ -2294,15 +2316,12 @@ export class CodeGenerator extends TreeParser {
             this.emit2(context, Bytecode.INSTR_NEW, subtemplate42.name, 0);
         } else if (context.list() !== null) {
             this.list(context.list()!);
-        } else if (context.conditional() !== null) {
-            // In the original code the branch for `conditional` was not handled. Instead using a conditional
-            // as primary threw an exception. So it's probably safe to handle it here as it should be.
-            this.conditional(context.conditional()!);
         } else if (context.expr() !== null) {
             this.expr(context.expr()!.mapExpr()!);
-            this.emit(context.expr(), Bytecode.INSTR_TOSTR);
 
             if (context.argExprList() !== null) {
+                this.emit(context.expr(), Bytecode.INSTR_TOSTR);
+
                 let count = 0;
                 context.argExprList()?.arg().forEach((arg) => {
                     this.arg(arg);
@@ -2659,7 +2678,7 @@ export class CodeGenerator extends TreeParser {
                 this.arg(arg);
                 retval.n++;
             });
-        } else if (context.namedArg().length > 0) {
+        } else if (context.namedArg().length > 0 || context.ELLIPSIS() !== null) {
             this.emit(context, Bytecode.INSTR_ARGS);
             retval.namedArgs = true;
 
