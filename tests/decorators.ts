@@ -278,11 +278,35 @@ export function Before<This, Args extends unknown[], Return>(
 
     const result = function (this: This, ...args: Args): Return {
         beforeAll(() => {
-            target.call(this, ...args);
+            // Call the original method and all overridden methods in the prototype chain (in reverse order).
+            const methods: Function[] = [];
+
+            // Start with the current instance's prototype.
+            let proto = Object.getPrototypeOf(this) as { [key: string]: Function; };
+
+            // Traverse up the prototype chain.
+            while (proto != null) {
+                // If the current prototype has the method, call it.
+                if (typeof proto[target.name] === "function") {
+                    const f = proto[target.name] as Function & { originalMethod: Function; };
+
+                    // If there's no originalMethod property then this is the original method.
+                    methods.unshift(f.originalMethod ?? f);
+                }
+
+                proto = Object.getPrototypeOf(proto);
+            }
+
+            methods.forEach((method) => {
+                method.call(this, ...args);
+            });
+
         });
 
         return void 0 as Return;
     };
+
+    Object.defineProperty(result, "originalMethod", { value: target });
     Object.defineProperty(result, "isBeforeAll", { value: true });
 
     return result;
@@ -303,11 +327,34 @@ export function After<This, Args extends unknown[], Return>(
 
     const result = function (this: This, ...args: Args): Return {
         afterAll(() => {
-            target.call(this, ...args);
+            // Call the original method and all overridden methods in the prototype chain (in reverse order).
+            const methods: Function[] = [];
+
+            // Start with the current instance's prototype.
+            let proto = Object.getPrototypeOf(this) as { [key: string]: Function; };
+
+            // Traverse up the prototype chain.
+            while (proto != null) {
+                // If the current prototype has the method, call it.
+                if (typeof proto[target.name] === "function") {
+                    const f = proto[target.name] as Function & { originalMethod: Function; };
+
+                    // If there's no originalMethod property then this is the original method.
+                    methods.unshift(f.originalMethod ?? f);
+                }
+
+                proto = Object.getPrototypeOf(proto);
+            }
+
+            methods.forEach((method) => {
+                method.call(this, ...args);
+            });
         });
 
         return void 0 as Return;
     };
+
+    Object.defineProperty(result, "originalMethod", { value: target });
     Object.defineProperty(result, "isAfterAll", { value: true });
 
     return result;

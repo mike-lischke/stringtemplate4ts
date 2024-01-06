@@ -28,7 +28,7 @@ interface IPropertyDescriptorParams {
 const getAllPropertyDescriptors = (target: unknown): PropertyDescriptorMap => {
     let descriptors: PropertyDescriptorMap = {};
     while (target != null) {
-        descriptors = { ...descriptors, ...Object.getOwnPropertyDescriptors(target) };
+        descriptors = { ...Object.getOwnPropertyDescriptors(target), ...descriptors };
         target = Object.getPrototypeOf(target);
     }
 
