@@ -10,6 +10,8 @@ import { AttributeRenderer } from "../AttributeRenderer.js";
 import { DebugState } from "../DebugState.js";
 import { ErrorType } from "../misc/ErrorType.js";
 import { ModelAdaptor } from "../ModelAdaptor.js";
+import { STErrorListener } from "../STErrorListener.js";
+import { STWriter } from "../STWriter.js";
 
 /**
  * An instance of the StringTemplate. It consists primarily of
@@ -79,6 +81,13 @@ export interface IST {
     render(lineWidth?: number): string;
     render(locale: Intl.Locale, lineWidth?: number): string;
 
+    write(out: STWriter): number;
+    write(out: STWriter, locale: Intl.Locale): number;
+    write(out: STWriter, listener: STErrorListener): number;
+    write(out: STWriter, locale: Intl.Locale, listener: STErrorListener): number;
+
+    getEvents(lineWidth?: number): IInterpEvent[];
+    getEvents(locale: Intl.Locale, lineWidth?: number): IInterpEvent[];
 }
 
 /**
@@ -212,6 +221,13 @@ export interface ISTGroup {
     getModelAdaptor<T>(attributeType: Constructor<T>): ModelAdaptor<T>;
 
     lookupTemplate(name: string): ICompiledST | undefined;
+
+    defineTemplate(templateName: string, template: string): ICompiledST;
+
+    defineTemplate(name: string, argsS: string, template: string): ICompiledST;
+
+    defineTemplate(fullyQualifiedTemplateName: string, nameT: Token, args: IFormalArgument[], template: string,
+        templateToken: Token): ICompiledST;
 }
 
 /**

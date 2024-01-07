@@ -184,29 +184,25 @@ export class ST implements IST {
     public static format(template: string, ...attributes: unknown[]): string;
     public static format(lineWidth: number, template: string, ...attributes: unknown[]): string;
     public static format(...args: unknown[]): string {
-        switch (args.length) {
-            case 2: {
-                const [template, attributes] = args as [string, unknown[]];
+        let lineWidth;
+        let template;
+        let attributes;
 
-                return ST.format(STWriter.NO_WRAP, template, attributes);
-            }
-
-            case 3: {
-                const [lineWidth, template, attributes] = args as [number, string, unknown[]];
-                const st = new ST(template.replaceAll(/%([0-9]+)/, "arg$1"));
-                let i = 1;
-                for (const a of attributes) {
-                    st.add("arg" + i, a);
-                    i++;
-                }
-
-                return st.render(lineWidth);
-            }
-
-            default: {
-                throw new Error("Invalid number of arguments");
-            }
+        if (typeof args[0] === "string") {
+            [template, ...attributes] = args as [string, ...unknown[]];
+            lineWidth = STWriter.NO_WRAP;
+        } else {
+            [lineWidth, template, ...attributes] = args as [number, string, ...unknown[]];
         }
+
+        const st = new ST(template.replaceAll(/%([0-9]+)/g, "arg$1"));
+        let i = 1;
+        for (const a of attributes) {
+            st.add("arg" + i, a);
+            i++;
+        }
+
+        return st.render(lineWidth);
     }
 
     protected static convertToAttributeList(currentValue: unknown): ST.AttributeList {

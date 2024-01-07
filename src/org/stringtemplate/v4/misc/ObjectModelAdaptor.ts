@@ -13,19 +13,18 @@ import { Constructor, IMember } from "../reflection/IMember.js";
 import { Method } from "../reflection/Method.js";
 import { Field } from "../reflection/Field.js";
 
+type IndexedObject = Object & { [key: string]: unknown; };
+
 export class ObjectModelAdaptor implements ModelAdaptor<Constructor> {
     protected static readonly INVALID_MEMBER: IMember = new Field(Object, "INVALID_MEMBER");
     protected static readonly membersCache = new Map<Constructor, Map<string, IMember>>();
 
-    protected static findMember(clazz: Constructor, memberName: string): IMember | undefined {
-        if (clazz == null) {
-            throw new Error("clazz");
+    protected static findMember(model: Object, memberName: string): IMember | undefined {
+        if (memberName.length === 0) {
+            return undefined;
         }
 
-        if (!memberName) {
-            throw new Error("memberName");
-        }
-
+        const clazz = Object.getPrototypeOf(model) as Constructor;
         let members = ObjectModelAdaptor.membersCache.get(clazz);
         let member: IMember | undefined;
         if (members) {
@@ -38,20 +37,25 @@ export class ObjectModelAdaptor implements ModelAdaptor<Constructor> {
             ObjectModelAdaptor.membersCache.set(clazz, members);
         }
 
-        // try getXXX and isXXX properties, look up using reflection
-        const methodSuffix = memberName[0].toUpperCase() + memberName.substring(1);
-
-        member = ObjectModelAdaptor.tryGetMethod(clazz, "get" + methodSuffix);
-        if (!member) {
-            member = ObjectModelAdaptor.tryGetMethod(clazz, "is" + methodSuffix);
-            if (!member) {
-                member = ObjectModelAdaptor.tryGetMethod(clazz, "has" + methodSuffix);
+        if (memberName in model) {
+            // try for a visible field
+            const field = (model as never)[memberName];
+            if (typeof field !== "function" && typeof field !== "object") {
+                member = new Field(clazz, memberName);
             }
+
         }
 
         if (!member) {
-            // try for a visible field
-            member = ObjectModelAdaptor.tryGetField(clazz, memberName);
+            const o = model as IndexedObject;
+            const methodSuffix = memberName[0].toUpperCase() + memberName.substring(1);
+            if ("get" + methodSuffix in o && o["get" + methodSuffix] instanceof Function) {
+                member = new Method(clazz, o["get" + methodSuffix] as Function);
+            } else if ("is" + methodSuffix in o && o["is" + methodSuffix] instanceof Function) {
+                member = new Method(clazz, o["is" + methodSuffix] as Function);
+            } else if ("has" + methodSuffix in o && o["has" + methodSuffix] instanceof Function) {
+                member = new Method(clazz, o["has" + methodSuffix] as Function);
+            }
         }
 
         members.set(memberName, member ?? ObjectModelAdaptor.INVALID_MEMBER);
@@ -59,44 +63,32 @@ export class ObjectModelAdaptor implements ModelAdaptor<Constructor> {
         return member;
     }
 
-    protected static tryGetMethod(clazz: Constructor, methodName: string): Method | undefined {
-        const method = (clazz as never)[methodName];
-        if (typeof method === "function") {
-            return new Method(clazz, method);
-        }
-
-        return undefined;
-    }
-
-    protected static tryGetField(clazz: Constructor, fieldName: string): Field | undefined {
-        const field = (clazz as never)[fieldName];
-        if (typeof field !== "function" && typeof field !== "object") {
-            return new Field(clazz, field);
-        }
-
-        return undefined;
-    }
-
-    public getProperty(_interp: Interpreter, _self: ST, model: Object, property: unknown,
+    public getProperty(_interp: Interpreter, _self: ST, model: Object, _property: unknown,
         propertyName: string): unknown {
-        const prototype = Object.getPrototypeOf(model) as Constructor;
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-        const member = ObjectModelAdaptor.findMember(prototype, propertyName);
+        const member = ObjectModelAdaptor.findMember(model, propertyName);
         if (member) {
-            if (member instanceof Method) {
-                return member.invoke(model);
-            } else {
-                if (member instanceof Field) {
-                    return member.get(model);
+            try {
+                if (member instanceof Method) {
+                    return member.invoke(model);
+                } else {
+                    if (member instanceof Field) {
+                        return member.get(model);
+                    }
                 }
+            }
+            catch (e) {
+                if (e instanceof Error) {
+                    this.throwNoSuchProperty(Object.getPrototypeOf(model), propertyName, e);
+                }
+
+                throw e;
             }
         }
 
-        this.throwNoSuchProperty(prototype, propertyName);
+        this.throwNoSuchProperty(Object.getPrototypeOf(model), propertyName);
     }
 
-    protected throwNoSuchProperty<T extends Constructor>(clazz: T, propertyName: string): never {
-        throw new STNoSuchPropertyException(undefined, clazz, propertyName);
+    protected throwNoSuchProperty<T extends Constructor>(clazz: T, propertyName: string, cause?: Error): never {
+        throw new STNoSuchPropertyException(cause, clazz, `${clazz.constructor.name}.${propertyName}`);
     }
-
 }

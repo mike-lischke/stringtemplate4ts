@@ -60,7 +60,7 @@ export class CompilationState {
         return this.stringTable.add(s);
     }
 
-    public refAttr(templateToken: Token, id: TerminalNode | null): void {
+    public refAttr(templateToken: Token | undefined, id: TerminalNode | null): void {
         const name = id?.getText() ?? "";
         if (this.impl.formalArguments?.has(name)) {
             const arg = this.impl.formalArguments.get(name)!;

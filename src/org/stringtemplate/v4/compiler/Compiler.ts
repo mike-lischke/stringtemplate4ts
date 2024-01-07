@@ -74,10 +74,6 @@ export class Compiler {
         return Compiler.SUBTEMPLATE_PREFIX + count;
     }
 
-    public static resetSubtemplateCount(): void {
-        Compiler.subtemplateCount = 0;
-    }
-
     /** Compile full template with known or unknown formal arguments. */
     public compile(values: ICompilerParameters): CompiledST | undefined {
         const is = CharStreams.fromString(values.template);

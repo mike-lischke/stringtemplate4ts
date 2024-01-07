@@ -22,28 +22,38 @@ import { IInstanceScope, IST } from "../compiler/common.js";
 
 export class ErrorManager {
     public static DEFAULT_ERROR_LISTENER = new class implements STErrorListener {
+        public silent = false;
+
         public compileTimeError(msg: STMessage): void {
-            console.error(msg);
+            if (!this.silent) {
+                console.error(msg);
+            }
         }
 
         public runTimeError(msg: STMessage): void {
-            if (msg.error !== ErrorType.NO_SUCH_PROPERTY) { // ignore these
+            if (!this.silent && msg.error !== ErrorType.NO_SUCH_PROPERTY) { // ignore these
                 console.error(msg.toString());
             }
         }
 
         public iOError(msg: STMessage): void {
-            console.error(msg.toString());
+            if (!this.silent) {
+                console.error(msg.toString());
+            }
         }
 
         public internalError(msg: STMessage): void {
-            console.error(msg.toString());
+            if (!this.silent) {
+                console.error(msg.toString());
+            }
         }
 
         public error(s: string, e?: Error): void {
-            console.error(s);
-            if (e) {
-                console.error(e.stack);
+            if (!this.silent) {
+                console.error(s);
+                if (e) {
+                    console.error(e.stack);
+                }
             }
         }
     }();

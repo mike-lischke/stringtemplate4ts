@@ -72,7 +72,6 @@ export class TestCompiler extends BaseTest {
     @Test
     public testAttr(): void {
         const template = "hi <name>";
-        Compiler.resetSubtemplateCount();
 
         const code = new Compiler().compile({ template });
         const asmExpected = "write_str 0, load_attr 1, write";
@@ -87,7 +86,6 @@ export class TestCompiler extends BaseTest {
     @Test
     public testInclude(): void {
         const template = "hi <foo()>";
-        Compiler.resetSubtemplateCount();
 
         const code = new Compiler().compile({ template });
         const asmExpected = "write_str 0, new 1 0, write";
@@ -102,7 +100,6 @@ export class TestCompiler extends BaseTest {
     @Test
     public testIncludeWithPassThrough(): void {
         const template = "hi <foo(...)>";
-        Compiler.resetSubtemplateCount();
 
         const code = new Compiler().compile({ template });
         const asmExpected = "write_str 0, args, passthru 1, new_box_args 1, write";
@@ -116,7 +113,6 @@ export class TestCompiler extends BaseTest {
     @Test
     public testIncludeWithPartialPassThrough(): void {
         const template = "hi <foo(x=y,...)>";
-        Compiler.resetSubtemplateCount();
 
         const code = new Compiler().compile({ template });
         const asmExpected = "write_str 0, args, load_attr 1, store_arg 2, passthru 3, new_box_args 3, write";
@@ -130,11 +126,10 @@ export class TestCompiler extends BaseTest {
     @Test
     public testSuperInclude(): void {
         const template = "<super.foo()>";
-        Compiler.resetSubtemplateCount();
 
         const code = new Compiler().compile({ template });
         const asmExpected = "super_new 0 0, write";
-        code!.dump();
+        // code!.dump();
         const asmResult = code!.instrs();
         assertEquals(asmExpected, asmResult);
         const stringsExpected = "[foo]";
@@ -145,7 +140,6 @@ export class TestCompiler extends BaseTest {
     @Test
     public testSuperIncludeWithArgs(): void {
         const template = "<super.foo(a,{b})>";
-        Compiler.resetSubtemplateCount();
 
         const code = new Compiler().compile({ template });
         const asmExpected = "load_attr 0, new 1 0, super_new 2 2, write";
@@ -159,7 +153,6 @@ export class TestCompiler extends BaseTest {
     @Test
     public testSuperIncludeWithNamedArgs(): void {
         const template = "<super.foo(x=a,y={b})>";
-        Compiler.resetSubtemplateCount();
 
         const code = new Compiler().compile({ template });
         const asmExpected = "args, load_attr 0, store_arg 1, new 2 0, store_arg 3, super_new_box_args 4, write";
@@ -173,7 +166,6 @@ export class TestCompiler extends BaseTest {
     @Test
     public testIncludeWithArgs(): void {
         const template = "hi <foo(a,b)>";
-        Compiler.resetSubtemplateCount();
 
         const code = new Compiler().compile({ template });
         const asmExpected = "write_str 0, load_attr 1, load_attr 2, new 3 2, write";
@@ -187,7 +179,6 @@ export class TestCompiler extends BaseTest {
     @Test
     public testAnonIncludeArgs(): void {
         const template = "<({ a, b | <a><b>})>";
-        Compiler.resetSubtemplateCount();
 
         const code = new Compiler().compile({ template });
         const asmExpected = "new 0 0, tostr, write";
@@ -206,7 +197,6 @@ export class TestCompiler extends BaseTest {
         const g = new STGroup();
         g.errMgr = new ErrorManager(errors);
 
-        Compiler.resetSubtemplateCount();
         const _code = new Compiler(g).compile({ template });
 
         const expected = "1:3: anonymous template has 0 arg(s) but mapped across 1 value(s)" + Misc.newLine;
@@ -220,7 +210,6 @@ export class TestCompiler extends BaseTest {
         const g = new STGroup();
         g.errMgr = new ErrorManager(errors);
 
-        Compiler.resetSubtemplateCount();
         const _code = new Compiler(g).compile({ template });
         const expected = "1:5: anonymous template has 1 arg(s) but mapped across 2 value(s)" + Misc.newLine;
         assertEquals(expected, errors.toString());
@@ -233,7 +222,6 @@ export class TestCompiler extends BaseTest {
         const g = new STGroup();
         g.errMgr = new ErrorManager(errors);
 
-        Compiler.resetSubtemplateCount();
         const _code = new Compiler(g).compile({ template });
         const expected = "1:11: anonymous template has 0 arg(s) but mapped across 1 value(s)" + Misc.newLine;
         assertEquals(expected, errors.toString());
@@ -243,7 +231,6 @@ export class TestCompiler extends BaseTest {
     public testIndirectIncludeWitArgs(): void {
         const template = "hi <(foo)(a,b)>";
 
-        Compiler.resetSubtemplateCount();
         const code = new Compiler().compile({ template });
         const asmExpected = "write_str 0, load_attr 1, tostr, load_attr 2, load_attr 3, new_ind 2, write";
         const asmResult = code!.instrs();
@@ -258,7 +245,6 @@ export class TestCompiler extends BaseTest {
     public testProp(): void {
         const template = "hi <a.b>";
 
-        Compiler.resetSubtemplateCount();
         const code = new Compiler().compile({ template });
         const asmExpected = "write_str 0, load_attr 1, load_prop 2, write";
         const asmResult = code!.instrs();
@@ -273,7 +259,6 @@ export class TestCompiler extends BaseTest {
     public testProp2(): void {
         const template = "<u.id>: <u.name>";
 
-        Compiler.resetSubtemplateCount();
         const code = new Compiler().compile({ template });
         const asmExpected = "load_attr 0, load_prop 1, write, write_str 2, load_attr 0, load_prop 3, write";
         const asmResult = code!.instrs();
@@ -288,7 +273,6 @@ export class TestCompiler extends BaseTest {
     public testMap(): void {
         const template = "<name:bold()>";
 
-        Compiler.resetSubtemplateCount();
         const code = new Compiler().compile({ template });
         const asmExpected = "load_attr 0, null, new 1 1, map, write";
         const asmResult = code!.instrs();
@@ -303,7 +287,6 @@ export class TestCompiler extends BaseTest {
     public testMapAsOption(): void {
         const template = "<a; wrap=name:bold()>";
 
-        Compiler.resetSubtemplateCount();
         const code = new Compiler().compile({ template });
         const asmExpected = "load_attr 0, options, load_attr 1, null, new 2 1, map, store_option 4, write_opt";
         const asmResult = code!.instrs();
@@ -318,7 +301,6 @@ export class TestCompiler extends BaseTest {
     public testMapArg(): void {
         const template = "<name:bold(x)>";
 
-        Compiler.resetSubtemplateCount();
         const code = new Compiler().compile({ template });
         const asmExpected = "load_attr 0, null, load_attr 1, new 2 2, map, write";
         const asmResult = code!.instrs();
@@ -333,7 +315,6 @@ export class TestCompiler extends BaseTest {
     public testIndirectMapArg(): void {
         const template = "<name:(t)(x)>";
 
-        Compiler.resetSubtemplateCount();
         const code = new Compiler().compile({ template });
         const asmExpected = "load_attr 0, load_attr 1, tostr, null, load_attr 2, new_ind 2, map, write";
         const asmResult = code!.instrs();
@@ -348,7 +329,6 @@ export class TestCompiler extends BaseTest {
     public testRepeatedMap(): void {
         const template = "<name:bold():italics()>";
 
-        Compiler.resetSubtemplateCount();
         const code = new Compiler().compile({ template });
         const asmExpected = "load_attr 0, null, new 1 1, map, null, new 2 1, map, write";
         const asmResult = code!.instrs();
@@ -363,7 +343,6 @@ export class TestCompiler extends BaseTest {
     public testRepeatedMapArg(): void {
         const template = "<name:bold(x):italics(x,y)>";
 
-        Compiler.resetSubtemplateCount();
         const code = new Compiler().compile({ template });
         const asmExpected =
             "load_attr 0, null, load_attr 1, new 2 2, map, " +
@@ -380,7 +359,6 @@ export class TestCompiler extends BaseTest {
     public testRotMap(): void {
         const template = "<name:bold(),italics()>";
 
-        Compiler.resetSubtemplateCount();
         const code = new Compiler().compile({ template });
         const asmExpected = "load_attr 0, null, new 1 1, null, new 2 1, rot_map 2, write";
         const asmResult = code!.instrs();
@@ -395,7 +373,6 @@ export class TestCompiler extends BaseTest {
     public testRotMapArg(): void {
         const template = "<name:bold(x),italics()>";
 
-        Compiler.resetSubtemplateCount();
         const code = new Compiler().compile({ template });
         const asmExpected = "load_attr 0, null, load_attr 1, new 2 2, null, new 3 1, rot_map 2, write";
         const asmResult = code!.instrs();
@@ -410,7 +387,6 @@ export class TestCompiler extends BaseTest {
     public testZipMap(): void {
         const template = "<names,phones:bold()>";
 
-        Compiler.resetSubtemplateCount();
         const code = new Compiler().compile({ template });
         const asmExpected = "load_attr 0, load_attr 1, null, null, new 2 2, zip_map 2, write";
         const asmResult = code!.instrs();
@@ -425,7 +401,6 @@ export class TestCompiler extends BaseTest {
     public testZipMapArg(): void {
         const template = "<names,phones:bold(x)>";
 
-        Compiler.resetSubtemplateCount();
         const code = new Compiler().compile({ template });
         const asmExpected = "load_attr 0, load_attr 1, null, null, load_attr 2, new 3 3, zip_map 2, write";
         const asmResult = code!.instrs();
@@ -440,7 +415,6 @@ export class TestCompiler extends BaseTest {
     public testAnonMap(): void {
         const template = "<name:{n | <n>}>";
 
-        Compiler.resetSubtemplateCount();
         const code = new Compiler().compile({ template });
         const asmExpected = "load_attr 0, null, new 1 1, map, write";
         const asmResult = code!.instrs();
@@ -455,7 +429,6 @@ export class TestCompiler extends BaseTest {
     public testAnonZipMap(): void {
         const template = "<a,b:{x,y | <x><y>}>";
 
-        Compiler.resetSubtemplateCount();
         const code = new Compiler().compile({ template });
         const asmExpected = "load_attr 0, load_attr 1, null, null, new 2 2, zip_map 2, write";
         const asmResult = code!.instrs();
@@ -470,7 +443,6 @@ export class TestCompiler extends BaseTest {
     public testIf(): void {
         const template = "go: <if(name)>hi, foo<endif>";
 
-        Compiler.resetSubtemplateCount();
         const code = new Compiler().compile({ template });
         const asmExpected = "write_str 0, load_attr 1, brf 12, write_str 2";
         const asmResult = code!.instrs();
@@ -485,7 +457,6 @@ export class TestCompiler extends BaseTest {
     public testIfElse(): void {
         const template = "go: <if(name)>hi, foo<else>bye<endif>";
 
-        Compiler.resetSubtemplateCount();
         const code = new Compiler().compile({ template });
         const asmExpected =
             "write_str 0, " +
@@ -506,7 +477,6 @@ export class TestCompiler extends BaseTest {
     public testElseIf(): void {
         const template = "go: <if(name)>hi, foo<elseif(user)>a user<endif>";
 
-        Compiler.resetSubtemplateCount();
         const code = new Compiler().compile({ template });
         const asmExpected =
             "write_str 0, " +
@@ -529,7 +499,6 @@ export class TestCompiler extends BaseTest {
     public testElseIfElse(): void {
         const template = "go: <if(name)>hi, foo<elseif(user)>a user<else>bye<endif>";
 
-        Compiler.resetSubtemplateCount();
         const code = new Compiler().compile({ template });
         const asmExpected =
             "write_str 0, " +
@@ -554,7 +523,6 @@ export class TestCompiler extends BaseTest {
     public testOption(): void {
         const template = "hi <name; separator=\"x\">";
 
-        Compiler.resetSubtemplateCount();
         const code = new Compiler().compile({ template });
         const asmExpected = "write_str 0, load_attr 1, options, load_str 2, store_option 3, write_opt";
         const asmResult = code!.instrs();
@@ -569,7 +537,6 @@ export class TestCompiler extends BaseTest {
     public testOptionAsTemplate(): void {
         const template = "hi <name; separator={, }>";
 
-        Compiler.resetSubtemplateCount();
         const code = new Compiler().compile({ template });
         const asmExpected = "write_str 0, load_attr 1, options, new 2 0, store_option 3, write_opt";
         const asmResult = code!.instrs();
@@ -584,7 +551,6 @@ export class TestCompiler extends BaseTest {
     public testOptions(): void {
         const template = "hi <name; anchor, wrap=foo(), separator=\", \">";
 
-        Compiler.resetSubtemplateCount();
         const code = new Compiler().compile({ template });
         const asmExpected =
             "write_str 0, " +
@@ -610,7 +576,6 @@ export class TestCompiler extends BaseTest {
     public testEmptyList(): void {
         const template = "<[]>";
 
-        Compiler.resetSubtemplateCount();
         const code = new Compiler().compile({ template });
         const asmExpected = "list, write";
         const asmResult = code!.instrs();
@@ -625,7 +590,6 @@ export class TestCompiler extends BaseTest {
     public testList(): void {
         const template = "<[a,b]>";
 
-        Compiler.resetSubtemplateCount();
         const code = new Compiler().compile({ template });
         const asmExpected = "list, load_attr 0, add, load_attr 1, add, write";
         const asmResult = code!.instrs();
@@ -639,8 +603,6 @@ export class TestCompiler extends BaseTest {
     @Test
     public testEmbeddedRegion(): void {
         const template = "<@r>foo<@end>";
-
-        Compiler.resetSubtemplateCount();
 
         // compile as if in root dir and in template 'a'
         const code = new Compiler().compile({ name: "a", template });
@@ -656,8 +618,6 @@ export class TestCompiler extends BaseTest {
     @Test
     public testRegion(): void {
         const template = "x:<@r()>";
-
-        Compiler.resetSubtemplateCount();
 
         // compile as if in root dir and in template 'a'
         const code = new Compiler().compile({ name: "a", template });

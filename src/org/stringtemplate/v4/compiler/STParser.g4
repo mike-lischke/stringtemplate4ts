@@ -130,8 +130,7 @@ andConditional:
 ;
 
 notConditional:
-    '!' /* ^ */ notConditional
-    | memberExpr
+    '!'* memberExpr
 ;
 
 notConditionalExpr:
@@ -225,11 +224,11 @@ primary:
     | FALSE
     | subtemplate
     | list
-    //| /* {$conditional.size()>0}?=> */ '(' /* ! */ conditional ')' /* ! */
     | /* {$conditional.size()==0}?=> */ lp = '(' expr ')' (
         '(' argExprList? ')' /* -> ^(INCLUDE_IND[$lp] expr argExprList? ) */
         | /* -> ^(TO_STR[$lp] expr) */
     )
+    | /* {$conditional.size()>0}?=> */ '(' /* ! */ conditional ')' /* ! */
 ;
 
 qualifiedId: (ID /* -> ID */ | '/' ID /* -> ^('/' ID) */) (

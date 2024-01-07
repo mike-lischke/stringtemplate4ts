@@ -16,7 +16,9 @@ interface IPropertyDescriptorParams {
     enabled?: boolean;
     timeout?: number;
 
+    isBeforeEach?: boolean;
     isBeforeAll?: boolean;
+    isAfterEach?: boolean;
     isAfterAll?: boolean;
 }
 
@@ -59,34 +61,19 @@ export class TestNG {
         }
 
         const instance = new testClass();
-        let beforeAll: TestFunction | undefined;
-        let afterAll: TestFunction | undefined;
 
         const testMethods = Object.entries(descriptors).filter(([, descriptor]) => {
             const value = descriptor.value as IPropertyDescriptorParams;
-            if (value?.isBeforeAll) {
-                beforeAll = descriptor.value as TestFunction;
-
-                return false;
-            }
-
-            if (value?.isAfterAll) {
-                afterAll = descriptor.value as TestFunction;
+            if (value?.isBeforeAll || value?.isBeforeEach || value?.isAfterAll || value?.isAfterEach) {
+                // This adds a beforeAll/beforeEach etc. hook to the current test case.
+                const func = descriptor.value as TestFunction;
+                func.call(instance);
 
                 return false;
             }
 
             return value?.isTest;
         });
-
-        if (beforeAll) {
-            // This adds a beforeAll hook to the current test case.
-            beforeAll.call(instance);
-        }
-
-        if (afterAll) {
-            afterAll.call(instance);
-        }
 
         testMethods.forEach(([entry, descriptor]) => {
             try {

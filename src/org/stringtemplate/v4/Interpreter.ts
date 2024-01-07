@@ -608,7 +608,7 @@ export class Interpreter {
         const code = self?.impl?.instructions;        // which code block are we executing
         let n = 0; // how many char we write out
 
-        if (self?.impl && self.locals && code) {
+        if (self?.impl && code) {
             let prevOpcode = 0;
             let argsCount: number;
             let nameIndex: number;
@@ -666,7 +666,7 @@ export class Interpreter {
                     case Bytecode.INSTR_LOAD_LOCAL: {
                         const valueIndex = Interpreter.getShort(code, ip);
                         ip += Bytecode.OPERAND_SIZE_IN_BYTES;
-                        o = self.locals[valueIndex];
+                        o = self.locals![valueIndex];
                         if (o === ST.EMPTY_ATTR) {
                             o = undefined;
                         }
@@ -1315,7 +1315,7 @@ export class Interpreter {
         // pre compute all option values (render all the way to strings)
         let optionStrings;
         if (options) {
-            optionStrings = new Array<string>(options.length);
+            optionStrings = new Array<string | null>(options.length);
             for (let i = 0; i < Interpreter.supportedOptions.size; i++) {
                 optionStrings[i] = this.toString(out, scope, options[i]);
             }
@@ -1344,7 +1344,7 @@ export class Interpreter {
      * Generic method to emit text for an object. It differentiates
      *  between templates, iterable objects, and plain old Java objects (POJOs)
      */
-    protected writeObject(out: STWriter, scope: InstanceScope, o: unknown, options?: string[]): number {
+    protected writeObject(out: STWriter, scope: InstanceScope, o: unknown, options?: Array<string | null>): number {
         let n = 0;
         if (o == null) {
             if (options && options[InterpreterOption.NULL]) {
@@ -1391,7 +1391,8 @@ export class Interpreter {
         return n;
     }
 
-    protected writeIterator(out: STWriter, scope: InstanceScope, it?: Iterator<unknown>, options?: string[]): number {
+    protected writeIterator(out: STWriter, scope: InstanceScope, it?: Iterator<unknown>,
+        options?: Array<string | null>): number {
         if (!it) {
             return 0;
         }
@@ -1411,9 +1412,9 @@ export class Interpreter {
 
             // Emit separator if we're beyond first value
             const needSeparator = seenAValue &&
-                separator &&            // we have a separator and
-                (iterValue ||           // either we have a value
-                    options![InterpreterOption.NULL]); // or no value but null option
+                separator &&                           // we have a separator and
+                (iterValue.value != null ||            //   either we have a value
+                    options![InterpreterOption.NULL] != null); //   or no value but null option
             if (needSeparator) {
                 n += out.writeSeparator(separator ?? "");
             }
@@ -1429,10 +1430,10 @@ export class Interpreter {
         return n;
     }
 
-    protected writePOJO(out: STWriter, scope: InstanceScope, o: unknown, options?: string[]): number {
+    protected writePOJO(out: STWriter, scope: InstanceScope, o: unknown, options?: Array<string | null>): number {
         let formatString = "";
         if (options) {
-            formatString = options[InterpreterOption.FORMAT];
+            formatString = options[InterpreterOption.FORMAT] ?? "";
         }
 
         // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
@@ -1517,7 +1518,7 @@ export class Interpreter {
                 break;
             }
 
-            if (!iterValue) {
+            if (iterValue.value == null) {
                 mapped.push(undefined);
                 continue;
             }
@@ -1547,15 +1548,15 @@ export class Interpreter {
      * @param prototype
      */
     // todo: i, i0 not set unless mentioned? map:{k,v | ..}?
-    protected zipMap(scope: InstanceScope, exprs: unknown[], prototype: IST): ST.AttributeList | undefined {
-        if (!exprs || !prototype || exprs.length === 0) {
+    protected zipMap(scope: InstanceScope, exprs: unknown[], prototype?: IST): ST.AttributeList | undefined {
+        if (!prototype || exprs.length === 0) {
             return undefined; // do not apply if missing templates or empty values
         }
 
         // make everything iterable
         for (let i = 0; i < exprs.length; i++) {
             const attr = exprs[i];
-            if (attr !== null) {
+            if (attr != null) {
                 exprs[i] = this.convertAnythingToIterator(scope, attr);
             }
         }
@@ -1599,8 +1600,9 @@ export class Interpreter {
             embedded.rawSetAttribute("i", i + 1);
             for (let a = 0; a < numExprs; a++) {
                 const it = exprs[a] as Iterator<unknown>;
-                if (it) {
-                    const iteratedValue = [it];
+                const next = it?.next();
+                if (next && !next.done) {
+                    const iteratedValue = next.value;
                     if (iteratedValue) {
                         const argName = formalArgumentNames[a];
                         embedded.rawSetAttribute(argName, iteratedValue);
@@ -1657,33 +1659,36 @@ export class Interpreter {
         }
     }
 
-    protected toString(out: STWriter, scope: InstanceScope, value: unknown): string {
-        if (value != null) {
-            if (typeof value === "string") {
-                return value;
-            }
-
-            // if not string already, must evaluate it
-            const sw = new StringWriter();
-            const prototype = Object.getPrototypeOf(out) as Constructor<STWriter>;
-            const stw = Reflect.construct(prototype, [sw]);
-
-            if (this.debug && !scope.earlyEval) {
-                scope = new InstanceScope(scope, scope.st);
-                scope.earlyEval = true;
-            }
-
-            this.writeObjectNoOptions(stw, scope, value);
-
-            return sw.toString();
+    protected toString(out: STWriter, scope: InstanceScope, value: unknown): string | null {
+        if (typeof value === "string") {
+            return value;
         }
 
-        return "";
+        if (value === null) {
+            return null;
+        }
+
+        // if not string already, must evaluate it
+        const sw = new StringWriter();
+        const stw = Reflect.construct(out.constructor, [sw]) as STWriter;
+
+        if (this.debug && !scope.earlyEval) {
+            scope = new InstanceScope(scope, scope.st);
+            scope.earlyEval = true;
+        }
+
+        this.writeObjectNoOptions(stw, scope, value);
+
+        return sw.toString();
     }
 
     protected testAttributeTrue(a: unknown): boolean {
         if (a == null) {
             return false;
+        }
+
+        if (typeof a === "boolean") {
+            return a;
         }
 
         if (Array.isArray(a)) {
@@ -1720,7 +1725,8 @@ export class Interpreter {
             const self = scope.st!;
             const adapter = self.groupThatCreatedThisInstance.getModelAdaptor(o.constructor as Constructor<unknown>);
 
-            return adapter.getProperty(this, self, o, property, this.toString(out, scope, property));
+            // toString can return null, so coalesce to the string "null" in such a case.
+            return adapter.getProperty(this, self, o, property, String(this.toString(out, scope, property)));
         } catch (e) {
             if (e instanceof STNoSuchPropertyException) {
                 this.errMgr.runTimeError(this, scope, ErrorType.NO_SUCH_PROPERTY, e, o.constructor.name + "." +

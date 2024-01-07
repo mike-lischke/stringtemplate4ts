@@ -223,9 +223,9 @@ formalArg[args: FormalArgument[]]:
 
 dictDef:
     ID '::=' dict {
-if ( this.currentGroup.rawGetDictionary($ID.text)!=null ) {
+if ( this.currentGroup.rawGetDictionary($ID.text)) {
     this.currentGroup.errMgr.compileTimeError(ErrorType.MAP_REDEFINITION, undefined, $ID);
-} else if ( this.currentGroup.rawGetTemplate($ID.text)!=null ) {
+} else if ( this.currentGroup.rawGetTemplate($ID.text)) {
     this.currentGroup.errMgr.compileTimeError(ErrorType.TEMPLATE_REDEFINITION_AS_MAP, undefined, $ID);
 } else {
     this.currentGroup.defineDictionary($ID.text, $dict.mapping!);
@@ -235,8 +235,8 @@ if ( this.currentGroup.rawGetDictionary($ID.text)!=null ) {
 
 dict
     returns[mapping: Map<string, unknown> | undefined]
-    @init {const mapping = new Map<string, unknown>();}:
-    '[' dictPairs[mapping] ']'
+    @init {$mapping = new Map<string, unknown>();}:
+    '[' dictPairs[$mapping] ']'
 ;
 
 dictPairs[mapping: Map<string, unknown>]:

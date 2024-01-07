@@ -54,10 +54,10 @@ const config: Config = {
     // An object that configures minimum threshold enforcement for coverage results
     coverageThreshold: {
         global: {
-            statements: 50,
-            branches: 55,
-            functions: 40,
-            lines: 50,
+            statements: 75,
+            branches: 72,
+            functions: 60,
+            lines: 75,
         },
     },
 

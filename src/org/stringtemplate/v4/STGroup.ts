@@ -384,7 +384,7 @@ export class STGroup {
                 }
 
                 const list = argsS.split(",");
-                const compileArgs = new Array<FormalArgument>();
+                compileArgs = new Array<FormalArgument>();
                 for (const entry of list) {
                     compileArgs.push(new FormalArgument(entry));
                 }

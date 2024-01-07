@@ -287,7 +287,7 @@ export class STLexer implements TokenSource {
     }
 
     protected consume(): void {
-        if (this.c === 0x10) { // \n
+        if (this.c === 0x0A) { // \n
             this.#currentLine += 1;
             this.#currentColumn = 0;
         } else {
@@ -673,21 +673,21 @@ export class STLexer implements TokenSource {
             this.lexerError("invalid hex digit: '" + this.currentCharToString() + "'");
         }
 
-        codePoint = codePoint << 4 + convertCharCodeToNumber();
+        codePoint = (codePoint << 4) + convertCharCodeToNumber();
 
         this.consume();
         if (!this.currentCharIsHexDigit()) {
             this.lexerError("invalid hex digit: '" + this.currentCharToString() + "'");
         }
 
-        codePoint = codePoint << 4 + convertCharCodeToNumber();
+        codePoint = (codePoint << 4) + convertCharCodeToNumber();
 
         this.consume();
         if (!this.currentCharIsHexDigit()) {
             this.lexerError("invalid hex digit: '" + this.currentCharToString() + "'");
         }
 
-        codePoint = codePoint << 4 + convertCharCodeToNumber();
+        codePoint = (codePoint << 4) + convertCharCodeToNumber();
 
         // ESCAPE kills >
         const uc = String.fromCodePoint(codePoint);

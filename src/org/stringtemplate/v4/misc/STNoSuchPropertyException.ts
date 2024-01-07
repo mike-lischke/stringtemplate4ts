@@ -12,7 +12,8 @@ import { Constructor } from "../reflection/IMember.js";
 export class STNoSuchPropertyException<T> extends STException {
     public o?: Constructor<T>;
     public propertyName?: string;
-    public constructor(e?: Error, o?: Constructor<T>, propertyName?: string) {
+
+    public constructor(e?: Error | undefined, o?: Constructor<T>, propertyName?: string) {
         super(undefined, e);
         this.o = o;
         this.propertyName = propertyName;
@@ -20,7 +21,7 @@ export class STNoSuchPropertyException<T> extends STException {
 
     public getMessage(): string {
         if (this.o) {
-            return "object " + this.o.name + " has no " + this.propertyName + " property";
+            return "object " + this.o.constructor.name + " has no " + this.propertyName + " property";
         } else {
             return "no such property: " + this.propertyName;
         }

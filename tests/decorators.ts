@@ -81,6 +81,37 @@ function executeTarget(this: unknown, target: Function, expectedExceptions?: Arr
     }
 }
 
+/**
+ * Collects and calls a list of all methods with the name of the target function in the prototype chain of the given
+ * instance.
+ * The list is ordered from the top of the prototype chain to the current instance and contains the original
+ * methods (not the decorator methods).
+ */
+function executeTargetWithInheritance<This>(this: This, target: Function, ...args: unknown[]) {
+    // Call the original method and all overridden methods in the prototype chain (in reverse order).
+    const methods: Function[] = [];
+
+    // Start with the current instance's prototype.
+    let proto = Object.getPrototypeOf(this) as { [key: string]: Function; };
+
+    // Traverse up the prototype chain.
+    while (proto != null) {
+        // If the current prototype has the method, call it.
+        if (typeof proto[target.name] === "function") {
+            const f = proto[target.name] as Function & { originalMethod: Function; };
+
+            // If there's no originalMethod property then this is the original method.
+            methods.unshift(f.originalMethod ?? f);
+        }
+
+        proto = Object.getPrototypeOf(proto);
+    }
+
+    methods.forEach((method) => {
+        method.call(this, ...args);
+    });
+};
+
 export function DataProvider<This, Args extends unknown[], Return>(
     target: DecoratorTargetFunction<This, Args, Return>,
     context: ClassMethodDecoratorContext<This, DecoratorTargetFunction<This, Args, Return>>
@@ -264,43 +295,48 @@ export function Test<T extends ITestParameters, This, Args extends unknown[], Re
 }
 
 /**
- * Decorator function for the Before annotation.
+ * Decorator function for the BeforeEach annotation.
  *
  * @param target The target method.
  * @param context The context of the decorator.
  *
  * @returns a method decorator.
  */
-export function Before<This, Args extends unknown[], Return>(
+export function BeforeEach<This, Args extends unknown[], Return>(
     target: DecoratorTargetFunction<This, Args, Return>,
     context: ClassMethodDecoratorContext<This, DecoratorTargetFunction<This, Args, Return>>,
 ): DecoratorTargetFunction<This, Args, Return> {
 
     const result = function (this: This, ...args: Args): Return {
-        beforeAll(() => {
-            // Call the original method and all overridden methods in the prototype chain (in reverse order).
-            const methods: Function[] = [];
+        beforeEach(() => {
+            executeTargetWithInheritance.call(this, target, ...args);
+        });
 
-            // Start with the current instance's prototype.
-            let proto = Object.getPrototypeOf(this) as { [key: string]: Function; };
+        return void 0 as Return;
+    };
 
-            // Traverse up the prototype chain.
-            while (proto != null) {
-                // If the current prototype has the method, call it.
-                if (typeof proto[target.name] === "function") {
-                    const f = proto[target.name] as Function & { originalMethod: Function; };
+    Object.defineProperty(result, "originalMethod", { value: target });
+    Object.defineProperty(result, "isBeforeEach", { value: true });
 
-                    // If there's no originalMethod property then this is the original method.
-                    methods.unshift(f.originalMethod ?? f);
-                }
+    return result;
+}
 
-                proto = Object.getPrototypeOf(proto);
-            }
+/**
+ * Decorator function for the BeforeAll annotation.
+ *
+ * @param target The target method.
+ * @param context The context of the decorator.
+ *
+ * @returns a method decorator.
+ */
+export function BeforeAll<This, Args extends unknown[], Return>(
+    target: DecoratorTargetFunction<This, Args, Return>,
+    context: ClassMethodDecoratorContext<This, DecoratorTargetFunction<This, Args, Return>>,
+): DecoratorTargetFunction<This, Args, Return> {
 
-            methods.forEach((method) => {
-                method.call(this, ...args);
-            });
-
+    const result = function (this: This, ...args: Args): Return {
+        beforeEach(() => {
+            executeTargetWithInheritance.call(this, target, ...args);
         });
 
         return void 0 as Return;
@@ -313,42 +349,47 @@ export function Before<This, Args extends unknown[], Return>(
 }
 
 /**
- * Decorator function for the After annotation.
+ * Decorator function for the AfterEach annotation.
  *
  * @param target The target method.
  * @param context The context of the decorator.
  *
  * @returns a method decorator.
  */
-export function After<This, Args extends unknown[], Return>(
+export function AfterEach<This, Args extends unknown[], Return>(
     target: DecoratorTargetFunction<This, Args, Return>,
     context: ClassMethodDecoratorContext<This, DecoratorTargetFunction<This, Args, Return>>,
 ): DecoratorTargetFunction<This, Args, Return> {
 
     const result = function (this: This, ...args: Args): Return {
-        afterAll(() => {
-            // Call the original method and all overridden methods in the prototype chain (in reverse order).
-            const methods: Function[] = [];
+        afterEach(() => {
+            executeTargetWithInheritance.call(this, target, ...args);
+        });
 
-            // Start with the current instance's prototype.
-            let proto = Object.getPrototypeOf(this) as { [key: string]: Function; };
+        return void 0 as Return;
+    };
 
-            // Traverse up the prototype chain.
-            while (proto != null) {
-                // If the current prototype has the method, call it.
-                if (typeof proto[target.name] === "function") {
-                    const f = proto[target.name] as Function & { originalMethod: Function; };
+    Object.defineProperty(result, "originalMethod", { value: target });
+    Object.defineProperty(result, "isAfterEach", { value: true });
 
-                    // If there's no originalMethod property then this is the original method.
-                    methods.unshift(f.originalMethod ?? f);
-                }
+    return result;
+}
+/**
+ * Decorator function for the AfterAll annotation.
+ *
+ * @param target The target method.
+ * @param context The context of the decorator.
+ *
+ * @returns a method decorator.
+ */
+export function AfterAll<This, Args extends unknown[], Return>(
+    target: DecoratorTargetFunction<This, Args, Return>,
+    context: ClassMethodDecoratorContext<This, DecoratorTargetFunction<This, Args, Return>>,
+): DecoratorTargetFunction<This, Args, Return> {
 
-                proto = Object.getPrototypeOf(proto);
-            }
-
-            methods.forEach((method) => {
-                method.call(this, ...args);
-            });
+    const result = function (this: This, ...args: Args): Return {
+        afterEach(() => {
+            executeTargetWithInheritance.call(this, target, ...args);
         });
 
         return void 0 as Return;

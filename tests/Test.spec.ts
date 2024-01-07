@@ -8,6 +8,8 @@ import { TestAggregates } from "./org/stringtemplate/v4/test/TestAggregates.js";
 import { TestAttributes } from "./org/stringtemplate/v4/test/TestAttributes.js";
 import { TestBuggyDefaultValueRaisesNPETest } from "./org/stringtemplate/v4/test/TestBuggyDefaultValueRaisesNPETest.js";
 import { TestCompiler } from "./org/stringtemplate/v4/test/TestCompiler.js";
+import { TestCoreBasics } from "./org/stringtemplate/v4/test/TestCoreBasics.js";
+import { TestDebugEvents } from "./org/stringtemplate/v4/test/TestDebugEvents.js";
 import { TestTemplateNames } from "./org/stringtemplate/v4/test/TestTemplateNames.js";
 import { TestTokensForDollarDelimiters } from "./org/stringtemplate/v4/test/TestTokensForDollarDelimiters.js";
 
@@ -29,6 +31,16 @@ describe("TestBuggyDefaultValueRaisesNPETest", () => {
 describe("TestCompiler", () => {
     const testNG = new TestNG();
     testNG.run(TestCompiler);
+});
+
+describe("TestCoreBasics", () => {
+    const testNG = new TestNG();
+    testNG.run(TestCoreBasics);
+});
+
+describe("TestDebugEvents", () => {
+    const testNG = new TestNG();
+    testNG.run(TestDebugEvents);
 });
 
 describe("TestTemplateNames", () => {

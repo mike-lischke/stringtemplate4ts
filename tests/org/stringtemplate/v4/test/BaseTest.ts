@@ -15,7 +15,7 @@ import { CharStreams, CommonToken, CommonTokenStream, Token } from "antlr4ng";
 
 import { Compiler, ST, STGroup, STLexer } from "../../../../../src/index.js";
 import { assertEquals } from "../../../../junit.js";
-import { After, Before } from "../../../../decorators.js";
+import { AfterEach, BeforeEach } from "../../../../decorators.js";
 
 export abstract class BaseTest {
     public static readonly pathSep = path.delimiter;
@@ -137,7 +137,7 @@ export abstract class BaseTest {
         return this.#tmpdir;
     }
 
-    @Before
+    @BeforeEach
     public setUp(): void {
         STGroup.defaultGroup = new STGroup();
         Compiler.subtemplateCount = 0;
@@ -147,6 +147,10 @@ export abstract class BaseTest {
         this.#tmpdir = path.resolve(baseTestDirectory, testDirectory);
     };
 
+    @AfterEach
+    public shutDown(): void {
+        BaseTest.deleteFile(this.#tmpdir);
+    }
     /**
      * Creates a file "Test.java" in the directory dirName containing a main
      * method with content starting as given by main.
@@ -357,10 +361,6 @@ export abstract class BaseTest {
             }
         */
 
-    @After
-    public shutDown(): void {
-        BaseTest.deleteFile(this.#tmpdir);
-    }
 }
 
 // eslint-disable-next-line @typescript-eslint/no-namespace, no-redeclare

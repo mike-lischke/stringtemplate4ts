@@ -225,7 +225,7 @@ export class CodeGenerator extends TreeParser {
     }
 
     public refAttr(id: TerminalNode | null): void {
-        this.template_stack.peek().state.refAttr(this.templateToken!, id);
+        this.template_stack.peek().state.refAttr(this.templateToken, id);
     }
 
     public defineString(s: string): number {
@@ -827,8 +827,9 @@ export class CodeGenerator extends TreeParser {
         retval.name = Compiler.getNewSubtemplateName();
         const args = new Array<FormalArgument>();
 
-        if (context.ID().length === 0) {
-            // No arguments.
+        if (context.template() === null) {
+            // Confusing original code: according to the grammar there can be no subtemplate without a template.
+            // However, the original tree grammar had a case for this, so we keep it.
             const sub = new CompiledST();
             sub.name = retval.name;
             sub.template = "";
@@ -1216,7 +1217,7 @@ export class CodeGenerator extends TreeParser {
         // handling for negation. This is fixed here.
         this.andConditional(context.andConditional(0)!);
         if (context.OR().length > 0) {
-            for (let i = 0; i < context.andConditional().length; ++i) {
+            for (let i = 0; i < context.andConditional().length - 1; ++i) {
                 this.andConditional(context.andConditional(i + 1)!);
                 this.emit(context.OR(i), Bytecode.INSTR_OR);
             }
@@ -1351,7 +1352,7 @@ export class CodeGenerator extends TreeParser {
     public andConditional(context: AndConditionalContext): void {
         this.notConditional(context.notConditional(0)!);
         if (context.AND().length > 0) {
-            for (let i = 0; i < context.notConditional().length; ++i) {
+            for (let i = 0; i < context.notConditional().length - 1; ++i) {
                 this.notConditional(context.notConditional(i + 1)!);
                 this.emit(context.AND(i), Bytecode.INSTR_AND);
             }
@@ -1359,12 +1360,10 @@ export class CodeGenerator extends TreeParser {
     }
 
     public notConditional(context: NotConditionalContext): void {
-        if (context.BANG() !== null) {
-            this.notConditional(context.notConditional()!);
-            this.emit(context.BANG(), Bytecode.INSTR_NOT);
-        } else {
-            this.memberExpr(context.memberExpr()!);
-        }
+        this.memberExpr(context.memberExpr()!);
+        context.BANG().forEach((bang) => {
+            this.emit(bang, Bytecode.INSTR_NOT);
+        });
     }
 
     // CodeGenerator.g:330:1: exprOptions : ^( OPTIONS ( option )* ) ;
@@ -1730,10 +1729,20 @@ export class CodeGenerator extends TreeParser {
 
     public memberExpr(context: MemberExprContext): void {
         this.includeExpr(context.includeExpr()!);
-        if (context.children!.length > 1) {
-            // Some optional property accessors. They alway a pair (dot + expression/id).
-            for (let i = 2; i < context.children!.length; i += 2) {
-                this.prop(context.children![i]);
+        let index = 1;
+
+        while (index < context.children!.length) {
+            // Jump over the dot.
+            ++index;
+
+            const child = context.children![index++] as TerminalNode;
+            if (child.symbol.type === STLexer.ID) {
+                // A simple ID.
+                this.prop(child);
+            } else {
+                // A map expression in parentheses.
+                this.prop(context.children![index]);
+                index += 2;
             }
         }
     }
@@ -2316,6 +2325,8 @@ export class CodeGenerator extends TreeParser {
             this.emit2(context, Bytecode.INSTR_NEW, subtemplate42.name, 0);
         } else if (context.list() !== null) {
             this.list(context.list()!);
+        } else if (context.conditional() !== null) {
+            this.conditional(context.conditional()!);
         } else if (context.expr() !== null) {
             this.expr(context.expr()!.mapExpr()!);
 
