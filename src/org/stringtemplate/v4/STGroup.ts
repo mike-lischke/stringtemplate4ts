@@ -36,6 +36,7 @@ import { GroupParser } from "./compiler/generated/GroupParser.js";
 import { Compiler } from "./compiler/Compiler.js";
 import { GroupLexer } from "./compiler/generated/GroupLexer.js";
 import { cloneStringTemplate, createStringTemplate } from "./compiler/factories.js";
+import { HashMap } from "./support/HashMap.js";
 
 /**
  * A directory or directory tree of {@code .st} template files and/or group files.
@@ -150,6 +151,7 @@ export class STGroup {
         const registry = new TypeRegistry<Constructor, ModelAdaptor<Object>>();
         registry.put(Object, new ObjectModelAdaptor());
         registry.put(ST, new STModelAdaptor());
+        registry.put(HashMap, new MapModelAdaptor());
         registry.put(Map, new MapModelAdaptor());
         registry.put(Aggregate, new AggregateModelAdaptor());
         this.adaptors = registry;
@@ -351,8 +353,8 @@ export class STGroup {
     /** for testing */
     public defineTemplate(templateName: string, template: string): ICompiledST;
     public defineTemplate(name: string, argsS: string, template: string): ICompiledST;
-    public defineTemplate(fullyQualifiedTemplateName: string, nameT: Token, args: FormalArgument[], template: string,
-        templateToken: Token): ICompiledST;
+    public defineTemplate(fullyQualifiedTemplateName: string, nameT: Token, args: FormalArgument[] | undefined,
+        template: string, templateToken?: Token): ICompiledST;
     public defineTemplate(...args: unknown[]): ICompiledST | undefined {
         let fullyQualifiedTemplateName;
         let nameT;
@@ -397,7 +399,7 @@ export class STGroup {
 
             case 5: {
                 [fullyQualifiedTemplateName, nameT, compileArgs, template, templateToken] =
-                    args as [string, Token, FormalArgument[], string, Token];
+                    args as [string, Token, FormalArgument[] | undefined, string, Token | undefined];
 
                 break;
             }
@@ -496,7 +498,7 @@ export class STGroup {
         templateToken: Token,
         template: string,
         nameToken: Token,
-        args: FormalArgument[]): void {
+        args?: FormalArgument[]): void {
         try {
             if (regionSurroundingTemplateName) {
                 this.defineRegion(regionSurroundingTemplateName, nameToken, template, templateToken);
@@ -718,9 +720,14 @@ export class STGroup {
         try {
             const content = fs.readFileSync(fileName, { encoding: this.encoding as BufferEncoding });
             const stream = CharStreams.fromString(content.toString());
+            stream.name = path.basename(fileName);
             const lexer = new GroupLexer(stream);
             const tokens = new CommonTokenStream(lexer);
             parser = new GroupParser(tokens);
+
+            // No error listeners needed here. The group grammar defines own catch clauses for logging errors.
+            parser.removeErrorListeners();
+
             parser.group(this, prefix);
         } catch (e) {
             if (e instanceof Error) {

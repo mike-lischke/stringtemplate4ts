@@ -62,7 +62,7 @@
 // cspell: disable
 
 import { BaseTest } from "./BaseTest.js";
-import { ErrorBuffer, STGroup, Compiler, ErrorManager, Misc } from "../../../../../src/index.js";
+import { ErrorBuffer, STGroup, Compiler, ErrorManager } from "../../../../../src/index.js";
 import { assertEquals } from "../../../../junit.js";
 
 import { Test } from "../../../../decorators.js";
@@ -199,7 +199,7 @@ export class TestCompiler extends BaseTest {
 
         const _code = new Compiler(g).compile({ template });
 
-        const expected = "1:3: anonymous template has 0 arg(s) but mapped across 1 value(s)" + Misc.newLine;
+        const expected = "[1:3: anonymous template has 0 arg(s) but mapped across 1 value(s)]";
         assertEquals(expected, errors.toString());
     }
 
@@ -211,7 +211,7 @@ export class TestCompiler extends BaseTest {
         g.errMgr = new ErrorManager(errors);
 
         const _code = new Compiler(g).compile({ template });
-        const expected = "1:5: anonymous template has 1 arg(s) but mapped across 2 value(s)" + Misc.newLine;
+        const expected = "[1:5: anonymous template has 1 arg(s) but mapped across 2 value(s)]";
         assertEquals(expected, errors.toString());
     }
 
@@ -223,7 +223,7 @@ export class TestCompiler extends BaseTest {
         g.errMgr = new ErrorManager(errors);
 
         const _code = new Compiler(g).compile({ template });
-        const expected = "1:11: anonymous template has 0 arg(s) but mapped across 1 value(s)" + Misc.newLine;
+        const expected = "[1:11: anonymous template has 0 arg(s) but mapped across 1 value(s)]";
         assertEquals(expected, errors.toString());
     }
 

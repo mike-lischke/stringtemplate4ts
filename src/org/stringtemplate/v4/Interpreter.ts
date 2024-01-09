@@ -31,6 +31,7 @@ import { constructorFromUnknown, isIterator } from "./support/helpers.js";
 import { printf } from "fast-printf";
 import { StringWriter } from "./support/StringWriter.js";
 import { IErrorManager, IInstanceScope, IST, ISTGroup } from "./compiler/common.js";
+import { HashMap } from "./support/HashMap.js";
 
 export enum InterpreterOption {
     ANCHOR = 0,
@@ -870,7 +871,7 @@ export class Interpreter {
                     }
 
                     case Bytecode.INSTR_ARGS: {
-                        this.operands[++this.sp] = new Map<string, unknown>();
+                        this.operands[++this.sp] = new HashMap<string, unknown>();
 
                         break;
                     }
@@ -879,7 +880,7 @@ export class Interpreter {
                         nameIndex = Interpreter.getShort(code, ip);
                         ip += Bytecode.OPERAND_SIZE_IN_BYTES;
                         name = self.impl.strings[nameIndex];
-                        const attrs = this.operands[this.sp] as Map<string, unknown>;
+                        const attrs = this.operands[this.sp] as HashMap<string, unknown>;
                         this.passthru(scope, name, attrs);
 
                         break;
@@ -1166,7 +1167,7 @@ export class Interpreter {
     protected storeArgs(scope: IInstanceScope, attrs: Map<string, unknown>, st?: IST): void;
     protected storeArgs(scope: IInstanceScope, argCount: number, st?: IST): void;
     protected storeArgs(...args: unknown[]): void {
-        if (args[1] instanceof Map) {
+        if (typeof args[1] !== "number") {
             const [scope, attrs, st] = args as [IInstanceScope, Map<string, unknown>, IST | undefined];
 
             let noSuchAttributeReported = false;

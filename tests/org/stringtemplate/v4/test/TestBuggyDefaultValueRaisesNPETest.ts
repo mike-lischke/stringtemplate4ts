@@ -8,7 +8,7 @@
 // cspell: disable
 
 import { BaseTest } from "./BaseTest.js";
-import { ErrorBuffer, Misc, STGroupFile } from "../../../../../src/index.js";
+import { ErrorBuffer, STGroupFile } from "../../../../../src/index.js";
 
 import { Test } from "../../../../decorators.js";
 import { assertEquals } from "../../../../junit.js";
@@ -34,6 +34,6 @@ export class TestBuggyDefaultValueRaisesNPETest extends BaseTest {
         //const s = st.render();
 
         // Check the errors. This contained an "NullPointerException" before
-        assertEquals("t.stg 1:12: extraneous input ')' expecting {';', RDELIM}" + Misc.newLine, errors.toString());
+        assertEquals("[t.stg 1:12: extraneous input ')' expecting {';', RDELIM}]", errors.toString());
     }
 }

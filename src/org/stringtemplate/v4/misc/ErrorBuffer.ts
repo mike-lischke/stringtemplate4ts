@@ -12,32 +12,40 @@ import { STErrorListener } from "../STErrorListener.js";
 
 /** Used during tests to track all errors. */
 export class ErrorBuffer implements STErrorListener {
-    public errors = new Array<STMessage>();
+    #errors = new Array<STMessage>();
 
     public compileTimeError(msg: STMessage): void {
-        this.errors.push(msg);
+        this.#errors.push(msg);
     }
 
     public runTimeError(msg: STMessage): void {
         if (msg.error !== ErrorType.NO_SUCH_PROPERTY) { // ignore these
-            this.errors.push(msg);
+            this.#errors.push(msg);
         }
     }
 
     public iOError(msg: STMessage): void {
-        this.errors.push(msg);
+        this.#errors.push(msg);
     }
 
     public internalError(msg: STMessage): void {
-        this.errors.push(msg);
+        this.#errors.push(msg);
     }
 
     public toString(): string {
-        let buf = "";
-        for (const m of this.errors) {
-            buf += m.toString() + Misc.newLine;
+        const list: string[] = [];
+        for (const m of this.#errors) {
+            list.push(m.toString());
         }
 
-        return buf;
+        return "[" + list.join(Misc.newLine) + "]";
+    }
+
+    public add(msg: STMessage): void {
+        this.#errors.push(msg);
+    }
+
+    public get(index: number): STMessage {
+        return this.#errors[index];
     }
 }

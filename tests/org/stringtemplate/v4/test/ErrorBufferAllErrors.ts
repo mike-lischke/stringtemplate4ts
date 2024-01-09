@@ -14,6 +14,6 @@ import { Override } from "../../../../decorators.js";
 export class ErrorBufferAllErrors extends ErrorBuffer {
     @Override
     public override runTimeError(msg: STMessage): void {
-        this.errors.push(msg);
+        this.add(msg);
     }
 }

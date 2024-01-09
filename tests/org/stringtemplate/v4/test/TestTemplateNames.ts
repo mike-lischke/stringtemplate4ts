@@ -141,7 +141,7 @@ export class TestTemplateNames extends BaseTest {
         const result = template.render();
         assertEquals(expected, result);
 
-        //assertEquals("[]", errors.errors.toString());
+        assertEquals("[]", errors.toString());
     }
 
     // TODO: test <a/b()> is RELATIVE NOT ABSOLUTE

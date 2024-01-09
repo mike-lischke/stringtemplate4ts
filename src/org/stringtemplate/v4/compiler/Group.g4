@@ -149,7 +149,7 @@ delimiters:
 ;
 
 /**
- * Match template and dictionary defs outside of (...)+ loop in this.currentGroup.
+ * Match template and dictionary defs outside of (...)+ loop in group.
  * The key is catching while still in the loop; must keep prediction of
  * elements separate from "stay in loop" prediction.
  */
@@ -192,10 +192,10 @@ if ($name.index >= 0) { // if ID missing
         enclosingTemplateName = prefix + enclosingTemplateName;
     }
 
-    // @ts-ignore, because ST4 doesn't allow a non-null assertion with attribute references.
-    const formalArgs = $formalArgs.args;
+    // @ts-ignore, because ANTLR4 doesn't allow a non-null assertion with attribute references.
+    let formalArgs; try { formalArgs = $formalArgs.args; } catch { }
     this.currentGroup.defineTemplateOrRegion(templateName, enclosingTemplateName, templateToken,
-                                    template, $name, formalArgs);
+        template, $name, formalArgs);
 }
 }
     | alias = ID '::=' target = ID {this.currentGroup.defineTemplateAlias($alias, $target);}
@@ -229,8 +229,7 @@ if ( this.currentGroup.rawGetDictionary($ID.text)) {
     this.currentGroup.errMgr.compileTimeError(ErrorType.TEMPLATE_REDEFINITION_AS_MAP, undefined, $ID);
 } else {
     this.currentGroup.defineDictionary($ID.text, $dict.mapping!);
-}
-}
+}}
 ;
 
 dict
@@ -255,7 +254,11 @@ defaultValuePair[mapping: Map<string, unknown>]:
 ;
 
 keyValuePair[Map<string, unknown> mapping]:
-    STRING ':' keyValue {mapping.set(Misc.replaceEscapes(Misc.strip($STRING.text, 1)), $keyValue.value);}
+    STRING ':' keyValue? {
+    // @ts-ignore, because ANTLR4 doesn't allow a non-null assertion with attribute references.
+    const value = $keyValue.value;
+    mapping.set(Misc.replaceEscapes(Misc.strip($STRING.text, 1)), value);
+}
 ;
 
 keyValue
@@ -267,7 +270,7 @@ keyValue
     | TRUE {$value = true;}
     | FALSE {$value = false;}
     | '[' ']' {$value = [];}
-    | ID {$value = STGroup.DICT_KEY;}
+    | {this.inputStream.LT(1)!.text === "key" }? ID {$value = STGroup.DICT_KEY;}
 ;
 catch[re] {
 this.error("missing value for key at '" + this.inputStream.LT(1)!.text + "'");

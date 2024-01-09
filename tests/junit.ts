@@ -22,7 +22,15 @@ export const assertThrows = <T extends Throwable>(expected: new (message: string
 };
 
 export const assertTrue = (value: boolean): void => {
-    if (!value) {
-        throw new Error(`Expected true but got false`);
-    }
+    expect(value).toBe(true);
 };
+
+export class Assert {
+    public static assertNotNull<T>(value: T | null): void {
+        expect(value).not.toBeNull();
+    }
+
+    public static assertEquals<T>(expected: T | null, actual: T | null): void {
+        expect(actual).toEqual(expected);
+    }
+}

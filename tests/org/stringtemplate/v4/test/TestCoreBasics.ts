@@ -175,7 +175,7 @@ export class TestCoreBasics extends BaseTest {
         const result = st?.render();
         assertEquals(expected, result);
 
-        const msg = errors.errors[0] as STRuntimeMessage;
+        const msg = errors.get(0) as STRuntimeMessage;
         const e = msg.cause as STNoSuchPropertyException<unknown>;
         assertEquals("User.qqq", e.propertyName);
     };
@@ -193,7 +193,7 @@ export class TestCoreBasics extends BaseTest {
         const result = st?.render();
         assertEquals(expected, result);
 
-        const msg = errors.errors[0] as STRuntimeMessage;
+        const msg = errors.get(0) as STRuntimeMessage;
         const e = msg.cause as STNoSuchPropertyException<unknown>;
         assertEquals("User.null", e.propertyName);
     };
@@ -211,7 +211,7 @@ export class TestCoreBasics extends BaseTest {
         const result = st?.render();
         assertEquals(expected, result);
 
-        const msg = errors.errors[0] as STRuntimeMessage;
+        const msg = errors.get(0) as STRuntimeMessage;
         const e = msg.cause as STNoSuchPropertyException<unknown>;
         assertEquals("User.100", e.propertyName);
     };

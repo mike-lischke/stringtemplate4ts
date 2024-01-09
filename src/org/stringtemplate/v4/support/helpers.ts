@@ -5,6 +5,16 @@
 
 import { Constructor } from "../reflection/IMember.js";
 
+/** Expresses the Java concept of object equality (equality based on the content of two objects). */
+export interface IEquatable {
+    equals(obj: unknown): boolean;
+    hashCode(): number;
+}
+
+export const isEquatable = (candidate: unknown): candidate is IEquatable => {
+    return typeof (candidate as IEquatable).equals === "function";
+};
+
 /**
  * A method to determine if a class is a super class of another class.
  *

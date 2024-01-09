@@ -226,8 +226,8 @@ export interface ISTGroup {
 
     defineTemplate(name: string, argsS: string, template: string): ICompiledST;
 
-    defineTemplate(fullyQualifiedTemplateName: string, nameT: Token, args: IFormalArgument[], template: string,
-        templateToken: Token): ICompiledST;
+    defineTemplate(fullyQualifiedTemplateName: string, nameT: Token, args?: IFormalArgument[], template?: string,
+        templateToken?: Token): ICompiledST;
 }
 
 /**
@@ -376,9 +376,7 @@ export enum RegionType {
 export const isCompiledST = (value: unknown): value is ICompiledST => {
     const candidate = value as ICompiledST;
 
-    return (candidate !== undefined)
-        && (candidate.name !== undefined)
-        && (candidate.prefix !== undefined) && (candidate.template !== undefined);
+    return (candidate != null) && (candidate.instructions !== undefined);
 };
 
 export namespace ISTGroup {
