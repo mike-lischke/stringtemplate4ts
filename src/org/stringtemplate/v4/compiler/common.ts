@@ -189,6 +189,10 @@ export interface ISTGroup {
     delimiterStartChar: string;
     delimiterStopChar: string;
 
+    iterateAcrossValues: boolean;
+
+    getName(): string;
+
     rawGetDictionary(name: string): Map<string, unknown> | undefined;
     isDictionary(name: string): boolean;
 

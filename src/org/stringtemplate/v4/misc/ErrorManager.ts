@@ -26,7 +26,7 @@ export class ErrorManager {
 
         public compileTimeError(msg: STMessage): void {
             if (!this.silent) {
-                console.error(msg);
+                console.error(msg.toString());
             }
         }
 

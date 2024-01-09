@@ -349,18 +349,19 @@ export class CodeGenerator extends TreeParser {
         //const INDENT1 = null;
         // const INDENT2 = null;
 
-        if (context.COMMENT() !== null) {
-            // ignore
-        } else if (context.INDENT() !== null) {
+        const hasIndent = context.INDENT() !== null;
+        if (hasIndent) {
             this.template_stack.peek().state.indent(context.INDENT());
-            if (context.singleElement() !== null) {
-                this.singleElement(context.singleElement()!);
-            }
-            this.template_stack.peek().state.emit(Bytecode.INSTR_DEDENT);
-        } else if (context.singleElement() !== null) {
+        }
+
+        if (context.singleElement() !== null) {
             this.singleElement(context.singleElement()!);
         } else if (context.compoundElement() !== null) {
             this.compoundElement(context.compoundElement()!);
+        }
+
+        if (hasIndent) {
+            this.template_stack.peek().state.emit(Bytecode.INSTR_DEDENT);
         }
 
         /*try {

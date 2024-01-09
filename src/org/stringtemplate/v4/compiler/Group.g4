@@ -256,7 +256,7 @@ defaultValuePair[mapping: Map<string, unknown>]:
 keyValuePair[Map<string, unknown> mapping]:
     STRING ':' keyValue? {
     // @ts-ignore, because ANTLR4 doesn't allow a non-null assertion with attribute references.
-    const value = $keyValue.value;
+    let value; try { value = $keyValue.value; } catch { }
     mapping.set(Misc.replaceEscapes(Misc.strip($STRING.text, 1)), value);
 }
 ;

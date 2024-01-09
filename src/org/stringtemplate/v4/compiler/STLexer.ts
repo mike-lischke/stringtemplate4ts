@@ -225,7 +225,11 @@ export class STLexer implements TokenSource {
     public match(x: number | string): void {
         const code = (typeof x === "string") ? x.codePointAt(0)! : x;
         if (this.c !== code) {
-            this.lexerError("expecting '" + x + "', found '" + this.currentCharToString() + "'");
+            // Create a fake token for the error message. Note: the current position hasn't been updated yet.
+            // So we do that manually here.
+            const token = this.newToken(STLexer.TEXT);
+            token.column = this.#currentColumn;
+            this.lexerError(token, "expecting '" + x + "', found '" + this.currentCharToString() + "'");
         }
         this.consume();
     }
@@ -520,7 +524,9 @@ export class STLexer implements TokenSource {
                         }
                     }
 
-                    this.lexerError("invalid character '" + this.currentCharToString() + "'");
+                    const token = this.newToken(STLexer.TEXT);
+                    token.column = this.#currentColumn;
+                    this.lexerError(token, "invalid character '" + this.currentCharToString() + "'");
                     if (this.c === Token.EOF) {
                         return this.newToken(Token.EOF);
                     }
@@ -626,7 +632,9 @@ export class STLexer implements TokenSource {
             }
 
             default: {
-                this.lexerError("invalid escaped char: '" + this.currentCharToString() + "'");
+                const token = this.newToken(STLexer.TEXT);
+                token.column = this.#currentColumn;
+                this.lexerError(token, "invalid escaped char: '" + this.currentCharToString() + "'");
                 this.consume();
                 this.match(this.delimiterStopChar);
 
@@ -663,28 +671,36 @@ export class STLexer implements TokenSource {
 
         let codePoint = 0;
         if (!this.currentCharIsHexDigit()) {
-            this.lexerError("invalid hex digit: '" + this.currentCharToString() + "'");
+            const token = this.newToken(STLexer.TEXT);
+            token.column = this.#currentColumn;
+            this.lexerError(token, "invalid hex digit: '" + this.currentCharToString() + "'");
         }
 
         codePoint = convertCharCodeToNumber();
 
         this.consume();
         if (!this.currentCharIsHexDigit()) {
-            this.lexerError("invalid hex digit: '" + this.currentCharToString() + "'");
+            const token = this.newToken(STLexer.TEXT);
+            token.column = this.#currentColumn;
+            this.lexerError(token, "invalid hex digit: '" + this.currentCharToString() + "'");
         }
 
         codePoint = (codePoint << 4) + convertCharCodeToNumber();
 
         this.consume();
         if (!this.currentCharIsHexDigit()) {
-            this.lexerError("invalid hex digit: '" + this.currentCharToString() + "'");
+            const token = this.newToken(STLexer.TEXT);
+            token.column = this.#currentColumn;
+            this.lexerError(token, "invalid hex digit: '" + this.currentCharToString() + "'");
         }
 
         codePoint = (codePoint << 4) + convertCharCodeToNumber();
 
         this.consume();
         if (!this.currentCharIsHexDigit()) {
-            this.lexerError("invalid hex digit: '" + this.currentCharToString() + "'");
+            const token = this.newToken(STLexer.TEXT);
+            token.column = this.#currentColumn;
+            this.lexerError(token, "invalid hex digit: '" + this.currentCharToString() + "'");
         }
 
         codePoint = (codePoint << 4) + convertCharCodeToNumber();
@@ -820,7 +836,9 @@ export class STLexer implements TokenSource {
             this.consume();
 
             if (this.c === Token.EOF) {
-                this.lexerError("EOF in string");
+                const token = this.newToken(Token.EOF);
+                token.column = this.#currentColumn;
+                this.lexerError(token, "EOF in string");
                 break;
             }
         }
@@ -846,8 +864,10 @@ export class STLexer implements TokenSource {
         this.match("!");
         while (!(this.currentCharMatchesOneOf("!") && this.inputStream.LA(2) === this.delimiterStopChar)) {
             if (this.c === Token.EOF) {
-                this.lexerError("Non-terminated comment starting at " + this.line + ":" + this._tokenStartColumn +
-                    ": '!" + this.delimiterStopChar + "' missing");
+                const token = this.newToken(Token.EOF);
+                token.column = this.#currentColumn;
+                this.lexerError(token, "Non-terminated comment starting at " + this.line + ":" +
+                    this._tokenStartColumn + ": '!" + this.delimiterStopChar + "' missing");
                 break;
             }
             this.consume();
@@ -868,7 +888,9 @@ export class STLexer implements TokenSource {
         } // scarf WS after <\\>
 
         if (this.c === Token.EOF) {
-            this.lexerError("Missing newline after newline escape <\\\\>");
+            const token = this.newToken(STLexer.NEWLINE);
+            token.column = this.#currentColumn;
+            this.lexerError(token, "Missing newline after newline escape <\\\\>");
 
             return;
         }
@@ -933,8 +955,9 @@ export class STLexer implements TokenSource {
         return String.fromCodePoint(this.c);
     }
 
-    private lexerError(message: string): void {
+    private lexerError(token: Token, message: string): void {
         const e = new LexerNoViableAltException(null as unknown as Lexer, this.inputStream, 0, new ATNConfigSet());
+        e.offendingToken = token;
         this.errMgr.lexerError(this.sourceName, message, this.templateToken, e);
     }
 }

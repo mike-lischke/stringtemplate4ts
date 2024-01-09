@@ -11,6 +11,10 @@ import { TestCompiler } from "./org/stringtemplate/v4/test/TestCompiler.js";
 import { TestCoreBasics } from "./org/stringtemplate/v4/test/TestCoreBasics.js";
 import { TestDebugEvents } from "./org/stringtemplate/v4/test/TestDebugEvents.js";
 import { TestDictionaries } from "./org/stringtemplate/v4/test/TestDictionaries.js";
+import { TestDollarDelimiters } from "./org/stringtemplate/v4/test/TestDollarDelimiters.js";
+import { TestEarlyEvaluation } from "./org/stringtemplate/v4/test/TestEarlyEvaluation.js";
+import { TestFunctions } from "./org/stringtemplate/v4/test/TestFunctions.js";
+import { TestGroups } from "./org/stringtemplate/v4/test/TestGroups.js";
 import { TestTemplateNames } from "./org/stringtemplate/v4/test/TestTemplateNames.js";
 import { TestTokensForDollarDelimiters } from "./org/stringtemplate/v4/test/TestTokensForDollarDelimiters.js";
 
@@ -47,6 +51,26 @@ describe("TestDebugEvents", () => {
 describe("TestDictionaries", () => {
     const testNG = new TestNG();
     testNG.run(TestDictionaries);
+});
+
+describe("TestDollarDelimiters", () => {
+    const testNG = new TestNG();
+    testNG.run(TestDollarDelimiters);
+});
+
+describe("TestEarlyEvaluation", () => {
+    const testNG = new TestNG();
+    testNG.run(TestEarlyEvaluation);
+});
+
+describe("TestFunctions", () => {
+    const testNG = new TestNG();
+    testNG.run(TestFunctions);
+});
+
+describe("TestGroups", () => {
+    const testNG = new TestNG();
+    testNG.run(TestGroups);
 });
 
 describe("TestTemplateNames", () => {

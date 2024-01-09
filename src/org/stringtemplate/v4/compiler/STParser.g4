@@ -75,10 +75,7 @@ template:
 ;
 
 element:
-    {this.inputStream.LT(1)!.column === 0}? INDENT? COMMENT NEWLINE /*-> // throw away */
-    | INDENT singleElement /*-> ^(INDENTED_EXPR INDENT singleElement? )    // singleElement is optional to handle error returning nil*/
-    | singleElement
-    | compoundElement
+    INDENT? (singleElement | compoundElement)
 ;
 
 singleElement:

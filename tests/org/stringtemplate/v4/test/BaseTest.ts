@@ -99,8 +99,9 @@ export abstract class BaseTest {
     public static writeFile(dir: string, fileName: string, content: string): void {
         try {
             const f = path.join(dir, fileName);
-            if (!existsSync(dir)) {
-                mkdirSync(dir, { recursive: true });
+            const realDir = path.dirname(f); // fileName can contain subdirectories.
+            if (!existsSync(realDir)) {
+                mkdirSync(realDir, { recursive: true });
             }
 
             writeFileSync(f, content);

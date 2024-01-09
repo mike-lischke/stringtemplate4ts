@@ -316,34 +316,28 @@ export class Interpreter {
      */
     public rest(scope: InstanceScope, v: unknown): unknown {
         if (v == null) {
-            return v;
+            return null;
         }
 
         if (Array.isArray(v)) {
             if (v.length <= 1) {
-                return undefined;
+                return null;
             }
 
             return v.slice(1);
         }
 
         v = this.convertAnythingIteratableToIterator(scope, v);
-        if (!isIterator(v)) {
-            return v;
+        if (isIterator(v)) {
+            const a = Array.from(v);
+            if (a.length <= 1) {
+                return null;
+            }
+
+            return a.slice(1);
         }
 
-        const a = new Array<unknown>();
-        const [first] = v;
-        if (first == null) {
-            // if not even one value return null
-            return undefined;
-        }
-
-        for (const o of v) {
-            a.push(o);
-        }
-
-        return a;
+        return null;
     }
 
     /**
@@ -448,7 +442,7 @@ export class Interpreter {
 
     }
 
-    public convertAnythingIteratableToIterator(_scope: InstanceScope | null, o: unknown): unknown {
+    public convertAnythingIteratableToIterator(scope: InstanceScope | null, o: unknown): unknown {
         if (o == null) {
             return o;
         }
@@ -457,14 +451,21 @@ export class Interpreter {
             return o;
         }
 
+        if (o instanceof Map || o instanceof HashMap) {
+            if (scope?.st?.groupThatCreatedThisInstance.iterateAcrossValues) {
+                return o.values();
+            }
+
+            return o.keys();
+        }
+
         // Is the object itself iterable?
         if (Symbol.iterator in o) {
             return (o as IterableIterator<unknown>)[Symbol.iterator]();
         }
 
-        // Does the object implement the Iterator interface?
+        // Does the object implement the Iterator interface (e.g. arrays)?
         if (isIterator(o)) {
-            // Note: we ignore scope.st.groupThatCreatedThisInstance.iterateAcrossValues here.
             const iterableIterator = {
                 [Symbol.iterator]() {
                     return this;
@@ -648,12 +649,12 @@ export class Interpreter {
                         try {
                             o = this.getAttribute(scope, name);
                             if (o === ST.EMPTY_ATTR) {
-                                o = undefined;
+                                o = null;
                             }
                         } catch (e) {
                             if (e instanceof STNoSuchAttributeException) {
                                 this.errMgr.runTimeError(this, scope, ErrorType.NO_SUCH_ATTRIBUTE, name);
-                                o = undefined;
+                                o = null;
                             } else {
                                 throw e;
                             }
@@ -669,7 +670,7 @@ export class Interpreter {
                         ip += Bytecode.OPERAND_SIZE_IN_BYTES;
                         o = self.locals![valueIndex];
                         if (o === ST.EMPTY_ATTR) {
-                            o = undefined;
+                            o = null;
                         }
 
                         this.operands[++this.sp] = o;
