@@ -93,15 +93,15 @@ export class ErrorManager {
         );
     }
 
-    public groupSyntaxError(error: ErrorType, srcName: string, e: RecognitionException, msg: string): void {
+    public groupSyntaxError(error: ErrorType, srcName: string, line: number, column: number, msg: string): void {
         this.listener.compileTimeError(
-            new STGroupCompiletimeMessage(error, srcName, e.offendingToken ?? undefined, undefined, msg),
+            new STGroupCompiletimeMessage(error, srcName, line, column, undefined, msg),
         );
     }
 
-    public groupLexerError(error: ErrorType, srcName: string, e: RecognitionException, msg: string): void {
+    public groupLexerError(error: ErrorType, srcName: string, line: number, column: number, msg: string): void {
         this.listener.compileTimeError(
-            new STGroupCompiletimeMessage(error, srcName, e.offendingToken ?? undefined, e, msg),
+            new STGroupCompiletimeMessage(error, srcName, line, column, undefined, msg),
         );
     }
 

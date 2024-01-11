@@ -6,7 +6,6 @@
  */
 
 import { STMessage } from "./STMessage.js";
-import { Misc } from "./Misc.js";
 import { ErrorType } from "./ErrorType.js";
 import { STErrorListener } from "../STErrorListener.js";
 
@@ -38,7 +37,7 @@ export class ErrorBuffer implements STErrorListener {
             list.push(m.toString());
         }
 
-        return "[" + list.join(Misc.newLine) + "]";
+        return "[" + list.join(", ") + "]";
     }
 
     public add(msg: STMessage): void {

@@ -14,6 +14,8 @@ import { TestDictionaries } from "./org/stringtemplate/v4/test/TestDictionaries.
 import { TestDollarDelimiters } from "./org/stringtemplate/v4/test/TestDollarDelimiters.js";
 import { TestEarlyEvaluation } from "./org/stringtemplate/v4/test/TestEarlyEvaluation.js";
 import { TestFunctions } from "./org/stringtemplate/v4/test/TestFunctions.js";
+import { TestGroupSyntax } from "./org/stringtemplate/v4/test/TestGroupSyntax.js";
+import { TestGroupSyntaxErrors } from "./org/stringtemplate/v4/test/TestGroupSyntaxErrors.js";
 import { TestGroups } from "./org/stringtemplate/v4/test/TestGroups.js";
 import { TestTemplateNames } from "./org/stringtemplate/v4/test/TestTemplateNames.js";
 import { TestTokensForDollarDelimiters } from "./org/stringtemplate/v4/test/TestTokensForDollarDelimiters.js";
@@ -71,6 +73,16 @@ describe("TestFunctions", () => {
 describe("TestGroups", () => {
     const testNG = new TestNG();
     testNG.run(TestGroups);
+});
+
+describe("TestGroupSyntax", () => {
+    const testNG = new TestNG();
+    testNG.run(TestGroupSyntax);
+});
+
+describe("TestGroupSyntaxErrors", () => {
+    const testNG = new TestNG();
+    testNG.run(TestGroupSyntaxErrors);
 });
 
 describe("TestTemplateNames", () => {

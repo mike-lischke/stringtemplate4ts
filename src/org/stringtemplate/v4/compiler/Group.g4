@@ -48,21 +48,16 @@ import { STLexer } from "../STLexer.js";
 @parser::members {
 public currentGroup!: STGroup;
 
-public displayRecognitionError(tokenNames: string[],  e: antlr.RecognitionException): void {
-    const msg = e.message;
-    this.currentGroup.errMgr.groupSyntaxError(ErrorType.SYNTAX_ERROR, this.getSourceName(), e, msg);
-}
-
 public override getSourceName(): string {
     const fullFileName = super.getSourceName();
     return basename(fullFileName); // strip to simple name
 }
 
-public error(msg: string): void {
-    const e = new antlr.NoViableAltException(this, this.inputStream);
-        this.currentGroup.errMgr.groupSyntaxError(ErrorType.SYNTAX_ERROR, this.getSourceName(), e, msg);
-    //this.recover(this.inputStream, null);
-    this.errorHandler.recover(this, e);
+public error(msg: string, re: antlr.RecognitionException): void {
+    const token = re.offendingToken;
+    this.currentGroup.errMgr.groupSyntaxError(ErrorType.SYNTAX_ERROR, this.getSourceName(), token?.line ?? 0,
+        token?.column ?? 0, msg);
+    this.errorHandler.recover(this, re);
 }
 
 public addArgument(args: FormalArgument[] , t: Token, defaultValueToken?: Token): void {
@@ -82,18 +77,6 @@ public addArgument(args: FormalArgument[] , t: Token, defaultValueToken?: Token)
 @lexer::members {
 public currentGroup!: STGroup;
 
-public reportError(e: antlr.RecognitionException): void {
-    let msg: string;
-    if (e instanceof antlr.NoViableAltException) {
-        msg = "invalid character '" + String.fromCodePoint(this.inputStream.LA(1)) + "'";
-    } else if (e instanceof antlr.LexerNoViableAltException) {
-        msg = "unterminated string";
-    } else {
-        msg = e.message;
-    }
-    this.currentGroup.errMgr.groupSyntaxError(ErrorType.SYNTAX_ERROR, this.getSourceName(), e, msg);
-}
-
 public getSourceName(): string {
     const fullFileName = this.sourceName;
     return basename(fullFileName); // strip to simple name
@@ -106,26 +89,28 @@ const lexer = this.inputStream.getTokenSource() as GroupLexer;
 this.currentGroup = lexer.currentGroup = $aGroup;
 }:
     oldStyleHeader? delimiters? (
-        'import' STRING {this.currentGroup.importTemplates($STRING);}
-        | 'import' // common error: name not in string
-        {
-const e = new antlr.NoViableAltException(this, this.inputStream);
+        IMPORT (
+            STRING {this.currentGroup.importTemplates($STRING);}
+            | // common error: name not in string
+            {
+const e = new antlr.InputMismatchException(this);
 this.errorHandler.reportError(this, e);
-        } ID ('.' ID)* // might be a.b.c.d
+} ID (DOT ID)* // might be a.b.c.d
+        )
     )* def[prefix]* EOF
 ;
 
 oldStyleHeader: // ignore but lets us use this parser in AW for both v3 and v4
-    'group' ID (':' ID)? ('implements' ID (',' ID)*)? ';'
+    GROUP ID (COLON ID)? (IMPLEMENTS ID (COMMA ID)*)? SEMICOLON
 ;
 
 groupName
     @init {let buf = "";}:
-    a = ID {buf += $a.text;} ('.' a = ID {buf += $a.text;})*
+    a = ID {buf += $a.text;} (DOT a = ID {buf += $a.text;})*
 ;
 
 delimiters:
-    'delimiters' a = STRING ',' b = STRING {
+    DELIMITERS a = STRING COMMA b = STRING {
         let supported = true;
         const textA = $a.text;
         const startCharacter = textA.length === 0 ? ">" : textA[1];
@@ -158,9 +143,18 @@ def[prefix: string]:
     | dictDef
 ;
 catch[re] {
-// pretend we already saw an error here
-// this.state.lastErrorIndex = this.inputStream.index;
-this.error("garbled template definition starting at '" + this.inputStream.LT(1)!.text + "'");
+if (re instanceof antlr.RecognitionException) {
+    localContext.exception = re;
+    if (!this.errorHandler.inErrorRecoveryMode(this)) {
+        this.error("garbled template definition starting at '" + this.inputStream.LT(1)!.text + "'", re);
+    }
+
+    // Manually start error recovery mode (which is usually done by the original exception code).
+    this.errorHandler.beginErrorCondition(this);
+    this.errorHandler.recover(this, re);
+} else {
+    throw re;
+}
 }
 
 templateDef[prefix: string]
@@ -168,7 +162,10 @@ templateDef[prefix: string]
     let template = "";
     let n = 0; // num char to strip from left, right of template def
 }:
-    ('@' enclosing = ID '.' name = ID '(' ')' | name = ID '(' formalArgs ')') '::=' {const templateToken = this.inputStream.LT(1)!;
+    (
+        AT enclosing = ID DOT name = ID LPAREN RPAREN
+        | name = ID LPAREN formalArgs RPAREN
+    ) ASSIGN {const templateToken = this.inputStream.LT(1)!;
         } (
         STRING {template = $STRING.text; n=1;}
         | BIGSTRING {template = $BIGSTRING.text; n=2;}
@@ -177,7 +174,7 @@ templateDef[prefix: string]
 template = "";
 const msg = "missing template at '" + this.inputStream.LT(1)!.text + "'";
 const e = new antlr.NoViableAltException(this, this.inputStream);
-this.currentGroup.errMgr.groupSyntaxError(ErrorType.SYNTAX_ERROR, this.getSourceName(), e, msg);
+this.error(msg, e);
 }
     ) {
 if ($name.index >= 0) { // if ID missing
@@ -198,21 +195,21 @@ if ($name.index >= 0) { // if ID missing
         template, $name, formalArgs);
 }
 }
-    | alias = ID '::=' target = ID {this.currentGroup.defineTemplateAlias($alias, $target);}
+    | alias = ID ASSIGN target = ID {this.currentGroup.defineTemplateAlias($alias, $target);}
 ;
 
 formalArgs
     returns[args: FormalArgument[] = []]
     locals[hasOptionalParameter: boolean = false]
     @init { $formalArgs::hasOptionalParameter = false; }:
-    formalArg[$args] (',' formalArg[$args])*
+    formalArg[$args] (COMMA formalArg[$args])*
     |
 ;
 
 formalArg[args: FormalArgument[]]:
     ID (
-        '=' a = (STRING | ANONYMOUS_TEMPLATE | 'true' | 'false') {$formalArgs::hasOptionalParameter = true;}
-        | '=' a = '[' ']' {$formalArgs::hasOptionalParameter = true;}
+        EQUAL a = (STRING | ANONYMOUS_TEMPLATE | TRUE | FALSE) {$formalArgs::hasOptionalParameter = true;}
+        | EQUAL a = LBRACK RBRACK {$formalArgs::hasOptionalParameter = true;}
         | {
     if ($formalArgs::hasOptionalParameter) {
             this.currentGroup.errMgr.compileTimeError(ErrorType.REQUIRED_PARAMETER_AFTER_OPTIONAL, undefined, $ID);
@@ -222,7 +219,7 @@ formalArg[args: FormalArgument[]]:
 ;
 
 dictDef:
-    ID '::=' dict {
+    ID ASSIGN dict {
 if ( this.currentGroup.rawGetDictionary($ID.text)) {
     this.currentGroup.errMgr.compileTimeError(ErrorType.MAP_REDEFINITION, undefined, $ID);
 } else if ( this.currentGroup.rawGetTemplate($ID.text)) {
@@ -235,26 +232,24 @@ if ( this.currentGroup.rawGetDictionary($ID.text)) {
 dict
     returns[mapping: Map<string, unknown> | undefined]
     @init {$mapping = new Map<string, unknown>();}:
-    '[' dictPairs[$mapping] ']'
+    LBRACK dictPairs[$mapping] RBRACK
 ;
 
 dictPairs[mapping: Map<string, unknown>]:
-    keyValuePair[mapping] (',' keyValuePair[mapping])* (
-        ',' defaultValuePair[mapping]
-    )?
-    | defaultValuePair[mapping]
+    (keyValuePair[mapping] COMMA?)+ (defaultValuePair[mapping] COMMA?)?
+    | defaultValuePair[mapping] COMMA?
 ;
 catch[re] {
-    this.error("missing dictionary entry at '" + this.inputStream.LT(1)!.text + "'");
+    this.error("missing dictionary entry at '" + this.inputStream.LT(1)!.text + "'", re);
 
 }
 
 defaultValuePair[mapping: Map<string, unknown>]:
-    'default' ':' keyValue {mapping.set(STGroup.DEFAULT_KEY, $keyValue.value);}
+    DEFAULT COLON keyValue {mapping.set(STGroup.DEFAULT_KEY, $keyValue.value);}
 ;
 
 keyValuePair[Map<string, unknown> mapping]:
-    STRING ':' keyValue? {
+    STRING COLON keyValue {
     // @ts-ignore, because ANTLR4 doesn't allow a non-null assertion with attribute references.
     let value; try { value = $keyValue.value; } catch { }
     mapping.set(Misc.replaceEscapes(Misc.strip($STRING.text, 1)), value);
@@ -269,12 +264,9 @@ keyValue
     | STRING {$value = Misc.replaceEscapes(Misc.strip($STRING.text, 1));}
     | TRUE {$value = true;}
     | FALSE {$value = false;}
-    | '[' ']' {$value = [];}
+    | LBRACK RBRACK {$value = [];}
     | {this.inputStream.LT(1)!.text === "key" }? ID {$value = STGroup.DICT_KEY;}
 ;
-catch[re] {
-this.error("missing value for key at '" + this.inputStream.LT(1)!.text + "'");
-}
 
 // $antlr-format reset
 // $antlr-format alignTrailingComments on, columnLimit 150, maxEmptyLinesToKeep 1, reflowComments off, useTab off
@@ -284,6 +276,21 @@ TRUE: 'true';
 FALSE: 'false';
 LBRACK: '[';
 RBRACK: ']';
+AT: '@';
+DOT: '.';
+COLON: ':';
+SEMICOLON: ';';
+COMMA: ',';
+LPAREN: '(';
+RPAREN: ')';
+ASSIGN: '::=';
+EQUAL: '=';
+
+IMPORT: 'import';
+GROUP: 'group';
+IMPLEMENTS: 'implements';
+DELIMITERS: 'delimiters';
+DEFAULT: 'default';
 
 ID: ('a' ..'z' | 'A' ..'Z' | '_') ( 'a' ..'z' | 'A' ..'Z' | '0' ..'9' | '-' | '_')*;
 
@@ -293,19 +300,18 @@ STRING:
         | '\\' ~'"'
         | {
 const msg = "\\n in string";
-const e = new antlr.LexerNoViableAltException(this, this.inputStream, 0, new antlr.ATNConfigSet());
-this.currentGroup.errMgr.groupLexerError(ErrorType.SYNTAX_ERROR, this.getSourceName(), e, msg);
+this.currentGroup.errMgr.groupLexerError(ErrorType.SYNTAX_ERROR, this.getSourceName(), 0, 0, msg);
 } '\n'
         | ~('\\' | '"' | '\n')
     )* '"' {
-this.text = this.text.replace(/\\\\\"/g,"\"");
+this.text = this.text.replace(/\\\"/g,"\"");
     }
 ;
 
 BIGSTRING_NO_NL: // same as BIGSTRING but means ignore newlines later
     '<%' .*? '%>'
     // %\> is the escape to avoid end of string
-    { this.text = this.text.replace(/\%\\\\>/g,"\%>"); }
+    { this.text = this.text.replace(/%\\>/g,"\%>"); }
 ;
 
 /** Match <<...>> but also allow <<..<x>>> so we can have tag on end.
@@ -331,9 +337,8 @@ lexer.subtemplateDepth = 1;
 let t = lexer.nextToken();
 while (lexer.subtemplateDepth >= 1 || t.type !== STLexer.RCURLY) {
     if (t.type === Token.EOF) {
-        const e = new antlr.LexerNoViableAltException(this, this.inputStream, 0, new antlr.ATNConfigSet());
         const msg = "missing final '}' in {...} anonymous template";
-        this.currentGroup.errMgr.groupLexerError(ErrorType.SYNTAX_ERROR, this.getSourceName(), e, msg);
+        this.currentGroup.errMgr.groupLexerError(ErrorType.SYNTAX_ERROR, this.getSourceName(), t.line, t.column, msg);
 
         break;
     }

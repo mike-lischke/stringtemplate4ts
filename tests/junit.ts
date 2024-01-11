@@ -25,6 +25,10 @@ export const assertTrue = (value: boolean): void => {
     expect(value).toBe(true);
 };
 
+export const assertNotNull = <T>(value: T | null): void => {
+    expect(value).not.toBeNull();
+};
+
 export class Assert {
     public static assertNotNull<T>(value: T | null): void {
         expect(value).not.toBeNull();

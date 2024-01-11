@@ -10,7 +10,9 @@
 import * as fs from "fs";
 import path from "path";
 
-import { CharStream, CharStreams, CommonToken, CommonTokenStream, RecognitionException, Token } from "antlr4ng";
+import {
+    BaseErrorListener, CharStream, CharStreams, CommonToken, CommonTokenStream, RecognitionException, Token,
+} from "antlr4ng";
 
 import { ICompiledST, ICompilerParameters, IST, ISTGroup, RegionType, isCompiledST } from "./compiler/common.js";
 
@@ -725,11 +727,34 @@ export class STGroup {
             const tokens = new CommonTokenStream(lexer);
             parser = new GroupParser(tokens);
 
-            // No error listeners needed here. The group grammar defines own catch clauses for logging errors.
+            lexer.removeErrorListeners();
             parser.removeErrorListeners();
+
+            // Redirection of syntax errors.
+            // eslint-disable-next-line @typescript-eslint/no-this-alias
+            const host = this;
+            lexer.addErrorListener(
+                new class extends BaseErrorListener {
+                    public override syntaxError(_recognizer: unknown,
+                        _offendingSymbol: Token | null, line: number, column: number, msg: string,
+                        _e: RecognitionException | null): void {
+                        host.errMgr.groupLexerError(ErrorType.SYNTAX_ERROR, stream.name, line, column, msg);
+                    }
+                }(),
+            );
+            parser.addErrorListener(
+                new class extends BaseErrorListener {
+                    public override syntaxError(_recognizer: unknown,
+                        offendingSymbol: Token | null, line: number, column: number, msg: string,
+                        e: RecognitionException | null): void {
+                        host.errMgr.groupSyntaxError(ErrorType.SYNTAX_ERROR, stream.name, line, column, msg);
+                    }
+                }(),
+            );
 
             parser.group(this, prefix);
         } catch (e) {
+            // XXX: parser errors are reported via error listeners.
             if (e instanceof Error) {
                 this.errMgr.iOError(undefined, ErrorType.CANT_LOAD_GROUP_FILE, e, fileName);
             } else {
@@ -765,8 +790,9 @@ export class STGroup {
         try {
             parser.templateDef(prefix);
         } catch (re) {
+            // XXX: parser errors are reported via error listeners.
             if (re instanceof RecognitionException) {
-                this.errMgr.groupSyntaxError(ErrorType.SYNTAX_ERROR, unqualifiedFileName, re, re.message);
+                //this.errMgr.groupSyntaxError(ErrorType.SYNTAX_ERROR, unqualifiedFileName, null, re, re.message);
             } else {
                 throw re;
             }

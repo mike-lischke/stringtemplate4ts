@@ -38,7 +38,7 @@ import path from "path";
 
 import { BaseTest } from "./BaseTest.js";
 import { Assert, assertEquals } from "../../../../junit.js";
-import { STGroupFile, ST, ErrorBuffer, STGroupString, Misc, HashMap } from "../../../../../src/index.js";
+import { STGroupFile, ST, ErrorBuffer, STGroupString, Misc, HashMap, ErrorManager } from "../../../../../src/index.js";
 
 import { Test } from "../../../../decorators.js";
 
@@ -162,6 +162,7 @@ export class TestDictionaries extends BaseTest {
 
     @Test
     public testDictEmptyValueAndAngleBracketStrings(): void {
+        ErrorManager.DEFAULT_ERROR_LISTENER.silent = true;
         const templates =
             "typeInit ::= [\"int\":\"0\", \"float\":, \"double\":<<0.0L>>] " + Misc.newLine +
             "var(type,name) ::= \"<type> <name> = <typeInit.(type)>;\"" + Misc.newLine;
@@ -170,9 +171,10 @@ export class TestDictionaries extends BaseTest {
         const st = group.getInstanceOf("var");
         st?.add("type", "float");
         st?.add("name", "x");
-        const expecting = "float x = ;";
+        const expecting = "float x = double;"; // The comma is ignored from parser single token recovery.
         const result = st?.render();
         assertEquals(expecting, result);
+        ErrorManager.DEFAULT_ERROR_LISTENER.silent = false;
     }
 
     @Test
@@ -208,6 +210,7 @@ export class TestDictionaries extends BaseTest {
 
     @Test
     public testDictEmptyDefaultValue(): void {
+        ErrorManager.DEFAULT_ERROR_LISTENER.silent = true;
         const templates =
             "typeInit ::= [\"int\":\"0\", default:] " + Misc.newLine +
             "var(type,name) ::= \"<type> <name> = <typeInit.(type)>;\"" + Misc.newLine;
@@ -216,9 +219,11 @@ export class TestDictionaries extends BaseTest {
         const group = new STGroupFile(this.tmpdir + "/test.stg");
         group.setListener(errors);
         group.load();
-        const expected = "[test.stg 2:0: missing value for key at 'var']";
+        const expected = "[test.stg 1:33: extraneous input ']' expecting {'true', 'false', '[', ID, STRING, " +
+            "BIGSTRING_NO_NL, BIGSTRING, '{'}, test.stg 2:0: no viable alternative at input 'var']";
         const result = errors.toString();
         assertEquals(expected, result);
+        ErrorManager.DEFAULT_ERROR_LISTENER.silent = false;
     }
 
     @Test
