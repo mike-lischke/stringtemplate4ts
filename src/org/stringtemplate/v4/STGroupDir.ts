@@ -15,6 +15,7 @@ import { CharStreams, Token } from "antlr4ng";
 import { STGroup } from "./STGroup.js";
 import { Misc } from "./misc/Misc.js";
 import { ICompiledST, ISTGroup } from "./compiler/common.js";
+import { Factories } from "./compiler/factories.js";
 
 // TODO: caching?
 
@@ -95,7 +96,7 @@ export class STGroupDir extends STGroup {
             throw new Error(msg);
         }
 
-        super.importTemplates.apply(args);
+        super.importTemplates.apply(this, args);
     }
 
     /**
@@ -165,8 +166,18 @@ export class STGroupDir extends STGroup {
         return this.loadTemplateFile(prefix, unqualifiedName + STGroupDir.TEMPLATE_FILE_EXTENSION);
     }
 
-    protected override importGroupDir(dirName: string): ISTGroup | undefined {
-        return new STGroupDir(dirName, this.encoding, this.delimiterStartChar, this.delimiterStopChar);
+    static {
+        Factories.createStringTemplateGroupDir = (dirName: string, encoding?: string, delimiterStartChar?: string,
+            delimiterStopChar?: string): ISTGroup => {
+            if (!encoding) {
+                return new STGroupDir(dirName);
+            }
 
+            if (!delimiterStartChar) {
+                return new STGroupDir(dirName, encoding);
+            }
+
+            return new STGroupDir(dirName, encoding, delimiterStartChar, delimiterStopChar!);
+        };
     }
 }

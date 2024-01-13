@@ -349,19 +349,19 @@ export class CodeGenerator extends TreeParser {
         //const INDENT1 = null;
         // const INDENT2 = null;
 
-        const hasIndent = context.INDENT() !== null;
-        if (hasIndent) {
-            this.template_stack.peek().state.indent(context.INDENT());
-        }
-
         if (context.singleElement() !== null) {
+            const hasIndent = context.INDENT() !== null;
+            if (hasIndent) {
+                this.template_stack.peek().state.indent(context.INDENT(), context.INDENT()?.getText() ?? "");
+            }
             this.singleElement(context.singleElement()!);
-        } else if (context.compoundElement() !== null) {
-            this.compoundElement(context.compoundElement()!);
-        }
 
-        if (hasIndent) {
-            this.template_stack.peek().state.emit(Bytecode.INSTR_DEDENT);
+            if (hasIndent) {
+                this.template_stack.peek().state.emit(Bytecode.INSTR_DEDENT);
+            }
+        } else if (context.compoundElement() !== null) {
+            // Ignore the indent token, it's only used for singleElement.
+            this.compoundElement(context.compoundElement()!);
         }
 
         /*try {
@@ -1040,6 +1040,9 @@ export class CodeGenerator extends TreeParser {
          *  We need to update them once we see the endif.
          */
         const endRefs = new Array<number>();
+        if (context._indent) {
+            this.template_stack.peek().state.indent(context, context._indent.text ?? "");
+        }
 
         this.conditional(context.conditional(0)!);
 
@@ -1086,6 +1089,10 @@ export class CodeGenerator extends TreeParser {
 
         for (const opnd of endRefs) {
             this.write(opnd, this.address());
+        }
+
+        if (context._indent) {
+            this.template_stack.peek().state.emit(Bytecode.INSTR_DEDENT);
         }
 
         /*try {
@@ -2330,8 +2337,21 @@ export class CodeGenerator extends TreeParser {
             this.conditional(context.conditional()!);
         } else if (context.expr() !== null) {
             this.expr(context.expr()!.mapExpr()!);
+            this.emit(context.expr(), Bytecode.INSTR_TOSTR);
 
-            if (context.argExprList() !== null) {
+            if (context.LPAREN().length > 1) {
+                // Indirection. May have arguments.
+                let count = 0;
+                if (context.argExprList() !== null) {
+                    context.argExprList()?.arg().forEach((arg) => {
+                        this.arg(arg);
+                        ++count;
+                    });
+                }
+                this.emit1(context.expr(), Bytecode.INSTR_NEW_IND, count);
+            }
+
+            /*if (context.argExprList() !== null) {
                 this.emit(context.expr(), Bytecode.INSTR_TOSTR);
 
                 let count = 0;
@@ -2343,7 +2363,7 @@ export class CodeGenerator extends TreeParser {
                 this.emit1(context.expr(), Bytecode.INSTR_NEW_IND, count);
             } else {
                 this.emit(context.expr(), Bytecode.INSTR_TOSTR);
-            }
+            }*/
         } else {
             this.#throwInternalError();
         }

@@ -22,7 +22,7 @@ import { ErrorManager } from "./misc/ErrorManager.js";
 import { defaultLocale } from "./support/helpers.js";
 import { StringWriter } from "./support/StringWriter.js";
 import { ICompiledST, IST, ISTGroup } from "./compiler/common.js";
-import { setStringTemplateCloner, setStringTemplateFactory } from "./compiler/factories.js";
+import { Factories } from "./compiler/factories.js";
 import { DebugState } from "./DebugState.js";
 
 /**
@@ -586,7 +586,7 @@ export class ST implements IST {
     static {
         // Register string template factories for use by other modules.
 
-        setStringTemplateFactory((group: ISTGroup, impl?: ICompiledST): IST => {
+        Factories.createStringTemplate = ((group: ISTGroup, impl?: ICompiledST): IST => {
             const st = new ST();
             st.impl = impl;
             st.groupThatCreatedThisInstance = group;
@@ -598,7 +598,7 @@ export class ST implements IST {
             return st;
         });
 
-        setStringTemplateCloner((prototype?: IST): IST => {
+        Factories.cloneStringTemplate = ((prototype?: IST): IST => {
             if (prototype) {
                 return new ST(prototype);
             }

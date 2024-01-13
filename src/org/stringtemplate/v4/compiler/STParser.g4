@@ -75,7 +75,9 @@ template:
 ;
 
 element:
-    INDENT? (singleElement | compoundElement)
+    {this.inputStream.LT(1)!.column === 0}? INDENT? COMMENT NEWLINE // throw away
+    | INDENT? singleElement
+    | compoundElement
 ;
 
 singleElement:
@@ -94,11 +96,16 @@ exprTag:
     LDELIM expr (';' exprOptions)? RDELIM /*-> ^(EXPR[$LDELIM,"EXPR"] expr exprOptions? )*/
 ;
 
-region
-    @init {let indent: Token | null | undefined;}:
-    i = INDENT? x = LDELIM '@' ID RDELIM {if (this.inputStream.LA(1) != STLexer.NEWLINE) indent=$i;} template INDENT? LDELIM '@end' RDELIM
+region:
+    //@init {let indent: Token | null | undefined;}:
+    indent = INDENT? x = LDELIM '@' ID RDELIM {if (this.inputStream.LA(1) === STLexer.NEWLINE) localContext._indent = undefined;} template INDENT?
+        LDELIM '@end' RDELIM
     // kill \n for <@end> on line by itself if multi-line embedded region
-    /*({$region.start.getLine()!=input.LT(1).getLine()}? => NEWLINE)? -> {indent!=null}? ^(INDENTED_EXPR $i ^(REGION[$x] ID template? )) -> ^(REGION[$x]
+    {if (localContext?.start!.line != this.inputStream.LT(1)!.line && this.inputStream.LA(1) === STLexer.NEWLINE) {
+        this.inputStream.consume()
+    }}
+    //({localContext?.start!.line !== this.inputStream.LT(1)!.line}? NEWLINE)?
+    /*-> {indent!=null}? ^(INDENTED_EXPR $i ^(REGION[$x] ID template? )) -> ^(REGION[$x]
         ID template? )*/
 ;
 
@@ -108,13 +115,18 @@ subtemplate:
     /*-> ^(SUBTEMPLATE[$lc,"SUBTEMPLATE"] ^(ARGS $ids)* template? )*/
 ;
 
-ifstat
-    @init {let indent: Token | null | undefined;}:
-    i = INDENT? LDELIM 'if' '(' c1 = conditional ')' RDELIM {if (this.inputStream.LA(1) != STLexer.NEWLINE) indent=$i;} t1 = template (
-        INDENT? LDELIM 'elseif' '(' c2 += conditional ')' RDELIM t2 += template
-    )* (INDENT? LDELIM 'else' RDELIM t3 = template)? INDENT? endif = LDELIM 'endif' RDELIM
+ifstat:
+    //@init {let indent: Token | null | undefined;}:
+    indent = INDENT? LDELIM 'if' '(' c1 = conditional ')' RDELIM {if (this.inputStream.LA(1) === STLexer.NEWLINE) localContext._indent = undefined;}
+        t1 = template (INDENT? LDELIM 'elseif' '(' c2 += conditional ')' RDELIM t2 += template)* (
+        INDENT? LDELIM 'else' RDELIM t3 = template
+    )? INDENT? endif = LDELIM 'endif' RDELIM
     // kill \n for <endif> on line by itself if multi-line IF
-    /*({$ifstat.start.getLine()!=input.LT(1).getLine()}? => NEWLINE)? -> {indent!=null}? ^(INDENTED_EXPR $i ^('if' $c1 $t1? ^('elseif' $c2 $t2)* ^(
+    {if (localContext?.start!.line != this.inputStream.LT(1)!.line && this.inputStream.LA(1) === STLexer.NEWLINE) {
+        this.inputStream.consume()
+    }}
+    //({localContext?.start!.line != this.inputStream.LT(1)!.line}? NEWLINE)?
+    /*-> {indent!=null}? ^(INDENTED_EXPR $i ^('if' $c1 $t1? ^('elseif' $c2 $t2)* ^(
         'else' $t3? )? )) -> ^('if' $c1 $t1? ^('elseif' $c2 $t2)* ^('else' $t3? )? )*/
 ;
 

@@ -186,8 +186,8 @@ export class CompilationState {
         CompilationState.writeShort(this.impl.instructions, addr, value);
     }
 
-    public indent(indent: ParseTree | null): void {
-        this.emit1(indent, Bytecode.INSTR_INDENT, indent?.getText() ?? "");
+    public indent(indent: ParseTree | null, text: string): void {
+        this.emit1(indent, Bytecode.INSTR_INDENT, text);
     }
 
     protected ensureCapacity(n: number): void {

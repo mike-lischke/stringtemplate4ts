@@ -37,7 +37,7 @@ import { Constructor } from "./reflection/IMember.js";
 import { GroupParser } from "./compiler/generated/GroupParser.js";
 import { Compiler } from "./compiler/Compiler.js";
 import { GroupLexer } from "./compiler/generated/GroupLexer.js";
-import { cloneStringTemplate, createStringTemplate } from "./compiler/factories.js";
+import { Factories } from "./compiler/factories.js";
 import { HashMap } from "./support/HashMap.js";
 
 /**
@@ -92,9 +92,9 @@ export class STGroup {
      * Every group can import templates/dictionaries from other groups.
      *  The list must be synchronized (see {@link STGroup#importTemplates}).
      */
-    public readonly imports = new Array<STGroup>();
+    public readonly imports = new Array<ISTGroup>();
 
-    protected readonly importsToClearOnUnload = new Array<STGroup>();
+    protected readonly importsToClearOnUnload = new Array<ISTGroup>();
 
     /** Maps template name to {@link CompiledST} object (or null if a previous attempt to load it failed. */
     protected templates = new Map<string, ICompiledST | null>();
@@ -201,13 +201,13 @@ export class STGroup {
      * The primary means of getting an instance of a template from this
      *  group. Names must be absolute, fully-qualified names like {@code /a/b}.
      */
-    public getInstanceOf(name: string): IST | undefined {
+    public getInstanceOf(name: string): IST | null {
         if (STGroup.verbose) {
             console.log(this.constructor.name + ".getInstanceOf(" + name + ")");
         }
 
         if (name.length === 0) {
-            return undefined;
+            return null;
         }
 
         if (name[0] !== "/") {
@@ -216,10 +216,10 @@ export class STGroup {
 
         const c = this.lookupTemplate(name);
         if (c) {
-            return createStringTemplate(this, c);
+            return Factories.createStringTemplate?.(this, c) ?? null;
         }
 
-        return undefined;
+        return null;
     }
 
     /**
@@ -254,9 +254,9 @@ export class STGroup {
     /**
      * Look up a fully-qualified name.
      */
-    public lookupTemplate(name: string): ICompiledST | undefined {
+    public lookupTemplate(name: string): ICompiledST | null {
         if (name.length === 0) {
-            return undefined;
+            return null;
         }
 
         if (name[0] !== "/") {
@@ -273,7 +273,7 @@ export class STGroup {
                 console.log(name + " previously seen as not found");
             }
 
-            return undefined;
+            return null;
         }
 
         // try to load from disk and look up again
@@ -597,9 +597,9 @@ export class STGroup {
      *  'programmatically'.</p>
      */
     public importTemplates(fileNameToken: Token): void;
-    public importTemplates(g: STGroup, clearOnUnload: boolean): void;
+    public importTemplates(g: ISTGroup, clearOnUnload: boolean): void;
     public importTemplates(...args: unknown[]): void {
-        let g: STGroup | null | undefined;
+        let g: ISTGroup | null | undefined;
         let clearOnUnload;
 
         switch (args.length) {
@@ -657,17 +657,17 @@ export class STGroup {
                     } else {
                         if (isGroupFile) {
                             if (fs.existsSync(fileUnderRoot)) {
-                                g = this.importGroupFile(fileUnderRoot) as STGroup;
+                                g = Factories.createStringTemplateGroupFile?.(fileUnderRoot, this.encoding,
+                                    this.delimiterStartChar, this.delimiterStopChar);
                             } else {
-                                g = this.importGroupFile(fileName) as STGroup;
+                                g = Factories.createStringTemplateGroupFile?.(fileName);
                             }
                         } else {
                             if (isGroupDir) {
                                 if (fs.existsSync(fileUnderRoot)) {
-                                    g = this.importGroupDir(fileUnderRoot) as STGroup;
+                                    g = Factories.createStringTemplateGroupDir?.(fileUnderRoot);
                                 } else {
-                                    // try in CLASSPATH
-                                    g = this.importGroupDir(fileName) as STGroup;
+                                    g = Factories.createStringTemplateGroupDir?.(fileName);
                                 }
                             }
                         }
@@ -705,7 +705,7 @@ export class STGroup {
         }
     }
 
-    public getImportedGroups(): STGroup[] {
+    public getImportedGroups(): ISTGroup[] {
         return this.imports;
     };
 
@@ -877,7 +877,7 @@ export class STGroup {
      */
     public createStringTemplateInternally(implOrProto?: ICompiledST | IST): IST {
         if (!implOrProto || isCompiledST(implOrProto)) {
-            const st = createStringTemplate(this, implOrProto);
+            const st = Factories.createStringTemplate!(this, implOrProto);
             if (STGroup.trackCreationEvents && st.debugState) {
                 st.debugState.newSTEvent = undefined; // toss it out
             }
@@ -885,7 +885,7 @@ export class STGroup {
             return st;
         }
 
-        return cloneStringTemplate(implOrProto); // no need to wack debugState; not set in ST(proto).
+        return Factories.cloneStringTemplate!(implOrProto); // no need to wack debugState; not set in ST(proto).
     }
 
     public getName(): string {
@@ -985,9 +985,9 @@ export class STGroup {
         return st;
     }
 
-    public lookupImportedTemplate(name: string): ICompiledST | undefined {
+    public lookupImportedTemplate(name: string): ICompiledST | null {
         if (this.imports.length === 0) {
-            return undefined;
+            return null;
         }
 
         for (const g of this.imports) {
@@ -1009,15 +1009,7 @@ export class STGroup {
             console.log(name + " not found in " + this.getName() + " imports");
         }
 
-        return undefined;
-    }
-
-    protected importGroupFile(fileName: string): ISTGroup | undefined {
-        return undefined;
-    }
-
-    protected importGroupDir(fileName: string): ISTGroup | undefined {
-        return undefined;
+        return null;
     }
 
 }

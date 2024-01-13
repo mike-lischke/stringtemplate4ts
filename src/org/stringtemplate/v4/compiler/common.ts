@@ -3,7 +3,7 @@
  * Licensed under the BSD-3 License. See License.txt in the project root for license information.
  */
 
-import { Interval, ParseTree, Token, TokenStream } from "antlr4ng";
+import { CharStream, Interval, ParseTree, Token, TokenStream } from "antlr4ng";
 
 import { Constructor } from "../reflection/IMember.js";
 import { AttributeRenderer } from "../AttributeRenderer.js";
@@ -210,7 +210,9 @@ export interface ISTGroup {
      */
     getAttributeRenderer<T>(attributeType: Constructor<T>): AttributeRenderer<T> | undefined;
 
-    lookupImportedTemplate(name: string): ICompiledST | undefined;
+    lookupImportedTemplate(name: string): ICompiledST | null;
+
+    unload(): void;
 
     getEmbeddedInstanceOf(interp: IInterpreter, scope: IInstanceScope, name: string): IST;
 
@@ -224,7 +226,15 @@ export interface ISTGroup {
 
     getModelAdaptor<T>(attributeType: Constructor<T>): ModelAdaptor<T>;
 
-    lookupTemplate(name: string): ICompiledST | undefined;
+    /**
+     * Register a renderer for all objects of a particular "kind" for all
+     *  templates evaluated relative to this group.  Use {@code r} to render if
+     *  object in question is an instance of {@code attributeType}.  Recursively
+     *  set renderer into all import groups.
+     */
+    registerRenderer<T>(attributeType: Constructor<T>, r: AttributeRenderer<T>, recursive?: boolean): void;
+
+    lookupTemplate(name: string): ICompiledST | null;
 
     defineTemplate(templateName: string, template: string): ICompiledST;
 
@@ -232,6 +242,16 @@ export interface ISTGroup {
 
     defineTemplate(fullyQualifiedTemplateName: string, nameT: Token, args?: IFormalArgument[], template?: string,
         templateToken?: Token): ICompiledST;
+
+    /**
+     * Load template stream into this group. {@code unqualifiedFileName} is
+     *  {@code "a.st"}. The {@code prefix} is path from group root to
+     *  {@code unqualifiedFileName} like {@code "/subdir"} if file is in
+     *  {@code /subdir/a.st}.
+     */
+    loadTemplateFile(prefix: string, unqualifiedFileName: string, templateStream: CharStream): ICompiledST | undefined;
+
+    setListener(listener: STErrorListener): void;
 }
 
 /**

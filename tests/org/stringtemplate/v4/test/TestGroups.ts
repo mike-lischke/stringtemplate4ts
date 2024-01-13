@@ -12,7 +12,7 @@
 import path from "path";
 
 import { BaseTest } from "./BaseTest.js";
-import { Assert, assertEquals, assertTrue } from "../../../../junit.js";
+import { Assert, assertEquals, assertNull, assertTrue } from "../../../../junit.js";
 import { STGroupDir, STGroupString, ErrorBuffer, STGroupFile, Misc } from "../../../../../src/index.js";
 
 import { Test } from "../../../../decorators.js";
@@ -585,7 +585,7 @@ export class TestGroups extends BaseTest {
 
         const group1 = new STGroupDir(dir);
         const st = group1.getInstanceOf("group/a"); // can't see
-        assertEquals(undefined, st);
+        assertNull(st);
     }
 
     @Test

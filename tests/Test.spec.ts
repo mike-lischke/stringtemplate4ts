@@ -17,6 +17,9 @@ import { TestFunctions } from "./org/stringtemplate/v4/test/TestFunctions.js";
 import { TestGroupSyntax } from "./org/stringtemplate/v4/test/TestGroupSyntax.js";
 import { TestGroupSyntaxErrors } from "./org/stringtemplate/v4/test/TestGroupSyntaxErrors.js";
 import { TestGroups } from "./org/stringtemplate/v4/test/TestGroups.js";
+import { TestImports } from "./org/stringtemplate/v4/test/TestImports.js";
+import { TestIndentation } from "./org/stringtemplate/v4/test/TestIndentation.js";
+import { TestIndirectionAndEarlyEval } from "./org/stringtemplate/v4/test/TestIndirectionAndEarlyEval.js";
 import { TestTemplateNames } from "./org/stringtemplate/v4/test/TestTemplateNames.js";
 import { TestTokensForDollarDelimiters } from "./org/stringtemplate/v4/test/TestTokensForDollarDelimiters.js";
 
@@ -83,6 +86,21 @@ describe("TestGroupSyntax", () => {
 describe("TestGroupSyntaxErrors", () => {
     const testNG = new TestNG();
     testNG.run(TestGroupSyntaxErrors);
+});
+
+describe("TestImports", () => {
+    const testNG = new TestNG();
+    testNG.run(TestImports);
+});
+
+describe("TestIndentation", () => {
+    const testNG = new TestNG();
+    testNG.run(TestIndentation);
+});
+
+describe("TestIndirectionAndEarlyEval", () => {
+    const testNG = new TestNG();
+    testNG.run(TestIndirectionAndEarlyEval);
 });
 
 describe("TestTemplateNames", () => {

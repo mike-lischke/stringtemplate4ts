@@ -11,6 +11,7 @@ import { dirname, resolve } from "path";
 import { STGroup } from "./STGroup.js";
 import { Misc } from "./misc/Misc.js";
 import { ICompiledST } from "./compiler/common.js";
+import { Factories } from "./compiler/factories.js";
 
 /**
  * The internal representation of a single group file (which must end in
@@ -157,7 +158,18 @@ export class STGroupFile extends STGroup {
         return dirname(this.fileName);
     }
 
-    protected override importGroupFile(fileName: string): STGroup | undefined {
-        return new STGroupFile(fileName, this.encoding, this.delimiterStartChar, this.delimiterStopChar);
+    static {
+        Factories.createStringTemplateGroupFile = (dirName: string, encoding?: string, delimiterStartChar?: string,
+            delimiterStopChar?: string): STGroup => {
+            if (!encoding) {
+                return new STGroupFile(dirName);
+            }
+
+            if (!delimiterStartChar) {
+                return new STGroupFile(dirName, encoding);
+            }
+
+            return new STGroupFile(dirName, encoding, delimiterStartChar, delimiterStopChar!);
+        };
     }
 }
