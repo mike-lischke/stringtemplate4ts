@@ -83,3 +83,4 @@ export * from "./org/stringtemplate/v4/reflection/IMember.js";
 export * from "./org/stringtemplate/v4/reflection/Field.js";
 
 export * from "./org/stringtemplate/v4/support/HashMap.js";
+export * from "./org/stringtemplate/v4/support/TimeZone.js";

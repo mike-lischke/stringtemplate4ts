@@ -126,7 +126,7 @@ export class HashMap<Key, Value> implements Map<Key, Value> {
                 const entry = entries.next();
                 const value = entry.value as [Key, Value];
 
-                return { done: entry.done, value: value[0] };
+                return { done: entry.done, value: value?.[0] };
             },
 
         };
@@ -143,7 +143,7 @@ export class HashMap<Key, Value> implements Map<Key, Value> {
                 const entry = entries.next();
                 const value = entry.value as [Key, Value];
 
-                return { done: entry.done, value: value[1] };
+                return { done: entry.done, value: value?.[1] };
             },
 
         };

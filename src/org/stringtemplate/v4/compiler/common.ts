@@ -63,6 +63,11 @@ export interface IST {
     add(name: string, value: unknown): IST;
 
     /**
+     * Remove an attribute value entirely (can't remove attribute definitions).
+     */
+    remove(name: string): void;
+
+    /**
      * Set {@code locals} attribute value when you only know the name, not the
      *  index. This is ultimately invoked by calling {@code ST#add} from
      *  outside so toss an exception to notify them.

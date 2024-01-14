@@ -33,6 +33,10 @@ export const assertNotNull = <T>(value: T | null): void => {
     expect(value).not.toBeNull();
 };
 
+export const assertArrayEquals = <T>(expected: T[], actual: T[]): void => {
+    expect(actual).toEqual(expected);
+};
+
 export class Assert {
     public static assertNotNull<T>(value: T | null): void {
         expect(value).not.toBeNull();

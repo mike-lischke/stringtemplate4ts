@@ -892,8 +892,8 @@ export class STGroup {
         return "<no name>;";
     }
 
-    public getFileName(): string {
-        return "";
+    public getFileName(): string | undefined {
+        return undefined;
     }
 
     /**

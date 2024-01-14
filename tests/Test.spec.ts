@@ -20,6 +20,16 @@ import { TestGroups } from "./org/stringtemplate/v4/test/TestGroups.js";
 import { TestImports } from "./org/stringtemplate/v4/test/TestImports.js";
 import { TestIndentation } from "./org/stringtemplate/v4/test/TestIndentation.js";
 import { TestIndirectionAndEarlyEval } from "./org/stringtemplate/v4/test/TestIndirectionAndEarlyEval.js";
+import { TestInterptimeErrors } from "./org/stringtemplate/v4/test/TestInterptimeErrors.js";
+import { TestLexer } from "./org/stringtemplate/v4/test/TestLexer.js";
+import { TestLineWrap } from "./org/stringtemplate/v4/test/TestLineWrap.js";
+import { TestLists } from "./org/stringtemplate/v4/test/TestLists.js";
+import { TestModelAdaptors } from "./org/stringtemplate/v4/test/TestModelAdaptors.js";
+import { TestNoNewlineTemplates } from "./org/stringtemplate/v4/test/TestNoNewlineTemplates.js";
+import { TestNullAndEmptyValues } from "./org/stringtemplate/v4/test/TestNullAndEmptyValues.js";
+import { TestOptions } from "./org/stringtemplate/v4/test/TestOptions.js";
+import { TestRegions } from "./org/stringtemplate/v4/test/TestRegions.js";
+import { TestRenderers } from "./org/stringtemplate/v4/test/TestRenderers.js";
 import { TestTemplateNames } from "./org/stringtemplate/v4/test/TestTemplateNames.js";
 import { TestTokensForDollarDelimiters } from "./org/stringtemplate/v4/test/TestTokensForDollarDelimiters.js";
 
@@ -101,6 +111,56 @@ describe("TestIndentation", () => {
 describe("TestIndirectionAndEarlyEval", () => {
     const testNG = new TestNG();
     testNG.run(TestIndirectionAndEarlyEval);
+});
+
+describe("TestInterptimeErrors", () => {
+    const testNG = new TestNG();
+    testNG.run(TestInterptimeErrors);
+});
+
+describe("TestLexer", () => {
+    const testNG = new TestNG();
+    testNG.run(TestLexer);
+});
+
+describe("TestLineWrap", () => {
+    const testNG = new TestNG();
+    testNG.run(TestLineWrap);
+});
+
+describe("TestLists", () => {
+    const testNG = new TestNG();
+    testNG.run(TestLists);
+});
+
+describe("TestModelAdaptors", () => {
+    const testNG = new TestNG();
+    testNG.run(TestModelAdaptors);
+});
+
+describe("TestNoNewlineTemplates", () => {
+    const testNG = new TestNG();
+    testNG.run(TestNoNewlineTemplates);
+});
+
+describe("TestNullAndEmptyValues", () => {
+    const testNG = new TestNG();
+    testNG.run(TestNullAndEmptyValues);
+});
+
+describe("TestOptions", () => {
+    const testNG = new TestNG();
+    testNG.run(TestOptions);
+});
+
+describe("TestRegions", () => {
+    const testNG = new TestNG();
+    testNG.run(TestRegions);
+});
+
+describe("TestRenderers", () => {
+    const testNG = new TestNG();
+    testNG.run(TestRenderers);
 });
 
 describe("TestTemplateNames", () => {

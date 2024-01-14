@@ -7,7 +7,8 @@
     "dictionaryDefinitions": [],
     "dictionaries": [],
     "words": [
-        "Iteratable"
+        "Iteratable",
+        "localizable"
     ],
     "ignoreWords": [
         "ANTLR",
@@ -18,11 +19,13 @@
         "Dlanguage",
         "Harwell",
         "Interp",
+        "Interptime",
         "LBRACK",
         "LCURLY",
         "LDELIM",
         "LINEBREAK",
         "LPAREN",
+        "Millis",
         "PASSTHRU",
         "RBRACK",
         "RCURLY",
@@ -34,8 +37,10 @@
         "TOSTR",
         "Xexact",
         "clazz",
+        "datetime",
         "instrs",
         "jree",
+        "luxon",
         "messageformat",
         "mvnrepository",
         "outfile",

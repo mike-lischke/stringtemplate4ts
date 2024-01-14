@@ -27,6 +27,7 @@
     "devDependencies": {
         "@types/he": "1.2.3",
         "@types/jest": "29.5.11",
+        "@types/luxon": "^3.4.0",
         "@types/node": "20.10.4",
         "@typescript-eslint/eslint-plugin": "6.14.0",
         "@typescript-eslint/parser": "6.13.2",
@@ -44,6 +45,7 @@
     "dependencies": {
         "antlr4ng": "2.0.5",
         "fast-printf": "1.6.9",
-        "he": "1.2.0"
+        "he": "1.2.0",
+        "luxon": "3.4.4"
     }
 }

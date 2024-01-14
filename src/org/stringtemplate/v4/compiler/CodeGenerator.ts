@@ -763,6 +763,10 @@ export class CodeGenerator extends TreeParser {
         //let ID6 = null;
         //let template7 = null;
 
+        if (context._indent) {
+            this.template_stack.peek().state.indent(context, context._indent.text ?? "");
+        }
+
         const id = context.ID();
         const name = STGroup.getMangledRegionName(this.outermostTemplateName!, id.getText() ?? "");
         const template = this.template(context.template(), name, []);
@@ -774,6 +778,10 @@ export class CodeGenerator extends TreeParser {
         this.outermostImpl.addImplicitlyDefinedTemplate(template);
         this.emit2(context, Bytecode.INSTR_NEW, name, 0);
         this.emit(context, Bytecode.INSTR_WRITE);
+
+        if (context._indent) {
+            this.template_stack.peek().state.emit(Bytecode.INSTR_DEDENT);
+        }
 
         /* try {
              // CodeGenerator.g:221:2: ( ^( REGION ID template[$name,null] ) )
@@ -2059,9 +2067,9 @@ export class CodeGenerator extends TreeParser {
                     }
 
                     if ((args !== null ? (args).namedArgs : false)) {
-                        this.emit1(id, Bytecode.INSTR_SUPER_NEW_BOX_ARGS, id.getText() ?? "");
+                        this.emit1(context, Bytecode.INSTR_SUPER_NEW_BOX_ARGS, id.getText() ?? "");
                     } else {
-                        this.emit2(id, Bytecode.INSTR_SUPER_NEW, id.getText() ?? "", args.n);
+                        this.emit2(context, Bytecode.INSTR_SUPER_NEW, id.getText() ?? "", args.n);
                     }
                 } else {
                     // Include super region ID.

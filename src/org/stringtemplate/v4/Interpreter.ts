@@ -552,8 +552,6 @@ export class Interpreter {
      * <p>
      * The evaluation context is the {@code invokedST} template itself so
      * template default arguments can see other arguments.</p>
-     * @param out
-     * @param scope
      */
     public setDefaultArguments(out: STWriter, scope: InstanceScope): void {
         const invokedST = scope.st;
@@ -943,7 +941,7 @@ export class Interpreter {
                         if (typeof o === "string") {
                             this.operands[++this.sp] = o.trim();
                         } else {
-                            this.errMgr.runTimeError(this, scope, ErrorType.EXPECTING_STRING, "trim", String(o));
+                            this.errMgr.runTimeError(this, scope, ErrorType.EXPECTING_STRING, "trim", typeof o);
                             this.operands[++this.sp] = o;
                         }
 
@@ -961,7 +959,7 @@ export class Interpreter {
                         if (typeof o === "string") {
                             this.operands[++this.sp] = o.length;
                         } else {
-                            this.errMgr.runTimeError(this, scope, ErrorType.EXPECTING_STRING, "strlen", String(o));
+                            this.errMgr.runTimeError(this, scope, ErrorType.EXPECTING_STRING, "strlen", typeof o);
                             this.operands[++this.sp] = 0;
                         }
 
@@ -1475,13 +1473,10 @@ export class Interpreter {
     /**
      * Renders expressions of the form {@code <names:a()>} or
      * {@code <names:a(),b()>}.
-     * @param scope
-     * @param attr
-     * @param prototypes
      */
     protected rotMap(scope: InstanceScope, attr: unknown, prototypes: IST[]): void {
-        if (!attr) {
-            this.operands[++this.sp] = undefined;
+        if (attr == null) {
+            this.operands[++this.sp] = null;
 
             return;
         }
@@ -1545,9 +1540,6 @@ export class Interpreter {
     /**
      * Renders expressions of the form {@code <names,phones:{n,p | ...}>} or
      * {@code <a,b:t()>}.
-     * @param scope
-     * @param exprs
-     * @param prototype
      */
     // todo: i, i0 not set unless mentioned? map:{k,v | ..}?
     protected zipMap(scope: InstanceScope, exprs: unknown[], prototype?: IST): ST.AttributeList | undefined {
@@ -1829,7 +1821,7 @@ export class Interpreter {
         // ask the native group defining the surrounding template for the renderer
         const r = scope.st?.impl?.nativeGroup.getAttributeRenderer(attributeType);
         if (r) {
-            return r.toString(o, formatString, this.locale);
+            return r.toString(o, { format: formatString, locale: this.locale });
         } else {
             return String(o);
         }

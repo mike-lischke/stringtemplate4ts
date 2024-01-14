@@ -36,7 +36,7 @@ export class ErrorType {
     }("passed %s arg(s) to template %s with %s declared arg(s)", "ARGUMENT_COUNT_MISMATCH", 8);
 
     public static readonly EXPECTING_STRING = new class extends ErrorType {
-    }("function %s expects a string not %s", "EXPECTING_STRING", 9);
+    }("function %s expects a string not a %s", "EXPECTING_STRING", 9);
 
     public static readonly WRITER_CTOR_ISSUE = new class extends ErrorType {
     }("%s(Writer) constructor doesn't exist", "WRITER_CTOR_ISSUE", 10);
