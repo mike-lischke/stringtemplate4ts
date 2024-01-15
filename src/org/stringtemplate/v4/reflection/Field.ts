@@ -1,5 +1,3 @@
-/* java2ts: keep */
-
 import { Constructor, IMember } from "./IMember.js";
 
 /*

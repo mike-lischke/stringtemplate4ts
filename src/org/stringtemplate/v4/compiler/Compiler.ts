@@ -1,5 +1,3 @@
-/* java2ts: keep */
-
 /*
  * Copyright (c) Terence Parr. All rights reserved.
  * Licensed under the BSD-3 License. See License.txt in the project root for license information.
@@ -133,7 +131,7 @@ export class Compiler {
             return impl;
         }
 
-        const gen = new CodeGenerator(tokens, r, this.group.errMgr, values.name, values.template, values.templateToken);
+        const gen = new CodeGenerator(tokens, this.group.errMgr, values.name, values.template, values.templateToken);
 
         let impl;
         try {

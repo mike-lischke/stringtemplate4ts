@@ -9,7 +9,6 @@ import { TestAttributes } from "./org/stringtemplate/v4/test/TestAttributes.js";
 import { TestBuggyDefaultValueRaisesNPETest } from "./org/stringtemplate/v4/test/TestBuggyDefaultValueRaisesNPETest.js";
 import { TestCompiler } from "./org/stringtemplate/v4/test/TestCompiler.js";
 import { TestCoreBasics } from "./org/stringtemplate/v4/test/TestCoreBasics.js";
-import { TestDebugEvents } from "./org/stringtemplate/v4/test/TestDebugEvents.js";
 import { TestDictionaries } from "./org/stringtemplate/v4/test/TestDictionaries.js";
 import { TestDollarDelimiters } from "./org/stringtemplate/v4/test/TestDollarDelimiters.js";
 import { TestEarlyEvaluation } from "./org/stringtemplate/v4/test/TestEarlyEvaluation.js";
@@ -62,11 +61,6 @@ describe("TestCompiler", () => {
 describe("TestCoreBasics", () => {
     const testNG = new TestNG();
     testNG.run(TestCoreBasics);
-});
-
-describe("TestDebugEvents", () => {
-    const testNG = new TestNG();
-    testNG.run(TestDebugEvents);
 });
 
 describe("TestDictionaries", () => {

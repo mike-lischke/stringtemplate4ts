@@ -7,7 +7,6 @@ import { CharStream, Interval, ParseTree, Token, TokenStream } from "antlr4ng";
 
 import { Constructor } from "../reflection/IMember.js";
 import { AttributeRenderer } from "../AttributeRenderer.js";
-import { DebugState } from "../DebugState.js";
 import { ErrorType } from "../misc/ErrorType.js";
 import { ModelAdaptor } from "../ModelAdaptor.js";
 import { STErrorListener } from "../STErrorListener.js";
@@ -28,12 +27,6 @@ import { STWriter } from "../STWriter.js";
  *  says.</p>
  */
 export interface IST {
-    /**
-     * If {@link STGroup#trackCreationEvents}, track creation and add
-     *  attribute events for each object. Create this object on first use.
-     */
-    debugState?: DebugState;
-
     /** The implementation for this template among all instances of same template . */
     impl?: ICompiledST;
 
@@ -90,9 +83,6 @@ export interface IST {
     write(out: STWriter, locale: Intl.Locale): number;
     write(out: STWriter, listener: STErrorListener): number;
     write(out: STWriter, locale: Intl.Locale, listener: STErrorListener): number;
-
-    getEvents(lineWidth?: number): IInterpEvent[];
-    getEvents(locale: Intl.Locale, lineWidth?: number): IInterpEvent[];
 }
 
 /**
@@ -144,29 +134,6 @@ export interface IInstanceScope {
 
     /** Current instruction pointer. */
     ip: number;
-
-    /**
-     * Includes the {@link EvalTemplateEvent} for this template. This is a
-     * subset of {@link Interpreter#events} field. The final
-     * {@link EvalTemplateEvent} is stored in 3 places:
-     *
-     * <ol>
-     *  <li>In {@link #parent}'s {@link #childEvalTemplateEvents} list</li>
-     *  <li>In this list</li>
-     *  <li>In the {@link Interpreter#events} list</li>
-     * </ol>
-     *
-     * The root ST has the final {@link EvalTemplateEvent} in its list.
-     * <p>
-     * All events get added to the {@link #parent}'s event list.</p>
-     */
-    events: IInterpEvent[];
-
-    /**
-     * All templates evaluated and embedded in this {@link ST}. Used
-     *  for tree view in STViz.
-     */
-    childEvalTemplateEvents: IEvalTemplateEvent[];
 
     earlyEval: boolean;
 }

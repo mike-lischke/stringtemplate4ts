@@ -1,5 +1,3 @@
-/* java2ts: keep */
-
 /*
  * Copyright (c) Terence Parr. All rights reserved.
  * Licensed under the BSD-3 License. See License.txt in the project root for license information.
@@ -204,7 +202,6 @@ export class CompiledST implements ICompiledST {
                     default: {
                         throw new Error("Unexpected default value token type.");
                     }
-
                 }
             }
         }

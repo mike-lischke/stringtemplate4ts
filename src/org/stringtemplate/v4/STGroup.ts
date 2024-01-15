@@ -1,5 +1,3 @@
-/* java2ts: keep */
-
 /*
  * Copyright (c) Terence Parr. All rights reserved.
  * Licensed under the BSD-3 License. See License.txt in the project root for license information.
@@ -59,12 +57,6 @@ export class STGroup {
 
     /** Watch loading of groups and templates. */
     public static verbose = false;
-
-    /**
-     * For debugging with `STViz`. Records where in code an {@link ST} was
-     * created and where code added attributes.
-     */
-    public static trackCreationEvents = false;
 
     public static defaultGroup = new STGroup();
 
@@ -904,9 +896,6 @@ export class STGroup {
     public createStringTemplateInternally(implOrProto?: ICompiledST | IST): IST {
         if (!implOrProto || isCompiledST(implOrProto)) {
             const st = Factories.createStringTemplate!(this, implOrProto);
-            if (STGroup.trackCreationEvents && st.debugState) {
-                st.debugState.newSTEvent = undefined; // toss it out
-            }
 
             return st;
         }
@@ -1001,11 +990,6 @@ export class STGroup {
             this.errMgr.runTimeError(interp, scope, ErrorType.NO_SUCH_TEMPLATE, fullyQualifiedName);
 
             return this.createStringTemplateInternally();
-        }
-
-        // this is only called internally. wack any debug ST create events
-        if (STGroup.trackCreationEvents && st.debugState) {
-            st.debugState.newSTEvent = undefined; // toss it out
         }
 
         return st;

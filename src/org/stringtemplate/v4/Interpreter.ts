@@ -1,5 +1,3 @@
-/* java2ts: keep */
-
 /*
  * Copyright (c) Terence Parr. All rights reserved.
  * Licensed under the BSD-3 License. See License.txt in the project root for license information.
@@ -15,10 +13,6 @@ import { InstanceScope } from "./InstanceScope.js";
 import { CompiledST } from "./compiler/CompiledST.js";
 import { BytecodeDisassembler } from "./compiler/BytecodeDisassembler.js";
 import { Bytecode } from "./compiler/Bytecode.js";
-import { InterpEvent } from "./debug/InterpEvent.js";
-import { IndentEvent } from "./debug/IndentEvent.js";
-import { EvalTemplateEvent } from "./debug/EvalTemplateEvent.js";
-import { EvalExprEvent } from "./debug/EvalExprEvent.js";
 import { STNoSuchPropertyException } from "./misc/STNoSuchPropertyException.js";
 import { STNoSuchAttributeException } from "./misc/STNoSuchAttributeException.js";
 import { Misc } from "./misc/Misc.js";
@@ -79,9 +73,6 @@ export class Interpreter {
      */
     public static trace = false;
 
-    /** When {@code true}, track events inside templates and in {@link #events}. */
-    public debug = false;
-
     /** Operand stack, grows upwards. */
     protected operands = new Array<unknown>(Interpreter.DEFAULT_OPERAND_STACK_SIZE);
 
@@ -108,42 +99,34 @@ export class Interpreter {
     // TODO: track the pieces not a string and track what it contributes to output
     protected executeTrace: string[] = [];
 
-    /**
-     * Track everything happening in interpreter across all templates if
-     * {@link #debug}. The last event in this field is the
-     * {@link EvalTemplateEvent} for the root template.
-     */
-    protected events: InterpEvent[] = [];
-
-    public constructor(group: ISTGroup, debug: boolean);
-    public constructor(group: ISTGroup, locale: Intl.Locale, debug: boolean);
-    public constructor(group: ISTGroup, errMgr: IErrorManager, debug: boolean);
-    public constructor(group: ISTGroup, locale: Intl.Locale, errMgr: IErrorManager, debug: boolean);
+    public constructor(group: ISTGroup);
+    public constructor(group: ISTGroup, locale: Intl.Locale);
+    public constructor(group: ISTGroup, errMgr: IErrorManager);
+    public constructor(group: ISTGroup, locale: Intl.Locale, errMgr: IErrorManager);
     public constructor(...args: unknown[]) {
         switch (args.length) {
-            case 2: {
-                [this.group, this.debug] = args as [STGroup, boolean];
+            case 1: {
+                [this.group] = args as [STGroup];
                 this.locale = new Intl.Locale("en-US");
                 this.errMgr = this.group.errMgr;
 
                 break;
             }
 
-            case 3: {
+            case 2: {
                 if (args[1] instanceof Intl.Locale) {
-                    [this.group, this.locale, this.debug] = args as [ISTGroup, Intl.Locale, boolean];
+                    [this.group, this.locale] = args as [ISTGroup, Intl.Locale];
                     this.errMgr = this.group.errMgr;
                 } else {
-                    [this.group, this.errMgr, this.debug] = args as [ISTGroup, ErrorManager, boolean];
+                    [this.group, this.errMgr] = args as [ISTGroup, ErrorManager];
                     this.locale = new Intl.Locale("en-US");
                 }
 
                 break;
             }
 
-            case 4: {
-                [this.group, this.locale, this.errMgr, this.debug] =
-                    args as [ISTGroup, Intl.Locale, ErrorManager, boolean];
+            case 3: {
+                [this.group, this.locale, this.errMgr] = args as [ISTGroup, Intl.Locale, ErrorManager];
 
                 break;
             }
@@ -200,23 +183,6 @@ export class Interpreter {
                 stack.unshift(p);
             } else {
                 stack.push(p);
-            }
-
-            p = p.parent;
-        }
-
-        return stack;
-    }
-
-    public static getEvalTemplateEventStack(scope: InstanceScope, topDown: boolean): EvalTemplateEvent[] {
-        const stack: EvalTemplateEvent[] = [];
-        let p: InstanceScope | undefined = scope;
-        while (p) {
-            const evalEvent = p.events[p.events.length - 1] as EvalTemplateEvent;
-            if (topDown) {
-                stack.unshift(evalEvent);
-            } else {
-                stack.push(evalEvent);
             }
 
             p = p.parent;
@@ -594,16 +560,11 @@ export class Interpreter {
         }
     }
 
-    public getEvents(): InterpEvent[] {
-        return this.events;
-    }
-
     public getExecutionTrace(): string[] {
         return this.executeTrace;
     }
 
     protected _exec(out: STWriter, scope: InstanceScope): number {
-        const start = out.index(); // track char we're about to write
         const self = scope.st;
         const code = self?.impl?.instructions;        // which code block are we executing
         let n = 0; // how many char we write out
@@ -623,7 +584,7 @@ export class Interpreter {
             let o: unknown;
 
             while (ip < self.impl.codeSize) {
-                if (Interpreter.trace || this.debug) {
+                if (Interpreter.trace) {
                     this.writeTrace(scope, ip);
                 }
 
@@ -1070,12 +1031,6 @@ export class Interpreter {
             }
         }
 
-        if (this.debug) {
-            const stop = out.index() - 1;
-            const e = new EvalTemplateEvent(scope, start, stop);
-            this.trackDebugEvent(scope, e);
-        }
-
         return n;
     }
 
@@ -1279,12 +1234,6 @@ export class Interpreter {
 
     protected indent(out: STWriter, scope: InstanceScope, strIndex: number): void {
         const indent = scope.st?.impl?.strings[strIndex] ?? "";
-        if (this.debug) {
-            const start = out.index(); // track char we're about to write
-            const e = new IndentEvent(scope, start, start + indent.length - 1, this.getExprStartChar(scope),
-                this.getExprStopChar(scope));
-            this.trackDebugEvent(scope, e);
-        }
         out.pushIndentation(indent);
     }
 
@@ -1293,15 +1242,7 @@ export class Interpreter {
      *  E.g., {@code <name>}
      */
     protected writeObjectNoOptions(out: STWriter, scope: InstanceScope, o: unknown): number {
-        const start = out.index(); // track char we're about to write
-        const n = this.writeObject(out, scope, o);
-        if (this.debug) {
-            const e = new EvalExprEvent(scope, start, out.index() - 1, this.getExprStartChar(scope),
-                this.getExprStopChar(scope));
-            this.trackDebugEvent(scope, e);
-        }
-
-        return n;
+        return this.writeObject(out, scope, o);
     }
 
     /**
@@ -1310,7 +1251,6 @@ export class Interpreter {
      */
     protected writeObjectWithOptions(out: STWriter, scope: InstanceScope, o: unknown,
         options: unknown[]): number {
-        const start = out.index(); // track char we're about to write
 
         // pre compute all option values (render all the way to strings)
         let optionStrings;
@@ -1329,12 +1269,6 @@ export class Interpreter {
 
         if (options !== null && options[InterpreterOption.ANCHOR]) {
             out.popAnchorPoint();
-        }
-
-        if (this.debug) {
-            const e = new EvalExprEvent(scope, start, out.index() - 1, this.getExprStartChar(scope),
-                this.getExprStopChar(scope));
-            this.trackDebugEvent(scope, e);
         }
 
         return n;
@@ -1666,11 +1600,6 @@ export class Interpreter {
         const sw = new StringWriter();
         const stw = Reflect.construct(out.constructor, [sw]) as STWriter;
 
-        if (this.debug && !scope.earlyEval) {
-            scope = new InstanceScope(scope, scope.st);
-            scope.earlyEval = true;
-        }
-
         this.writeObjectNoOptions(stw, scope, value);
 
         return sw.toString();
@@ -1760,9 +1689,6 @@ export class Interpreter {
         tr += Interpreter.getEnclosingInstanceStackString(scope);
         tr += ", sp=" + this.sp + ", nw=" + this.charsWrittenOnLine;
         const s = tr.toString();
-        if (this.debug) {
-            this.executeTrace.push(s);
-        }
 
         if (Interpreter.trace) {
             console.log(s);
@@ -1796,25 +1722,6 @@ export class Interpreter {
         }
 
         return tr;
-    }
-
-    /**
-     * For every event, we track in overall {@link #events} list and in
-     * {@code self}'s {@link InstanceScope#events} list so that each template
-     * has a list of events used to create it. If {@code e} is an
-     * {@link EvalTemplateEvent}, store in parent's
-     * {@link InstanceScope#childEvalTemplateEvents} list for {@link STViz} tree
-     * view.
-     */
-    protected trackDebugEvent(scope: InstanceScope, e: InterpEvent): void {
-        this.events.push(e);
-        scope.events.push(e);
-        if (e instanceof EvalTemplateEvent) {
-            const parent = scope.parent;
-            if (parent) {
-                scope.parent.childEvalTemplateEvents.push(e);
-            }
-        }
     }
 
     private renderObject<T>(scope: InstanceScope, formatString: string, o: T, attributeType: Constructor<T>): string {

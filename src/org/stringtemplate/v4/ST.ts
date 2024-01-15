@@ -1,5 +1,3 @@
-/* java2ts: keep */
-
 /*
  * Copyright (c) Terence Parr. All rights reserved.
  * Licensed under the BSD-3 License. See License.txt in the project root for license information.
@@ -14,16 +12,12 @@ import { Interpreter } from "./Interpreter.js";
 import { InstanceScope } from "./InstanceScope.js";
 import { AutoIndentWriter } from "./AutoIndentWriter.js";
 import { FormalArgument } from "./compiler/FormalArgument.js";
-import { AddAttributeEvent } from "./debug/AddAttributeEvent.js";
-import { ConstructionEvent } from "./debug/ConstructionEvent.js";
-import { InterpEvent } from "./debug/InterpEvent.js";
 import { Aggregate } from "./misc/Aggregate.js";
 import { ErrorManager } from "./misc/ErrorManager.js";
 import { defaultLocale } from "./support/helpers.js";
 import { StringWriter } from "./support/StringWriter.js";
 import { ICompiledST, IST, ISTGroup } from "./compiler/common.js";
 import { Factories } from "./compiler/factories.js";
-import { DebugState } from "./DebugState.js";
 
 /**
  * An instance of the StringTemplate. It consists primarily of
@@ -87,12 +81,6 @@ export class ST implements IST {
     public groupThatCreatedThisInstance!: ISTGroup;
 
     /**
-     * If {@link STGroup#trackCreationEvents}, track creation and add
-     *  attribute events for each object. Create this object on first use.
-     */
-    public debugState?: DebugState;
-
-    /**
      * Safe to simultaneously write via {@link #add}, which is synchronized.
      *  Reading during exec is, however, NOT synchronized.  So, not thread safe
      *  to add attributes while it is being evaluated.  Initialized to
@@ -142,14 +130,6 @@ export class ST implements IST {
             this.groupThatCreatedThisInstance = proto.groupThatCreatedThisInstance;
 
             return;
-        }
-
-        if (STGroup.trackCreationEvents) {
-            if (!this.debugState) {
-                this.debugState = new DebugState();
-            }
-
-            this.debugState.newSTEvent = new ConstructionEvent();
         }
 
         let group;
@@ -238,14 +218,6 @@ export class ST implements IST {
     public add(name: string, value: unknown): ST {
         if (name.indexOf(".") >= 0) {
             throw new Error("cannot have '.' in attribute names");
-        }
-
-        if (STGroup.trackCreationEvents) {
-            if (!this.debugState) {
-                this.debugState = new DebugState();
-            }
-
-            this.debugState.addAttrEvents.map(name, new AddAttributeEvent(name, value));
         }
 
         let arg;
@@ -414,7 +386,7 @@ export class ST implements IST {
             case 1: {
                 const [out] = args as [STWriter];
 
-                const interp = new Interpreter(this.groupThatCreatedThisInstance, this.impl!.nativeGroup.errMgr, false);
+                const interp = new Interpreter(this.groupThatCreatedThisInstance, this.impl!.nativeGroup.errMgr);
                 const scope = new InstanceScope(undefined, this);
 
                 return interp.exec(out, scope);
@@ -425,15 +397,14 @@ export class ST implements IST {
                     const [out, locale] = args as [STWriter, Intl.Locale];
 
                     const interp = new Interpreter(this.groupThatCreatedThisInstance, locale,
-                        this.impl!.nativeGroup.errMgr, false);
+                        this.impl!.nativeGroup.errMgr);
                     const scope = new InstanceScope(undefined, this);
 
                     return interp.exec(out, scope);
                 } else {
                     const [out, listener] = args as [STWriter, STErrorListener];
 
-                    const interp = new Interpreter(this.groupThatCreatedThisInstance, new ErrorManager(listener),
-                        false);
+                    const interp = new Interpreter(this.groupThatCreatedThisInstance, new ErrorManager(listener));
                     const scope = new InstanceScope(undefined, this);
 
                     return interp.exec(out, scope);
@@ -443,8 +414,7 @@ export class ST implements IST {
             case 3: {
                 const [out, locale, listener] = args as [STWriter, Intl.Locale, STErrorListener];
 
-                const interp = new Interpreter(this.groupThatCreatedThisInstance, locale, new ErrorManager(listener),
-                    false);
+                const interp = new Interpreter(this.groupThatCreatedThisInstance, locale, new ErrorManager(listener));
                 const scope = new InstanceScope(undefined, this);
 
                 return interp.exec(out, scope);
@@ -501,53 +471,6 @@ export class ST implements IST {
     }
 
     // TESTING SUPPORT
-
-    public getEvents(lineWidth?: number): InterpEvent[];
-    public getEvents(locale: Intl.Locale, lineWidth?: number): InterpEvent[];
-    public getEvents(...args: unknown[]): InterpEvent[] {
-        let locale;
-        let lineWidth;
-
-        switch (args.length) {
-            case 0: {
-                locale = defaultLocale();
-                lineWidth = STWriter.NO_WRAP;
-
-                break;
-            }
-
-            case 1: {
-                if (args[0] instanceof Intl.Locale) {
-                    [locale] = args as [Intl.Locale];
-                    lineWidth = STWriter.NO_WRAP;
-                } else {
-                    [lineWidth] = args as [number];
-                    locale = defaultLocale();
-                }
-
-                break;
-            }
-
-            case 2: {
-                [locale, lineWidth] = args as [Intl.Locale, number];
-
-                break;
-            }
-
-            default: {
-                throw new Error("Invalid number of arguments");
-            }
-        }
-
-        const out = new StringWriter();
-        const wr = new AutoIndentWriter(out);
-        wr.setLineWidth(lineWidth);
-        const interp = new Interpreter(this.groupThatCreatedThisInstance, locale, true);
-        const scope = new InstanceScope(undefined, this);
-        interp.exec(wr, scope); // render and track events
-
-        return interp.getEvents();
-    }
 
     public toString(): string {
         if (!this.impl) {
