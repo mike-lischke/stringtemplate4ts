@@ -1,5 +1,5 @@
 {
-    "name": "stringtemplate4-ts",
+    "name": "stringtemplate4ts",
     "version": "1.0.0",
     "description": "A TypeScript port of the Java StringTemplate 4 library",
     "type": "module",
@@ -21,8 +21,7 @@
         "test": "node --experimental-vm-modules --no-warnings --loader ts-node/esm ./node_modules/jest/bin/jest.js --no-coverage --silent",
         "test-ci": "npm run test -- --no-coverage --watchAll=false --silent",
         "test-coverage": "npm run test -- --coverage --silent",
-        "generate-parsers": "antlr4ng -no-visitor -no-listener -Dlanguage=TypeScript -o src/org/stringtemplate/v4/compiler/generated -package parser -encoding utf8 -Xexact-output-dir src/org/stringtemplate/v4/compiler/*.g4",
-        "generate-parsers-v3": "java -jar bin/antlr-3.5.3-complete-no-st3.jar -o generated -lib  src/org/stringtemplate/v4/compiler/generated src/org/stringtemplate/v4/compiler/CodeGenerator.g"
+        "generate-parsers": "antlr4ng -no-visitor -no-listener -Dlanguage=TypeScript -o src/org/stringtemplate/v4/compiler/generated -package parser -encoding utf8 -Xexact-output-dir src/org/stringtemplate/v4/compiler/*.g4"
     },
     "devDependencies": {
         "@types/he": "1.2.3",

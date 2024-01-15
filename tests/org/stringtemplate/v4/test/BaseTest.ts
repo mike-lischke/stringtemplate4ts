@@ -12,56 +12,10 @@ import { existsSync, mkdirSync, rmSync, statSync, unlinkSync, writeFileSync } fr
 import { CharStreams, CommonToken, CommonTokenStream, Token } from "antlr4ng";
 
 import { Compiler, ST, STGroup, STLexer } from "../../../../../src/index.js";
-import { assertEquals } from "../../../../junit.js";
 import { AfterEach, BeforeEach } from "../../../../decorators.js";
 
 export abstract class BaseTest {
     public static readonly pathSep = path.delimiter;
-
-    // public static readonly interactive = Boolean.parseBoolean(System.getProperty("test.interactive"));
-
-    /*
-    private static StreamVacuum = class StreamVacuum /* implements Runnable / {
-        protected buf = new StringBuffer();
-        protected in: BufferedReader;
-        protected sucker: Thread;
-        public constructor(in: InputStream) {
-        this.in = new BufferedReader(new InputStreamReader(in));
-    }
-
-        public start(): void {
-        this.sucker = new Thread(this);
-        this.sucker.start();
-    };
-
-    @Override
-    public run(): void {
-        try {
-            let line = this.in.readLine();
-            while(line !== null) {
-        this.buf.append(line);
-        this.buf.append('\n');
-        line = this.in.readLine();
-    }
-} catch (ioe) {
-    if (ioe instanceof Error) {
-        console.error("can't read output from process");
-    } else {
-        throw ioe;
-    }
-}
-        }
-
-        /** wait for the thread to finish /
-    public join(): void {
-        this.sucker.join();
-    }
-
-    public toString(): string {
-        return this.buf.toString();
-    }
-};
-*/
 
     public static User = class User {
         public id: number;
@@ -269,7 +223,7 @@ export abstract class BaseTest {
             }
         }
         const result = "[" + entries.join(", ") + "]";
-        assertEquals(expected, result);
+        expect(result).toEqual(expected);
     }
 
     public getRandomDir(): string {

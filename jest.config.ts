@@ -1,6 +1,6 @@
 /*
  * This file is released under the MIT license.
- * Copyright (c) 2023 Mike Lischke
+ * Copyright (c) 2023, 2024 Mike Lischke
  *
  * See LICENSE file for more info.
  */
