@@ -151,7 +151,7 @@ export class Compiler {
             }
         }
 
-        if (!values.srcName && impl) {
+        if (!values.args && impl) {
             impl.hasFormalArgs = false;
         }
 

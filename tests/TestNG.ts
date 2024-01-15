@@ -6,7 +6,7 @@
 import { TestException } from "./TestException.js";
 
 export type Constructor<T> = (new () => T);
-export type TestFunction = Function & { isTest: boolean; };
+export type TestFunction = Function & { isTest: boolean; enabled?: boolean; };
 
 interface IPropertyDescriptorParams {
     isTest?: boolean;
@@ -78,7 +78,7 @@ export class TestNG {
         testMethods.forEach(([entry, descriptor]) => {
             try {
                 const method = descriptor.value as TestFunction;
-                if (method.isTest) {
+                if (method.isTest && method.enabled !== false) {
                     method.call(instance);
                 }
             } catch (error) {

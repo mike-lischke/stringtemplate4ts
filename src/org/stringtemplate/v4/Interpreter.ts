@@ -487,7 +487,7 @@ export class Interpreter {
             return o;
         }
 
-        const singleton = new ST.AttributeList(1);
+        const singleton = new ST.AttributeList();
         singleton.push(o);
 
         return singleton[Symbol.iterator]();

@@ -19,12 +19,12 @@ import { AfterAll, BeforeAll, Test } from "../../../../decorators.js";
 
 export class TestCoreBasics extends BaseTest {
     @BeforeAll
-    public override setUp(): void {
+    public init(): void {
         ErrorManager.DEFAULT_ERROR_LISTENER.silent = true;
     }
 
     @AfterAll
-    public override shutDown(): void {
+    public restore(): void {
         ErrorManager.DEFAULT_ERROR_LISTENER.silent = false;
     }
 

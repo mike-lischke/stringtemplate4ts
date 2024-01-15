@@ -10,7 +10,7 @@
 import * as fs from "fs";
 import * as path from "path";
 
-import { CharStreams, Token } from "antlr4ng";
+import { CharStream, CharStreams, Token } from "antlr4ng";
 
 import { STGroup } from "./STGroup.js";
 import { Misc } from "./misc/Misc.js";
@@ -78,7 +78,6 @@ export class STGroupDir extends STGroup {
             if (STGroupDir.verbose) {
                 console.log("STGroupDir(" + dirName + ") found");
             }
-
         } else {
             throw new Error("No such directory: " + dirName);
         }
@@ -120,7 +119,7 @@ export class STGroupDir extends STGroup {
         const stream = CharStreams.fromString(content);
         stream.name = unqualifiedFileName;
 
-        return super.loadTemplateFile(prefix, unqualifiedFileName, stream);
+        return this.doLoadTemplateFile(prefix, unqualifiedFileName, stream);
     }
 
     public override  getName(): string {
@@ -164,6 +163,12 @@ export class STGroupDir extends STGroup {
         const unqualifiedName = Misc.getFileName(name);
 
         return this.loadTemplateFile(prefix, unqualifiedName + STGroupDir.TEMPLATE_FILE_EXTENSION);
+    }
+
+    /** Separated call to allow overriding it in derived classes. */
+    protected doLoadTemplateFile(prefix: string, unqualifiedFileName: string,
+        templateStream: CharStream): ICompiledST | undefined {
+        return super.loadTemplateFile(prefix, unqualifiedFileName, templateStream);
     }
 
     static {

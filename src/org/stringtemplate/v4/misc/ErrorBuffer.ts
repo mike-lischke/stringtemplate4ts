@@ -13,6 +13,10 @@ import { STErrorListener } from "../STErrorListener.js";
 export class ErrorBuffer implements STErrorListener {
     #errors = new Array<STMessage>();
 
+    public get size(): number {
+        return this.#errors.length;
+    }
+
     public compileTimeError(msg: STMessage): void {
         this.#errors.push(msg);
     }

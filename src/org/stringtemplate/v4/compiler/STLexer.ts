@@ -229,7 +229,8 @@ export class STLexer implements TokenSource {
             // So we do that manually here.
             const token = this.newToken(STLexer.TEXT);
             token.column = this.#currentColumn;
-            this.lexerError(token, "expecting '" + x + "', found '" + this.currentCharToString() + "'");
+            this.lexerError(token, "expecting '" + String.fromCodePoint(code) + "', found '" +
+                this.currentCharToString() + "'");
         }
         this.consume();
     }
@@ -298,8 +299,10 @@ export class STLexer implements TokenSource {
             this.#currentColumn += 1;
         }
 
-        this.inputStream.consume();
-        this.c = this.inputStream.LA(1);
+        if (this.c !== Token.EOF) {
+            this.inputStream.consume();
+            this.c = this.inputStream.LA(1);
+        }
     }
 
     protected outside(): Token {
@@ -355,17 +358,17 @@ export class STLexer implements TokenSource {
 
     protected inside(): Token {
         while (true) {
-            switch (String.fromCodePoint(this.c)) {
-                case " ":
-                case "\t":
-                case "\n":
-                case "\r": {
+            switch (this.c) {
+                case 0x20: // space
+                case 0x09: // tab
+                case 0x0A: // \n
+                case 0x0D: { // \r
                     this.consume();
 
                     return STLexer.SKIP;
                 }
 
-                case ".": {
+                case 0x2E: { // .
                     const dot = this.c;
                     this.consume();
 
@@ -379,67 +382,67 @@ export class STLexer implements TokenSource {
                     return this.newToken(STLexer.DOT);
                 }
 
-                case ",": {
+                case 0x2C: { // ,
                     this.consume();
 
                     return this.newToken(STLexer.COMMA);
                 }
 
-                case ":": {
+                case 0x3A: { // :
                     this.consume();
 
                     return this.newToken(STLexer.COLON);
                 }
 
-                case ";": {
+                case 0x3B: { // ;
                     this.consume();
 
                     return this.newToken(STLexer.SEMI);
                 }
 
-                case "(": {
+                case 0x28: { // (
                     this.consume();
 
                     return this.newToken(STLexer.LPAREN);
                 }
 
-                case ")": {
+                case 0x29: { // )
                     this.consume();
 
                     return this.newToken(STLexer.RPAREN);
                 }
 
-                case "[": {
+                case 0x5B: { // [
                     this.consume();
 
                     return this.newToken(STLexer.LBRACK);
                 }
 
-                case "]": {
+                case 0x5D: { // ]
                     this.consume();
 
                     return this.newToken(STLexer.RBRACK);
                 }
 
-                case "=": {
+                case 0x3D: { // =
                     this.consume();
 
                     return this.newToken(STLexer.EQUALS);
                 }
 
-                case "!": {
+                case 0x21: { // !
                     this.consume();
 
                     return this.newToken(STLexer.BANG);
                 }
 
-                case "/": {
+                case 0x2F: { // /
                     this.consume();
 
                     return this.newToken(STLexer.SLASH);
                 }
 
-                case "@": {
+                case 0x40: { // @
                     this.consume();
                     if (this.c === "e".codePointAt(0)
                         && this.inputStream.LA(2) === "n".codePointAt(0)
@@ -454,11 +457,11 @@ export class STLexer implements TokenSource {
                     return this.newToken(STLexer.AT);
                 }
 
-                case '"': {
+                case 0x22: { // "
                     return this.mSTRING();
                 }
 
-                case "&": {
+                case 0x26: { // &
                     this.consume();
                     this.match("&");
 
@@ -466,7 +469,7 @@ export class STLexer implements TokenSource {
                 }
 
                 // &&
-                case "|": {
+                case 0x7C: { // |
                     this.consume();
                     this.match("|");
 
@@ -474,7 +477,7 @@ export class STLexer implements TokenSource {
                 }
 
                 // ||
-                case "{": {
+                case 0x7B: { // {
                     return this.subTemplate();
                 }
 
@@ -609,24 +612,24 @@ export class STLexer implements TokenSource {
         }
 
         let text: string;
-        switch (String.fromCodePoint(this.c)) {
-            case "\\": {
+        switch (this.c) {
+            case 0x5C: { // \
                 this.matchLINEBREAK();
 
                 return STLexer.SKIP;
             }
 
-            case "n": {
+            case 0x6E: { // n
                 text = "\n";
                 break;
             }
 
-            case "t": {
+            case 0x74: { // t
                 text = "\t";
                 break;
             }
 
-            case " ": {
+            case 0x20: {
                 text = " ";
                 break;
             }
@@ -867,7 +870,7 @@ export class STLexer implements TokenSource {
                 const token = this.newToken(Token.EOF);
                 token.column = this.#currentColumn;
                 this.lexerError(token, "Non-terminated comment starting at " + this.line + ":" +
-                    this._tokenStartColumn + ": '!" + this.delimiterStopChar + "' missing");
+                    this._tokenStartColumn + ": '!" + String.fromCodePoint(this.delimiterStopChar) + "' missing");
                 break;
             }
             this.consume();

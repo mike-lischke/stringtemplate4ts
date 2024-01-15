@@ -11,7 +11,7 @@ import { BaseTest } from "./BaseTest.js";
 import { STGroupFile, STGroupDir, ErrorBuffer, STGroupString, Misc } from "../../../../../src/index.js";
 import { assertEquals } from "../../../../junit.js";
 
-import { Test } from "../../../../decorators.js";
+import { Ignore, Test } from "../../../../decorators.js";
 
 export class TestRegions extends BaseTest {
     @Test
@@ -426,8 +426,8 @@ export class TestRegions extends BaseTest {
         assertEquals(expected, result);
     }
 
-    // @Ignore("will revisit the behavior of indented expressions spanning multiple lines for a future release")
-    // @Test
+    @Ignore("will revisit the behavior of indented expressions spanning multiple lines for a future release")
+    @Test
     public testEmbeddedSubtemplate(): void {
         const dir = this.getRandomDir();
         const groupFile =

@@ -60,7 +60,7 @@ export class CompiledST implements ICompiledST {
     /** How do we interpret syntax of template? (debug only) */
     public ast?: ParseTree;
 
-    public formalArguments = new Map<string, IFormalArgument>();
+    public formalArguments?: Map<string, IFormalArgument>;
 
     public hasFormalArgs = false;
 
@@ -129,7 +129,7 @@ export class CompiledST implements ICompiledST {
         clone.templateDefStartToken = this.templateDefStartToken;
         clone.tokens = this.tokens;
         clone.ast = this.ast;
-        clone.formalArguments = new Map([...this.formalArguments]);
+        clone.formalArguments = this.formalArguments ? new Map([...this.formalArguments]) : undefined;
         clone.hasFormalArgs = this.hasFormalArgs;
         clone.numberOfArgsWithDefaultValues = this.numberOfArgsWithDefaultValues;
         clone.implicitlyDefinedTemplates = [...this.implicitlyDefinedTemplates];
@@ -212,7 +212,6 @@ export class CompiledST implements ICompiledST {
 
     public defineFormalArgs(args?: IFormalArgument[]): void {
         this.hasFormalArgs = true; // even if no args; it's formally defined
-        this.formalArguments = new Map();
         if (args) {
             for (const a of args) {
                 this.addArg(a);
@@ -224,7 +223,9 @@ export class CompiledST implements ICompiledST {
      * Used by {@link ST#add} to add args one by one without turning on full formal args definition signal.
      */
     public addArg(a: IFormalArgument): void {
-        if (this.formalArguments.has(a.name)) {
+        if (!this.formalArguments) {
+            this.formalArguments = new Map();
+        } else if (this.formalArguments.has(a.name)) {
             throw new Error(`Formal argument ${a.name} already exists.`);
         }
 

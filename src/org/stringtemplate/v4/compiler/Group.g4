@@ -300,7 +300,7 @@ STRING:
         | '\\' ~'"'
         | {
 const msg = "\\n in string";
-this.currentGroup.errMgr.groupLexerError(ErrorType.SYNTAX_ERROR, this.getSourceName(), 0, 0, msg);
+this.currentGroup.errMgr.groupLexerError(ErrorType.SYNTAX_ERROR, this.getSourceName(), this.line, this.column, msg);
 } '\n'
         | ~('\\' | '"' | '\n')
     )* '"' {

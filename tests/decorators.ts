@@ -335,7 +335,7 @@ export function BeforeAll<This, Args extends unknown[], Return>(
 ): DecoratorTargetFunction<This, Args, Return> {
 
     const result = function (this: This, ...args: Args): Return {
-        beforeEach(() => {
+        beforeAll(() => {
             executeTargetWithInheritance.call(this, target, ...args);
         });
 
@@ -388,7 +388,7 @@ export function AfterAll<This, Args extends unknown[], Return>(
 ): DecoratorTargetFunction<This, Args, Return> {
 
     const result = function (this: This, ...args: Args): Return {
-        afterEach(() => {
+        afterAll(() => {
             executeTargetWithInheritance.call(this, target, ...args);
         });
 
@@ -399,4 +399,22 @@ export function AfterAll<This, Args extends unknown[], Return>(
     Object.defineProperty(result, "isAfterAll", { value: true });
 
     return result;
+}
+
+/**
+ * Decorator function for the Ignore annotation.
+ *
+ * @param param The reason why the test is ignored.
+ *
+ * @returns the original method.
+ */
+export function Ignore(param: string): Function {
+
+    return <This, Args extends unknown[], Return>(target: DecoratorTargetFunction<This, Args, Return>,
+        context: ClassMethodDecoratorContext<This, DecoratorTargetFunction<This, Args, Return>>) => {
+
+        Object.defineProperty(target, "enabled", { value: false });
+
+        return target;
+    };
 }

@@ -137,7 +137,7 @@ export class STGroup {
      * <p>
      *  The last one you register gets priority; do least to most specific.</p>
      */
-    protected readonly adaptors: Map<Constructor, ModelAdaptor<unknown>>;
+    protected readonly adaptors: TypeRegistry<ModelAdaptor<unknown>>;
 
     static #reservedCharsPattern = /[a-zA-Z0-9@\-_[\]]/;
 
@@ -150,7 +150,7 @@ export class STGroup {
             this.delimiterStopChar = delimiterStopChar;
         }
 
-        const registry = new TypeRegistry<Constructor, ModelAdaptor<Object>>();
+        const registry = new TypeRegistry<ModelAdaptor<Object>>();
         registry.put(Object, new ObjectModelAdaptor());
         registry.put(ST, new STModelAdaptor());
         registry.put(HashMap, new MapModelAdaptor());
@@ -782,8 +782,34 @@ export class STGroup {
     public loadTemplateFile(prefix: string, unqualifiedFileName: string,
         templateStream: CharStream): ICompiledST | undefined {
         const lexer = new GroupLexer(templateStream);
+        lexer.removeErrorListeners();
+
         const tokens = new CommonTokenStream(lexer);
+
         const parser = new GroupParser(tokens);
+        parser.removeErrorListeners();
+
+        // eslint-disable-next-line @typescript-eslint/no-this-alias
+        const host = this;
+        lexer.addErrorListener(
+            new class extends BaseErrorListener {
+                public override syntaxError(_recognizer: unknown,
+                    _offendingSymbol: Token | null, line: number, column: number, msg: string,
+                    _e: RecognitionException | null): void {
+                    host.errMgr.groupLexerError(ErrorType.SYNTAX_ERROR, templateStream.name, line, column, msg);
+                }
+            }(),
+        );
+        parser.addErrorListener(
+            new class extends BaseErrorListener {
+                public override syntaxError(_recognizer: unknown,
+                    offendingSymbol: Token | null, line: number, column: number, msg: string,
+                    e: RecognitionException | null): void {
+                    host.errMgr.groupSyntaxError(ErrorType.SYNTAX_ERROR, templateStream.name, line, column, msg);
+                }
+            }(),
+        );
+
         parser.currentGroup = this;
         lexer.currentGroup = this;
 

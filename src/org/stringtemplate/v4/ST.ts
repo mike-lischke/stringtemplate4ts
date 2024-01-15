@@ -133,8 +133,8 @@ export class ST implements IST {
             if (proto.locals) {
                 this.locals = [...proto.locals];
             } else {
-                if (this.impl && this.impl.formalArguments.size > 0) {
-                    this.locals = new Array<Object>(this.impl.formalArguments.size);
+                if (this.impl && (this.impl.formalArguments?.size ?? 0) > 0) {
+                    this.locals = new Array<Object>(this.impl.formalArguments?.size ?? 0);
                     this.locals.fill(ST.EMPTY_ATTR);
                 }
             }
@@ -250,18 +250,14 @@ export class ST implements IST {
 
         let arg;
         if (this.impl?.hasFormalArgs) {
-            if (this.impl.formalArguments !== null) {
-                arg = this.impl.formalArguments.get(name);
-            }
+            arg = this.impl.formalArguments?.get(name);
 
             if (!arg) {
                 throw new Error("no such attribute: " + name);
             }
         } else {
             // define and make room in locals (a hack to make new ST("simple template") work.)
-            if (this.impl?.formalArguments) {
-                arg = this.impl.formalArguments.get(name);
-            }
+            arg = this.impl?.formalArguments?.get(name);
 
             if (!arg) { // not defined
                 arg = new FormalArgument(name);
@@ -269,7 +265,8 @@ export class ST implements IST {
                 if (!this.locals) {
                     this.locals = [];
                 } else {
-                    this.locals = this.locals.slice(0, Math.min(this.locals.length, this.impl!.formalArguments.size));
+                    this.locals = this.locals.slice(0, Math.min(this.locals.length,
+                        this.impl!.formalArguments?.size ?? 0));
                 }
                 this.locals[arg.index] = ST.EMPTY_ATTR;
             }

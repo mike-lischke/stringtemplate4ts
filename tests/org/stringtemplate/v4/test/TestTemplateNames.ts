@@ -23,9 +23,10 @@ export class TestTemplateNames extends BaseTest {
         TestTemplateNames.writeFile(dir, "a.st", "a(x) ::= << </subdir/b()> >>\n");
         TestTemplateNames.writeFile(dir + "/subdir", "b.st", "b() ::= <<bar>>\n");
         const group = new STGroupDir(dir);
-        assertEquals(" bar ", group.getInstanceOf("a")!.render());
-        assertEquals(" bar ", group.getInstanceOf("/a")!.render());
-        assertEquals("bar", group.getInstanceOf("/subdir/b")!.render());
+
+        assertEquals(" bar ", group.getInstanceOf("a")?.render());
+        assertEquals(" bar ", group.getInstanceOf("/a")?.render());
+        assertEquals("bar", group.getInstanceOf("/subdir/b")?.render());
     }
 
     @Test
@@ -35,7 +36,7 @@ export class TestTemplateNames extends BaseTest {
         TestTemplateNames.writeFile(dir, "a.st", "a(x) ::= << <subdir/b()> >>\n");
         TestTemplateNames.writeFile(dir + "/subdir", "b.st", "b() ::= <<bar>>\n");
         const group = new STGroupDir(dir);
-        assertEquals(" bar ", group.getInstanceOf("a")!.render());
+        assertEquals(" bar ", group.getInstanceOf("a")?.render());
     }
 
     @Test
@@ -45,7 +46,7 @@ export class TestTemplateNames extends BaseTest {
         TestTemplateNames.writeFile(dir, "a.st", "a(x) ::= << </subdir/b()> >>\n");
         TestTemplateNames.writeFile(dir + "/subdir", "b.st", "b() ::= <<bar>>\n");
         const group = new STGroupDir(dir);
-        assertEquals(" bar ", group.getInstanceOf("a")!.render());
+        assertEquals(" bar ", group.getInstanceOf("a")?.render());
     }
 
     @Test
@@ -54,9 +55,9 @@ export class TestTemplateNames extends BaseTest {
         TestTemplateNames.writeFile(dir, "a.st", "a() ::= << <b()> >>\n");
         TestTemplateNames.writeFile(dir, "b.st", "b() ::= <<bar>>\n");
         const group = new STGroupDir(dir);
-        const st = group.getInstanceOf("a")!;
+        const st = group.getInstanceOf("a");
         const expected = " bar ";
-        const result = st.render();
+        const result = st?.render();
         assertEquals(expected, result);
     }
 
@@ -68,7 +69,7 @@ export class TestTemplateNames extends BaseTest {
         TestTemplateNames.writeFile(dir + "/subdir", "b.st", "b() ::= <<bar>>\n");
         const group = new STGroupDir(dir);
         // group.getInstanceOf("/subdir/a")!.impl!.dump();
-        assertEquals(" bar ", group.getInstanceOf("/subdir/a")!.render());
+        assertEquals(" bar ", group.getInstanceOf("/subdir/a")?.render());
     }
 
     @Test
@@ -76,8 +77,8 @@ export class TestTemplateNames extends BaseTest {
         const dir = this.getRandomDir();
         TestTemplateNames.writeFile(dir, "a.st", "a(x) ::= <<foo>>");
         const group = new STGroupDir(dir);
-        assertEquals("foo", group.getInstanceOf("a")!.render());
-        assertEquals("foo", group.getInstanceOf("/a")!.render());
+        assertEquals("foo", group.getInstanceOf("a")?.render());
+        assertEquals("foo", group.getInstanceOf("/a")?.render());
     }
 
     @Test
@@ -87,8 +88,8 @@ export class TestTemplateNames extends BaseTest {
         TestTemplateNames.writeFile(dir + "/subdir", "a.st", "a() ::= << </subdir/b()> >>\n");
         TestTemplateNames.writeFile(dir + "/subdir", "b.st", "b() ::= <<bar>>\n");
         const group = new STGroupDir(dir);
-        assertEquals(" bar ", group.getInstanceOf("/subdir/a")!.render());
-        assertEquals(" bar ", group.getInstanceOf("subdir/a")!.render());
+        assertEquals(" bar ", group.getInstanceOf("/subdir/a")?.render());
+        assertEquals(" bar ", group.getInstanceOf("subdir/a")?.render());
     }
 
     @Test
@@ -116,7 +117,7 @@ export class TestTemplateNames extends BaseTest {
         TestTemplateNames.writeFile(dir + "/subdir", "b.st", "b() ::= <<bar>>\n");
         TestTemplateNames.writeFile(dir + "/subdir", "c.st", "c() ::= << <b()> >>\n");
         const group = new STGroupDir(dir);
-        assertEquals("  bar  ", group.getInstanceOf("a")!.render());
+        assertEquals("  bar  ", group.getInstanceOf("a")?.render());
     }
 
     /**

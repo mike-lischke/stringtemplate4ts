@@ -302,7 +302,7 @@ export interface ICompiledST {
     /** How do we interpret syntax of template? (debug only) */
     ast?: ParseTree;
 
-    readonly formalArguments: Map<string, IFormalArgument>;
+    readonly formalArguments?: Map<string, IFormalArgument>;
 
     hasFormalArgs: boolean;
 

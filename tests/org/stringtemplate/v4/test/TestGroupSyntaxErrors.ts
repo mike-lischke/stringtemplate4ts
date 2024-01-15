@@ -101,7 +101,7 @@ export class TestGroupSyntaxErrors extends BaseTest {
         const group = new STGroupFile(path.join(this.tmpdir, "t.stg"));
         group.setListener(errors);
         group.load(); // force load
-        const expected = "[t.stg 0:0: \\n in string]";
+        const expected = "[t.stg 2:4: \\n in string]";
         const result = errors.toString();
         assertEquals(expected, result);
     }

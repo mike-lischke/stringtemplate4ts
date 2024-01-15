@@ -16,15 +16,11 @@ import { Compiler } from "./compiler/Compiler.js";
 
 /**
  * A directory of templates without headers like ST v3 had.  Still allows group
- *  files in directory though like {@link STGroupDir} parent.
+ * files in directory though like {@link STGroupDir} parent.
  */
 export class STRawGroupDir extends STGroupDir {
-    public override loadTemplateFile(prefix: string, unqualifiedFileName: string,
-        templateStream?: CharStream): ICompiledST | undefined {
-        if (!templateStream) {
-            return super.loadTemplateFile(prefix, unqualifiedFileName);
-        }
-
+    protected override doLoadTemplateFile(prefix: string, unqualifiedFileName: string,
+        templateStream: CharStream): ICompiledST | undefined {
         const template = templateStream.getText(0, templateStream.size - 1);
         const templateName = Misc.getFileNameNoSuffix(unqualifiedFileName);
         const fullyQualifiedTemplateName = prefix + templateName;

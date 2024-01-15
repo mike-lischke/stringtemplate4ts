@@ -30,8 +30,14 @@ import { TestNullAndEmptyValues } from "./org/stringtemplate/v4/test/TestNullAnd
 import { TestOptions } from "./org/stringtemplate/v4/test/TestOptions.js";
 import { TestRegions } from "./org/stringtemplate/v4/test/TestRegions.js";
 import { TestRenderers } from "./org/stringtemplate/v4/test/TestRenderers.js";
+import { TestSTRawGroupDir } from "./org/stringtemplate/v4/test/TestSTRawGroupDir.js";
+import { TestScopes } from "./org/stringtemplate/v4/test/TestScopes.js";
+import { TestSubtemplates } from "./org/stringtemplate/v4/test/TestSubtemplates.js";
+import { TestSyntaxErrors } from "./org/stringtemplate/v4/test/TestSyntaxErrors.js";
 import { TestTemplateNames } from "./org/stringtemplate/v4/test/TestTemplateNames.js";
 import { TestTokensForDollarDelimiters } from "./org/stringtemplate/v4/test/TestTokensForDollarDelimiters.js";
+import { TestTypeRegistry } from "./org/stringtemplate/v4/test/TestTypeRegistry.js";
+import { TestWhitespace } from "./org/stringtemplate/v4/test/TestWhitespace.js";
 
 describe("TestAggregates", () => {
     const testNG = new TestNG();
@@ -163,6 +169,26 @@ describe("TestRenderers", () => {
     testNG.run(TestRenderers);
 });
 
+describe("TestScopes", () => {
+    const testNG = new TestNG();
+    testNG.run(TestScopes);
+});
+
+describe("TestSTRawGroupDir", () => {
+    const testNG = new TestNG();
+    testNG.run(TestSTRawGroupDir);
+});
+
+describe("TestSubtemplates", () => {
+    const testNG = new TestNG();
+    testNG.run(TestSubtemplates);
+});
+
+describe("TestSyntaxErrors", () => {
+    const testNG = new TestNG();
+    testNG.run(TestSyntaxErrors);
+});
+
 describe("TestTemplateNames", () => {
     const testNG = new TestNG();
     testNG.run(TestTemplateNames);
@@ -171,4 +197,14 @@ describe("TestTemplateNames", () => {
 describe("TestTokensForDollarDelimiters", () => {
     const testNG = new TestNG();
     testNG.run(TestTokensForDollarDelimiters);
+});
+
+describe("TestTypeRegistry", () => {
+    const testNG = new TestNG();
+    testNG.run(TestTypeRegistry);
+});
+
+describe("TestWhitespace", () => {
+    const testNG = new TestNG();
+    testNG.run(TestWhitespace);
 });

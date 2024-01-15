@@ -9,22 +9,22 @@ import { Constructor } from "../reflection/IMember.js";
 import { isSuperclassOf } from "../support/helpers.js";
 import { AmbiguousMatchException } from "./AmbiguousMatchException.js";
 
-export class TypeRegistry<K extends Constructor, V> implements Map<K, V> {
+export class TypeRegistry<V> {
     public [Symbol.toStringTag]: string = "TypeRegistry";
 
-    private readonly backingStore = new Map<K, V>();
-    private readonly cache = new Map<K, K | undefined>();
+    private readonly backingStore = new Map<Constructor, V>();
+    private readonly cache = new Map<Constructor, Constructor | null>();
 
-    public forEach(callbackfn: (value: V, key: K, map: Map<K, V>) => void,
+    public forEach(callbackfn: (value: V, key: Constructor, map: Map<Constructor, V>) => void,
         thisArg?: unknown): void {
         this.backingStore.forEach(callbackfn, thisArg);
     }
 
-    public entries(): IterableIterator<[K, V]> {
+    public entries(): IterableIterator<[Constructor, V]> {
         return this.backingStore.entries();
     }
 
-    public keys(): IterableIterator<K> {
+    public keys(): IterableIterator<Constructor> {
         return this.backingStore.keys();
     }
 
@@ -32,7 +32,7 @@ export class TypeRegistry<K extends Constructor, V> implements Map<K, V> {
         return this.backingStore.values();
     }
 
-    public [Symbol.iterator](): IterableIterator<[K, V]> {
+    public [Symbol.iterator](): IterableIterator<[Constructor, V]> {
         return this.backingStore[Symbol.iterator]();
     }
 
@@ -44,7 +44,7 @@ export class TypeRegistry<K extends Constructor, V> implements Map<K, V> {
         return this.backingStore.size === 0;
     }
 
-    public has(key: K): boolean {
+    public has(key: Constructor): boolean {
         if (this.cache.has(key)) {
             return true;
         }
@@ -62,7 +62,7 @@ export class TypeRegistry<K extends Constructor, V> implements Map<K, V> {
         return false;
     }
 
-    public get(key: K): V | undefined {
+    public get(key: Constructor): V | null {
         const value = this.backingStore.get(key);
         if (value) {
             return value;
@@ -71,28 +71,28 @@ export class TypeRegistry<K extends Constructor, V> implements Map<K, V> {
         const redirect = this.cache.get(key);
         if (redirect) {
             if (!redirect) {
-                return undefined;
+                return null;
             } else {
-                return this.backingStore.get(redirect);
+                return this.backingStore.get(redirect) ?? null;
             }
         }
 
-        const candidates = new Array<K | null>();
+        const candidates = new Array<Constructor | null>();
         for (const clazz of this.backingStore.keys()) {
-            if (isSuperclassOf(clazz, key)) { // XXX: Class.isAssignableFrom
+            if (isSuperclassOf(clazz, key)) {
                 candidates.push(clazz);
             }
         }
 
         if (candidates.length === 0) {
-            this.cache.set(key, undefined);
+            this.cache.set(key, null);
 
-            return undefined;
+            return null;
         } else {
             if (candidates.length === 1) {
-                this.cache.set(key, candidates[0]!);
+                this.cache.set(key, candidates[0]);
 
-                return this.backingStore.get(candidates[0]!);
+                return this.backingStore.get(candidates[0]!) ?? null;
             } else {
                 for (let i = 0; i < candidates.length - 1; i++) {
                     if (!candidates[i]) {
@@ -100,11 +100,10 @@ export class TypeRegistry<K extends Constructor, V> implements Map<K, V> {
                     }
 
                     for (let j = i + 1; j < candidates.length; j++) {
-                        if (isSuperclassOf(candidates[i], candidates[j])) { // XXX: Class.isAssignableFrom
+                        if (isSuperclassOf(candidates[i], candidates[j])) {
                             candidates[i] = null;
                             break;
                         } else {
-                            // XXX: Class.isAssignableFrom
                             if (isSuperclassOf(candidates[j], candidates[i])) {
                                 candidates[j] = null;
                             }
@@ -139,14 +138,14 @@ export class TypeRegistry<K extends Constructor, V> implements Map<K, V> {
                     throw new AmbiguousMatchException(builder);
                 }
 
-                this.cache.set(key, candidates[0]!);
+                this.cache.set(key, candidates[0]);
 
-                return this.backingStore.get(candidates[0]!);
+                return this.backingStore.get(candidates[0]!) ?? null;
             }
         }
     }
 
-    public put(key: K, value: V): V | undefined {
+    public put(key: Constructor, value: V): V | null {
         const result = this.get(key);
         this.backingStore.set(key, value);
         this.handleAlteration(key);
@@ -154,13 +153,13 @@ export class TypeRegistry<K extends Constructor, V> implements Map<K, V> {
         return result;
     }
 
-    public set(key: K, value: V): this {
+    public set(key: Constructor, value: V): this {
         this.put(key, value);
 
         return this;
     }
 
-    public remove(key: K): V | undefined {
+    public remove(key: Constructor): V | null {
         const previous = this.get(key);
         if (this.backingStore.delete(key)) {
             this.handleAlteration(key);
@@ -169,7 +168,7 @@ export class TypeRegistry<K extends Constructor, V> implements Map<K, V> {
         return previous;
     }
 
-    public delete(key: K): boolean {
+    public delete(key: Constructor): boolean {
         return this.remove(key) !== undefined;
     }
 
@@ -180,8 +179,8 @@ export class TypeRegistry<K extends Constructor, V> implements Map<K, V> {
 
     private handleAlteration(clazz: Constructor): void {
         for (const [key] of this.cache.entries()) {
-            if (isSuperclassOf(clazz, key)) { // XXX: Class.isAssignableFrom
-                this.cache.set(key, undefined);
+            if (isSuperclassOf(clazz, key)) {
+                this.cache.set(key, null);
             }
         }
     }
