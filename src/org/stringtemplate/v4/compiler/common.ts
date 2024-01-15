@@ -267,7 +267,7 @@ export interface ICompiledST {
     tokens?: TokenStream;
 
     /** How do we interpret syntax of template? (debug only) */
-    ast?: ParseTree;
+    tree?: ParseTree;
 
     readonly formalArguments?: Map<string, IFormalArgument>;
 

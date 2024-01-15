@@ -180,7 +180,7 @@ export class CodeGenerator {
             sub.addArg(new FormalArgument("i0"));
             sub.isAnonSubtemplate = true;
             sub.templateDefStartToken = context.start!;
-            sub.ast = context;
+            sub.tree = context;
             sub.tokens = this.#input;
 
             this.#outermostImpl.addImplicitlyDefinedTemplate(sub);
@@ -193,7 +193,7 @@ export class CodeGenerator {
             const sub = this.template(context.template(), name, args);
             sub.isAnonSubtemplate = true;
             sub.templateDefStartToken = context.template().start!;
-            sub.ast = context.template();
+            sub.tree = context.template();
             sub.tokens = this.#input;
 
             this.#outermostImpl.addImplicitlyDefinedTemplate(sub);

@@ -55,8 +55,8 @@ export class CompiledST implements ICompiledST {
     /** Overall token stream for template (debug only). */
     public tokens?: TokenStream;
 
-    /** How do we interpret syntax of template? (debug only) */
-    public ast?: ParseTree;
+    /** The parse tree of the parser run which created this instance. */
+    public tree?: ParseTree;
 
     public formalArguments?: Map<string, IFormalArgument>;
 
@@ -126,7 +126,7 @@ export class CompiledST implements ICompiledST {
         clone.template = this.template;
         clone.templateDefStartToken = this.templateDefStartToken;
         clone.tokens = this.tokens;
-        clone.ast = this.ast;
+        clone.tree = this.tree;
         clone.formalArguments = this.formalArguments ? new Map([...this.formalArguments]) : undefined;
         clone.hasFormalArgs = this.hasFormalArgs;
         clone.numberOfArgsWithDefaultValues = this.numberOfArgsWithDefaultValues;

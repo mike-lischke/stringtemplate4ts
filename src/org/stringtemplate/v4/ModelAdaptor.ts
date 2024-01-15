@@ -30,5 +30,5 @@ export interface ModelAdaptor<T> {
      * any key type. If we need to convert to {@code String}, then it's done by
      * {@code ST} and passed in here.</p>
      */
-    getProperty(interp: IInterpreter, self: IST, model: T, property: unknown, propertyName: string): unknown;
+    getProperty(interpreter: IInterpreter, self: IST, model: T, property: unknown, propertyName: string): unknown;
 }

@@ -139,7 +139,7 @@ export class Compiler {
             impl.nativeGroup = this.group;
             impl.template = values.template;
 
-            impl.ast = r;
+            impl.tree = r;
             impl.tokens = tokens;
         } catch (re) {
             if (re instanceof RecognitionException) {
