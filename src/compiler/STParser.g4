@@ -55,15 +55,6 @@ public static create(input: antlr.TokenStream, errMgr: ErrorManager, templateTok
 
     return result;
 }
-
-/*
-protected recoverFromMismatchedToken(input: antlr.IntStream, ttype: number, follow: antlr.BitSet): void {
-	throw new antlr.NoViableAltException(this, input);
-} */
-}
-
-@rulecatch {
-   catch (re) { throw re; }
 }
 
 templateAndEOF:
@@ -75,7 +66,7 @@ template:
 ;
 
 element:
-    {this.inputStream.LT(1)!.column === 0}? INDENT? COMMENT NEWLINE // throw away
+    {this.inputStream.LT(1)!.column === 0}? INDENT? COMMENT NEWLINE
     | INDENT? singleElement
     | compoundElement
 ;
@@ -93,49 +84,41 @@ compoundElement:
 ;
 
 exprTag:
-    LDELIM expr (';' exprOptions)? RDELIM /*-> ^(EXPR[$LDELIM,"EXPR"] expr exprOptions? )*/
+    LDELIM expr (';' exprOptions)? RDELIM
 ;
 
 region:
-    //@init {let indent: Token | null | undefined;}:
     indent = INDENT? x = LDELIM '@' ID RDELIM {if (this.inputStream.LA(1) === STLexer.NEWLINE) localContext._indent = undefined;} template INDENT?
         LDELIM '@end' RDELIM
+
     // kill \n for <@end> on line by itself if multi-line embedded region
     {if (localContext?.start!.line != this.inputStream.LT(1)!.line && this.inputStream.LA(1) === STLexer.NEWLINE) {
         this.inputStream.consume()
     }}
-    //({localContext?.start!.line !== this.inputStream.LT(1)!.line}? NEWLINE)?
-    /*-> {indent!=null}? ^(INDENTED_EXPR $i ^(REGION[$x] ID template? )) -> ^(REGION[$x]
-        ID template? )*/
 ;
 
 subtemplate:
     lc = '{' (ids += ID ( ',' ids += ID)* '|')? template INDENT? '}'
-    // ignore final INDENT before } as it's not part of outer indent
-    /*-> ^(SUBTEMPLATE[$lc,"SUBTEMPLATE"] ^(ARGS $ids)* template? )*/
 ;
 
 ifstat:
-    //@init {let indent: Token | null | undefined;}:
     indent = INDENT? LDELIM 'if' '(' c1 = conditional ')' RDELIM {if (this.inputStream.LA(1) === STLexer.NEWLINE) localContext._indent = undefined;}
         t1 = template (INDENT? LDELIM 'elseif' '(' c2 += conditional ')' RDELIM t2 += template)* (
         INDENT? LDELIM 'else' RDELIM t3 = template
     )? INDENT? endif = LDELIM 'endif' RDELIM
+
     // kill \n for <endif> on line by itself if multi-line IF
     {if (localContext?.start!.line != this.inputStream.LT(1)!.line && this.inputStream.LA(1) === STLexer.NEWLINE) {
         this.inputStream.consume()
     }}
-    //({localContext?.start!.line != this.inputStream.LT(1)!.line}? NEWLINE)?
-    /*-> {indent!=null}? ^(INDENTED_EXPR $i ^('if' $c1 $t1? ^('elseif' $c2 $t2)* ^(
-        'else' $t3? )? )) -> ^('if' $c1 $t1? ^('elseif' $c2 $t2)* ^('else' $t3? )? )*/
 ;
 
 conditional:
-    andConditional ('||' /* ^ */ andConditional)*
+    andConditional ('||' andConditional)*
 ;
 
 andConditional:
-    notConditional ('&&' /* ^ */ notConditional)*
+    notConditional ('&&' notConditional)*
 ;
 
 notConditional:
@@ -143,14 +126,11 @@ notConditional:
 ;
 
 notConditionalExpr:
-    ID (
-        p = '.' prop = ID /*-> ^(PROP[$p,"PROP"] $notConditionalExpr $prop)*/
-        | p = '.' '(' mapExpr ')' /*-> ^(PROP_IND[$p,"PROP_IND"] $notConditionalExpr mapExpr)  */
-    )*
+    ID (p = '.' prop = ID | p = '.' '(' mapExpr ')')*
 ;
 
 exprOptions:
-    option (',' option)* /* -> ^(OPTIONS option* ) */
+    option (',' option)*
 ;
 
 option
@@ -164,17 +144,17 @@ option
             this.errMgr.compileTimeError(ErrorType.NO_SUCH_OPTION, this.templateToken, $ID, $ID.text);
 		}
 		} (
-        '=' exprNoComma /* -> {validOption}? ^('=' ID exprNoComma) -> */
+        '=' exprNoComma
         | {
 			if (defVal == null) {
 				this.errMgr.compileTimeError(ErrorType.NO_DEFAULT_VALUE, this.templateToken, $ID);
 			}
-		} /* -> {validOption&&defVal!=null}? ^(EQUALS["="] ID STRING[$ID,'"'+defVal+'"']) ->  */
+		}
     )
 ;
 
 exprNoComma:
-    memberExpr (':' mapTemplateRef /*-> ^(MAP memberExpr mapTemplateRef) */ | /* -> memberExpr */)
+    memberExpr (':' mapTemplateRef |)
 ;
 
 expr:
@@ -185,15 +165,12 @@ expr:
 // error handling
 
 mapExpr:
-    memberExpr (
-        (c = ',' memberExpr)+ col = ':' mapTemplateRef /* -> ^(ZIP[$col] ^(ELEMENTS memberExpr+ ) mapTemplateRef) */
-        | /*-> memberExpr */
-    ) (
+    memberExpr ((c = ',' memberExpr)+ col = ':' mapTemplateRef |) (
         {$x.splice(0);} // don't keep queueing x; new list for each iteration
         col = ':' x += mapTemplateRef (
             // In the origional grammar this part used a syntactic predicate to stop parsing if we already saw a comma.
-            /*{$c === null}? =>*/ ',' x += mapTemplateRef
-        )* /*-> ^(MAP[$col] $mapExpr $x+ ) */
+            ',' x += mapTemplateRef
+        )*
     )*
 ;
 
@@ -204,25 +181,22 @@ expr:(e)(args)       convert e to a string template name and apply to expr
 */
 
 mapTemplateRef:
-    qualifiedId '(' args ')' /* -> ^(INCLUDE qualifiedId args? ) */
+    qualifiedId '(' args ')'
     | subtemplate
-    | lp = '(' mapExpr rp = ')' '(' argExprList? ')' /* -> ^(INCLUDE_IND mapExpr argExprList? ) */
+    | lp = '(' mapExpr rp = ')' '(' argExprList? ')'
 ;
 
 memberExpr:
-    (includeExpr /* -> includeExpr */) (
-        p = '.' ID /* -> ^(PROP[$p,"PROP"] $memberExpr ID) */
-        | p = '.' '(' mapExpr ')' /* -> ^(PROP_IND[$p,"PROP_IND"] $ memberExpr mapExpr) */
-    )*
+    (includeExpr) (p = '.' ID | p = '.' '(' mapExpr ')')*
 ;
 
-includeExpr:                                                  // prevent full LL(*), which fails, falling back on k=1; need k=2
+includeExpr:
     {Compiler.funcs.has(this.inputStream.LT(1)!.text ?? "")}? // predefined function
-    ID '(' expr? ')' /* -> ^(EXEC_FUNC ID expr? ) */
-    | 'super' '.' ID '(' args ')' /* -> ^(INCLUDE_SUPER ID args? ) */
-    | qualifiedId '(' args ')' /* -> ^(INCLUDE qualifiedId args? ) */
-    | '@' 'super' '.' ID '(' rp = ')' /* -> ^(INCLUDE_SUPER_REGION ID) */
-    | '@' ID '(' rp = ')' /* -> ^(INCLUDE_REGION ID) */
+    ID '(' expr? ')'
+    | 'super' '.' ID '(' args ')'
+    | qualifiedId '(' args ')'
+    | '@' 'super' '.' ID '(' rp = ')'
+    | '@' ID '(' rp = ')'
     | primary
 ;
 
@@ -233,27 +207,22 @@ primary:
     | FALSE
     | subtemplate
     | list
-    | /* {$conditional.size()==0}?=> */ lp = '(' expr ')' (
-        '(' argExprList? ')' /* -> ^(INCLUDE_IND[$lp] expr argExprList? ) */
-        | /* -> ^(TO_STR[$lp] expr) */
-    )
-    | /* {$conditional.size()>0}?=> */ '(' /* ! */ conditional ')' /* ! */
+    | lp = '(' expr ')' ( '(' argExprList? ')' |)
+    | '(' conditional ')'
 ;
 
-qualifiedId: (ID /* -> ID */ | '/' ID /* -> ^('/' ID) */) (
-        '/' r = ID /* -> ^('/' $qualifiedId $r) */
-    )*
+qualifiedId: (ID | '/' ID) ('/' r = ID)*
 ;
 
 args:
     argExprList
-    | namedArg ( ',' namedArg)* (',' '...')? /* -> namedArg+ '...'? */
+    | namedArg ( ',' namedArg)* (',' '...')?
     | '...'
     |
 ;
 
 argExprList:
-    arg (',' arg)* /* -> arg+ */
+    arg (',' arg)*
 ;
 
 arg:
@@ -261,16 +230,16 @@ arg:
 ;
 
 namedArg:
-    ID '=' arg /* -> ^('=' ID arg) */
+    ID '=' arg
 ;
 
 list:
     {this.inputStream.LA(2) == STLexer.RBRACK}? // hush warning; [] special case
-    lb = '[' ']' /* -> LIST[$lb] */
-    | lb = '[' listElement (',' listElement)* ']' /* -> ^(LIST[$lb] listElement* ) */
+    lb = '[' ']'
+    | lb = '[' listElement (',' listElement)* ']'
 ;
 
 listElement:
     exprNoComma
-    | /* -> NULL */
+    |
 ;

@@ -8,9 +8,9 @@ This repository contains a TypeScript port of the StringTemplate 4 template engi
 
 - Testing infrastructure code (decorators, JUnit wrappers, configuration and spec files)
 - A MurmurHash implementation used by the HashMap class.
-- The HashMap class. 
+- The HashMap class.
 
-ST4TS (StringTemplate4TypeScript) is a template engine for generating source code, web pages, emails, or any other formatted text output. ST4TS is particularly good at multi-targeted code generators, multiple site skins, and internationalisation/localisation.
+ST4TS (StringTemplate4TypeScript) is a template engine for generating source code, web pages, emails, or any other formatted text output. ST4TS is particularly good at multi-targeted code generators, multiple site skins, and internationalization/localization.
 
 The main website for the original ST implementation is:
 
@@ -35,7 +35,7 @@ The port closely resembles the original. Luckily, Java and TypeScript share many
 Run
 
 ```bash
-npm i stringtemplate4ts 
+npm i stringtemplate4ts
 ```
 
 Or use your preferred package manager.
@@ -63,3 +63,10 @@ npm run test
 ```
 
 in the project root.
+
+## Release Notes
+
+### 1.0.0 - 1.0.1
+
+- Initial release.
+- Changed build structure to include both CommonJS and ES6 modules.

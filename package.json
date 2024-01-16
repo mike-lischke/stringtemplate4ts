@@ -1,9 +1,11 @@
 {
     "name": "stringtemplate4ts",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "description": "A TypeScript port of the Java StringTemplate 4 library",
     "type": "module",
-    "main": "index.mjs",
+    "main": "dist/index.cjs",
+    "module": "dist/index.mjs",
+    "types": "dist/index.d.ts",
     "repository": {
         "type": "git",
         "url": "https://github.com/mike-lischke/stringtemplate4-ts"
@@ -15,9 +17,13 @@
     "author": "Mike Lischke",
     "license": "MIT",
     "scripts": {
-        "prepublishOnly": "npm run build && npm run test",
-        "build": "npm run generate-parsers && tsc && esbuild ./src/index.js --main-fields=module,main --bundle --outfile=dist/stringtemplate4ts.mjs --format=esm --platform=node",
-        "build-minified": "npm run build -- --minify",
+        "prepublishOnly": "npm run build-minified && npm run test",
+        "build-minified": "npm run generate-parsers && tsc && npm run build-mjs-minified && npm run build-cjs-minified",
+        "build-bundle": "esbuild ./src/index.js --main-fields=module,main --bundle --sourcemap",
+        "build-mjs": "npm run build-bundle -- --outfile=dist/index.mjs --format=esm --platform=node",
+        "build-mjs-minified": "npm run build-mjs -- --minify",
+        "build-cjs": "npm run build-bundle -- --outfile=dist/index.cjs --format=cjs --platform=node",
+        "build-cjs-minified": "npm run build-cjs -- --minify",
         "test": "node --experimental-vm-modules --no-warnings --loader ts-node/esm ./node_modules/jest/bin/jest.js --no-coverage --silent",
         "test-ci": "npm run test -- --no-coverage --watchAll=false --silent",
         "test-coverage": "npm run test -- --coverage --silent",
@@ -26,7 +32,7 @@
     "devDependencies": {
         "@types/he": "1.2.3",
         "@types/jest": "29.5.11",
-        "@types/luxon": "^3.4.0",
+        "@types/luxon": "3.4.0",
         "@types/node": "20.10.4",
         "@typescript-eslint/eslint-plugin": "6.14.0",
         "@typescript-eslint/parser": "6.13.2",
