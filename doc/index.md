@@ -1,16 +1,18 @@
 # StringTemplate 4 Documentation
 
-Please check [Frequently asked questions (FAQ)](faq/index.md) before asking questions on stackoverflow or StringTemplate-discussion list.
-
-Notes: To add to or improve this documentation, <a href=https://help.github.com/articles/fork-a-repo>fork</a> the <a href=https://github.com/antlr/stringtemplate4>antlr/stringtemplate4 repo</a> then update this `doc/index.md` or file(s) in that directory.  Submit a <a href=https://help.github.com/articles/creating-a-pull-request>pull request</a> to get your changes incorporated into the main repository. Do not mix code and documentation updates in the same pull request. <b>You must sign the contributors.txt certificate of origin with your pull request if you've not done so before.</b></li>
+Please ask questions about StringTemplate in general on StackOverflow or in the StringTemplate-discussion list. For specific question about the TypeScript implementation of the ST library use the issue tracker or the discussions of the repository on Github.
 
 ## Installation
 
-* [Java](java.md)
-* [C#](https://github.com/antlr/antlrcs)
-* [JavaScript--not stable](https://github.com/jsnyders/StringTemplate-js)
-* Python
-* [Objective-C](https://github.com/muggins/ST4-ObjC2.0-Runtime)
+Get the Node.js package with the usual command:
+
+```bash
+npm i stringtemplate4ts
+```
+
+in your project folder.
+
+> Note: This TypeScript port uses semantic versioning, independent of the original Code, and hence starts with version `1.0.0` instead of `4.3.3` (the version of Java ST4, at the time of writing this).
 
 ## Introductory material
 
@@ -48,25 +50,6 @@ Notes: To add to or improve this documentation, <a href=https://help.github.com/
 * [Renderers](renderers.md)
 * [Model adaptors](adaptors.md)
 
-## Debugging
-
-* [StringTemplate Inspector GUI](inspector.md)
-
 ## Misc
 
 * [Template to Bytecode mapping](bytecode.md)
-* [Differences between v3 and v4](3to4.md)
-* [Releasing ST4](releasing-st4.md)
-
-## Release Notes
-
-For just 4.0.0 - 4.0.7. Now look at [github for release notes](https://github.com/antlr/stringtemplate4/releases).
-
-* [4.0 Release Notes](release-notes/4.0.md)
-* [4.0.1 Release Notes](release-notes/4.0.1.md)
-* [4.0.2 Release Notes](release-notes/4.0.2.md)
-* [4.0.3 Release Notes](release-notes/4.0.3.md)
-* [4.0.4 Release Notes](release-notes/4.0.4.md)
-* [4.0.5 Release Notes](release-notes/4.0.5.md)
-* [4.0.6 Release Notes](release-notes/4.0.6.md)
-* [4.0.7 Release Notes](release-notes/4.0.7.md)

@@ -1,6 +1,6 @@
 # Auto-indentation
 
-Properly-indented text is a very desirable generation outcome, but it is often difficult to achieve--particularly when the programmer must do this manually. StringTemplate automatically and naturally indents output by tracking the nesting level of all attribute expression evaluations and associated whitespace preﬁxes. For example, in the following slist template, all output generated from the `<statements>` expression will be indented by two spaces because the expression itself is indented.
+Properly-indented text is a very desirable generation outcome, but it is often difficult to achieve - particularly when the programmer must do this manually. StringTemplate automatically and naturally indents output by tracking the nesting level of all attribute expression evaluations and associated whitespace preﬁxes. For example, in the following slist template, all output generated from the `<statements>` expression will be indented by two spaces because the expression itself is indented.
 
 ```
 slist(statements) ::= <<
@@ -16,9 +16,9 @@ StringTemplate performs auto indentation as the text gets emitted during renderi
 
 To turn off auto indentation, tell StringTemplate to use NoIndentWriter by invoking the write(writer) method instead of the usual render method:
 
-```java
-StringWriter sw = new StringWriter();
-NoIndentWriter w = new NoIndentWriter(sw);
+```typescript
+const sw = new StringWriter();
+const w = new NoIndentWriter(sw);
 st.write(w); // same as render() except with a different writer
-String result = sw.toString();
+const result = sw.toString();
 ```

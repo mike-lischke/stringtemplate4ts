@@ -41,13 +41,11 @@ import "test.stg"  // import a group of templates from a file
 import "test"      // import a directory of templates
 ```
 
-**In the Java-reference implementation**, StringTemplate also looks for files and directories in the CLASSPATH. Using relative paths is particularly important if we want to load templates from jar files. Java cannot find files specified with absolute path names within jar files. Please refer to [Using StringTemplate with Java](java.md).
-
 Templates with the same name override templates from imported groups just like method overriding and class inheritance. See [Group inheritance](inheritance.md).
 
 ## Dictionaries
 
-There are situations where you need to translate a string in one language to a string in another language. For example, you might want to translate integer to int when translating Pascal to C. You could pass a Map or IDictionary (e.g. hashtable) from the model into the templates, but then you have output literals in your model:-1:. The StringTemplate solution is to support a dictionary feature. For example, here is a dictionary that maps Java type names to their default initialization values:
+There are situations where you need to translate a string in one language to a string in another language. For example, you might want to translate integer to int when translating Pascal to C. You could pass a Map or Dictionary (e.g. Map) from the model into the templates, but then you have output literals in your model. The StringTemplate solution is to support a dictionary feature. For example, here is a dictionary that maps Java type names to their default initialization values:
 
 ```
 typeInitMap ::= [

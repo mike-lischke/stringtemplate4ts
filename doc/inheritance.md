@@ -45,21 +45,22 @@ public enum <typename> { <names; separator=", "> }
 
 Group Java1\_5 the inherited template class will write template constants. The following sample code creates group objects referring to both template group files, creates and filled in instances of template class, and finally prints out the rendered text.
 
-```java
-public void test(String[] args) {
-    STGroup java1_4 = new STGroupFile("/tmp/Java1_4.stg");
-    STGroup java1_5 = new STGroupFile("/tmp/Java1_5.stg");
-    System.out.println( getCode(java1_4) );
-    System.out.println( getCode(java1_5) );
+```typescript
+export const test = (args: unknown[]): void => {
+    const java1_4 = new STGroupFile("/tmp/Java1_4.stg");
+    const java1_5 = new STGroupFile("/tmp/Java1_5.stg");
+    console.log(getCode(java1_4));
+    console.log(getCode(java1_5));
 }
-public String getCode(STGroup java) {
-    ST cl = java.getInstanceOf("class"); // create class
-    cl.add("name", "T");
-    ST consts = java.getInstanceOf("constants");
-    consts.add("typename", "MyEnum");
-    consts.add("names", new String[] {"A","B"});
-    cl.add("members", consts); // add constants as a member
-    return cl.render();
+
+export const getCode = (java: STGroup): string => {
+    const cl = java.getInstanceOf("class"); // create class
+    cl?.add("name", "T");
+    const consts = java.getInstanceOf("constants");
+    consts?.add("typename", "MyEnum");
+    consts?.add("names", ["A", "B"]);
+    cl?.add("members", consts); // add constants as a member
+    return cl?.render() ?? "";
 }
 ```
  
@@ -84,7 +85,7 @@ In object-oriented programming languages, the type of the receiving object dicta
 
 Imagine we're generating an HTML page using templates from group file site.stg (using `$...$` delimiters) that invokes a searchbox template defined within the same group file:
 
-```
+```stringtemplate
 // site.stg
 page(content) ::= <<
 <html>
@@ -100,11 +101,11 @@ searchbox() ::= "<form method=get action=/search>...</form>"
 
 To create an instance of page, inject some test content, and print it out, we can use the following controller code.
 
-```java
-STGroup g = new STGroupFile("site.stg", '$', '$');
-ST page = g.getInstanceOf("page");
-page.add("content", "a test page");
-System.out.println(page.render());
+```typescript
+const g = new STGroupFile("site.stg", "$", "$");
+const page = g.getInstanceOf("page");
+page?.add("content", "a test page");
+console.log(page?.render());
 ```
  
 We get the following output.
@@ -121,7 +122,7 @@ a test page
 
 Now, let's define a subgroup that overrides searchbox so that it generates nothing.
 
-```
+```stringtemplate
 // bland.stg
 import "site.stg"
 searchbox() ::= ""
@@ -129,8 +130,8 @@ searchbox() ::= ""
 
 We can use identical code except for changing the source of the templates:
 
-```java
-STGroup g = new STGroupFile("bland.stg", '$', '$');
+```typescript
+const g = new STGroupFile("bland.stg", "$", "$");
 ...
 ```
 
@@ -153,12 +154,12 @@ When dealing with lots of output language variations, a proper separation of con
 
 Obviously the number of variations can explode. To deal with this problem, StringTemplate allows you to dynamically import/inherit templates using the controller instead of an import statement in the group file (and is the only way to do it when using directories of templates instead of group files). Here's some code that assumes there are no imports in the group files. To create group dbg\_java1\_5, it imports java1\_5 group, which itself imports java1\_4.
  
-```java
-STGroup java1_4 = new STGroupFile("/tmp/Java1_4.stg");
-STGroup java1_5 = new STGroupFile("/tmp/Java1_5.stg");
+```typescript
+const java1_4 = new STGroupFile("/tmp/Java1_4.stg");
+const java1_5 = new STGroupFile("/tmp/Java1_5.stg");
 java1_5.imporTemplates(java1_4); // import "Java1_5.stg"
-STGroup dbg_java1_4 = new STGroupFile("/tmp/Dbg.stg");
-STGroup dbg_java1_5 = new STGroupFile("/tmp/Dbg.stg");
+const dbg_java1_4 = new STGroupFile("/tmp/Dbg.stg");
+const dbg_java1_5 = new STGroupFile("/tmp/Dbg.stg");
 dbg_java1_4.importTemplates(java1_4); // import "Java1_4.stg"
 dbg_java1_5.importTemplates(java1_5); // import "Java1_5.stg"
 ```
@@ -169,23 +170,23 @@ There are 2 kinds of people using StringTemplate: web type folks and code genera
 
 Remember, for each group there should only be one STGroup object. So, imagine we have group file foo.stg and template a.st in a directory called /tmp and we create a group object to handle that stuff:
  
-```java
-STGroup dir = STGroupDir("/tmp");
+```typescript
+const dir = STGroupDir("/tmp");
 dir.getInstanceOf("a"); // no problem; looks in "/tmp/a.st"
 dir.getInstanceOf("/foo/b"); // no problem if foo.stg has b() template
 ```
 
 So far so good. Now, what you cannot do is have foo.stg import something because it is nested within dir:
 
-```
+```stringtemplate
 import "bar.stg"  // causes unsupported operation exception
 b() ::= "..."
 ```
 
 If I did,
 
-```java
-STGroup g = new STGroupFile("/tmp/foo.stg");
+```typescript
+const g = new STGroupFile("/tmp/foo.stg");
 ```
 
 then there is no problem. Difference is that you don't want to mix inheritance with subdirectories and a group file within a STGroupDir acts like a subdirectory.

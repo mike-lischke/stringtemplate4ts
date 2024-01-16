@@ -1,13 +1,13 @@
 # Error listeners
 
-To get notified when StringTemplate detects a problem during compilation of templates or, at runtime, when interpreting templates, provide StringTemplate with an error listener. The default listener sends messages to standard error/output, which are generally not what you want in a larger application. Here are the listener definitions in the various ports:
+To get notified when StringTemplate detects a problem during compilation of templates or, at runtime, when interpreting templates, provide StringTemplate with an error listener. The default listener sends messages to the console, which is generally not what you want in a larger application. Here is the listener definition:
  
-```java
-public interface STErrorListener {
-    public void compileTimeError(STMessage msg);
-    public void runTimeError(STMessage msg);
-    public void IOError(STMessage msg);
-    public void internalError(STMessage msg);
+```typescript
+export interface STErrorListener {
+    compileTimeError(msg: STMessage): void;
+    runTimeError(msg: STMessage): void;
+    iOError(msg: STMessage): void;
+    internalError(msg: STMessage): void;
 }
 ```
  
@@ -15,9 +15,9 @@ The STMessage instances include information such as the ErrorType and any argume
 
 You can specify a listener per group or per execution of the interpreter. To catch compile errors, make sure to set the listener before you trigger an action that processes the group file or loads templates:
 
-```java
+```typescript
 // listener per group
-STGroup g = ...;
+const g = new STGroup(...);
 g.setListener(myListener);
 g.getInstance("foo");
 ...
@@ -25,11 +25,11 @@ g.getInstance("foo");
 
 If you want to track interpretation errors with a particular listener, use the appropriate ST.write() method:
 
-```java
+```typescript
 // listener per rendering
-STGroup g = ...;
-ST st = g.getInstance("foo");
-st.write(myWriter, myListener);
+const g = new STGroup(...);
+const st = g.getInstance("foo");
+st?.write(myWriter, myListener);
 ```
 
 Imported groups automatically use the listener of the importing group.

@@ -48,18 +48,18 @@ See [Templates conditionals](templates.md#conditionals)
 
 If `attribute` has a value or is a boolean object that evaluates to true, include `subtemplate `else include `subtemplate2`. These conditionals may be nested.
 ```
-<if(attribute)>subtemplate 
-<else>subtemplate2 
+<if(attribute)>subtemplate
+<else>subtemplate2
 <endif>
 ```
 
 First attribute that has a value or is a boolean object that evaluates to true, include that subtemplate. These conditionals may be nested.
 
 ```
-<if(x)>subtemplate 
-<elseif(y)>subtemplate2 
-<elseif(z)>subtemplate3 
-<else>subtemplate4 
+<if(x)>subtemplate
+<elseif(y)>subtemplate2
+<elseif(z)>subtemplate3
+<else>subtemplate4
 <endif>
 ```
 
@@ -82,7 +82,7 @@ See [Group file syntax](groups.md)
 ```
 t1(arg1,arg2,...,argN) ::= "template1" // single-line template
 // multi line template
-t2(args) ::= << 
+t2(args) ::= <<
 template2
 >>
 // multi line template that ignores indentation and newlines
@@ -99,7 +99,7 @@ import "template file.st"
 import "group file.stg"
 ```
 
-The paths can be absolute, but should probably be relative to the class path or the directory of the template that imports them.
+The paths can be absolute, but should probably be relative to the directory of the template that imports them.
 
 ## Reserved words
 

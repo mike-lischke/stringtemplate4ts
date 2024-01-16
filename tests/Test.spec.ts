@@ -1,42 +1,42 @@
 /*
  * Copyright (c) Mike Lischke. All rights reserved.
- * Licensed under the MIT License. See License.txt in the project root for license information.
+ * Licensed under the MIT License. See License-MIT.txt in the project root for license information.
  */
 
 import { TestNG } from "./TestNG.js";
-import { TestAggregates } from "./org/stringtemplate/v4/test/TestAggregates.js";
-import { TestAttributes } from "./org/stringtemplate/v4/test/TestAttributes.js";
-import { TestBuggyDefaultValueRaisesNPETest } from "./org/stringtemplate/v4/test/TestBuggyDefaultValueRaisesNPETest.js";
-import { TestCompiler } from "./org/stringtemplate/v4/test/TestCompiler.js";
-import { TestCoreBasics } from "./org/stringtemplate/v4/test/TestCoreBasics.js";
-import { TestDictionaries } from "./org/stringtemplate/v4/test/TestDictionaries.js";
-import { TestDollarDelimiters } from "./org/stringtemplate/v4/test/TestDollarDelimiters.js";
-import { TestEarlyEvaluation } from "./org/stringtemplate/v4/test/TestEarlyEvaluation.js";
-import { TestFunctions } from "./org/stringtemplate/v4/test/TestFunctions.js";
-import { TestGroupSyntax } from "./org/stringtemplate/v4/test/TestGroupSyntax.js";
-import { TestGroupSyntaxErrors } from "./org/stringtemplate/v4/test/TestGroupSyntaxErrors.js";
-import { TestGroups } from "./org/stringtemplate/v4/test/TestGroups.js";
-import { TestImports } from "./org/stringtemplate/v4/test/TestImports.js";
-import { TestIndentation } from "./org/stringtemplate/v4/test/TestIndentation.js";
-import { TestIndirectionAndEarlyEval } from "./org/stringtemplate/v4/test/TestIndirectionAndEarlyEval.js";
-import { TestInterptimeErrors } from "./org/stringtemplate/v4/test/TestInterptimeErrors.js";
-import { TestLexer } from "./org/stringtemplate/v4/test/TestLexer.js";
-import { TestLineWrap } from "./org/stringtemplate/v4/test/TestLineWrap.js";
-import { TestLists } from "./org/stringtemplate/v4/test/TestLists.js";
-import { TestModelAdaptors } from "./org/stringtemplate/v4/test/TestModelAdaptors.js";
-import { TestNoNewlineTemplates } from "./org/stringtemplate/v4/test/TestNoNewlineTemplates.js";
-import { TestNullAndEmptyValues } from "./org/stringtemplate/v4/test/TestNullAndEmptyValues.js";
-import { TestOptions } from "./org/stringtemplate/v4/test/TestOptions.js";
-import { TestRegions } from "./org/stringtemplate/v4/test/TestRegions.js";
-import { TestRenderers } from "./org/stringtemplate/v4/test/TestRenderers.js";
-import { TestSTRawGroupDir } from "./org/stringtemplate/v4/test/TestSTRawGroupDir.js";
-import { TestScopes } from "./org/stringtemplate/v4/test/TestScopes.js";
-import { TestSubtemplates } from "./org/stringtemplate/v4/test/TestSubtemplates.js";
-import { TestSyntaxErrors } from "./org/stringtemplate/v4/test/TestSyntaxErrors.js";
-import { TestTemplateNames } from "./org/stringtemplate/v4/test/TestTemplateNames.js";
-import { TestTokensForDollarDelimiters } from "./org/stringtemplate/v4/test/TestTokensForDollarDelimiters.js";
-import { TestTypeRegistry } from "./org/stringtemplate/v4/test/TestTypeRegistry.js";
-import { TestWhitespace } from "./org/stringtemplate/v4/test/TestWhitespace.js";
+import { TestAggregates } from "./TestAggregates.js";
+import { TestAttributes } from "./TestAttributes.js";
+import { TestBuggyDefaultValueRaisesNPETest } from "./TestBuggyDefaultValueRaisesNPETest.js";
+import { TestCompiler } from "./TestCompiler.js";
+import { TestCoreBasics } from "./TestCoreBasics.js";
+import { TestDictionaries } from "./TestDictionaries.js";
+import { TestDollarDelimiters } from "./TestDollarDelimiters.js";
+import { TestEarlyEvaluation } from "./TestEarlyEvaluation.js";
+import { TestFunctions } from "./TestFunctions.js";
+import { TestGroupSyntax } from "./TestGroupSyntax.js";
+import { TestGroupSyntaxErrors } from "./TestGroupSyntaxErrors.js";
+import { TestGroups } from "./TestGroups.js";
+import { TestImports } from "./TestImports.js";
+import { TestIndentation } from "./TestIndentation.js";
+import { TestIndirectionAndEarlyEval } from "./TestIndirectionAndEarlyEval.js";
+import { TestInterptimeErrors } from "./TestInterptimeErrors.js";
+import { TestLexer } from "./TestLexer.js";
+import { TestLineWrap } from "./TestLineWrap.js";
+import { TestLists } from "./TestLists.js";
+import { TestModelAdaptors } from "./TestModelAdaptors.js";
+import { TestNoNewlineTemplates } from "./TestNoNewlineTemplates.js";
+import { TestNullAndEmptyValues } from "./TestNullAndEmptyValues.js";
+import { TestOptions } from "./TestOptions.js";
+import { TestRegions } from "./TestRegions.js";
+import { TestRenderers } from "./TestRenderers.js";
+import { TestSTRawGroupDir } from "./TestSTRawGroupDir.js";
+import { TestScopes } from "./TestScopes.js";
+import { TestSubtemplates } from "./TestSubtemplates.js";
+import { TestSyntaxErrors } from "./TestSyntaxErrors.js";
+import { TestTemplateNames } from "./TestTemplateNames.js";
+import { TestTokensForDollarDelimiters } from "./TestTokensForDollarDelimiters.js";
+import { TestTypeRegistry } from "./TestTypeRegistry.js";
+import { TestWhitespace } from "./TestWhitespace.js";
 
 describe("TestAggregates", () => {
     const testNG = new TestNG();

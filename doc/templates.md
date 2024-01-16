@@ -230,3 +230,5 @@ In practice, delayed evaluation means that templates may be created and assemble
 ## Formal template syntax
 
 Please see [StringTemplate template parser](https://github.com/antlr/grammars-v4/blob/master/stringtemplate/STParser.g4).
+
+> Note: the Java implementation of StringTemplate uses a handwritten ST lexer and an own version of the ST parser grammar, not what is linked above. The TS port does the same, but might later be changed to use the grammars from the grammar directory.

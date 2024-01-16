@@ -1,0 +1,18 @@
+@@ -0,0 +1,10 @@
+.github
+.vscode
+cli/
+tests/
+coverage/
+dist/*.map
+src/
+doc/
+
+jest.config.ts
+.eslintignore
+.eslintrc.json
+.project
+tsconfig.json
+cspell.json
+historical-contributors-agreement.txt
+developer-cert-of-origin.txt

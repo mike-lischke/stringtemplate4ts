@@ -1,4 +1,6 @@
 [![GitHub Workflow Status (with event)](https://img.shields.io/github/actions/workflow/status/mike-lischke/stringtemplate4-ts/nodejs.yml?style=for-the-badge&logo=github)](https://github.com/mike-lischke/stringtemplate4-ts/actions/workflows/nodejs.yml)
+[![Weekly Downloads](https://img.shields.io/npm/dw/stringtemplate4ts?style=for-the-badge&color=blue)](https://www.npmjs.com/package/stringtemplate4ts)
+[![npm version](https://img.shields.io/npm/v/stringtemplate4ts?style=for-the-badge&color=yellow)](https://www.npmjs.com/package/stringtemplate4ts)
 
 # Introduction
 
@@ -20,6 +22,13 @@ model-view separation, unlike other engines. See [this document](./doc/mvc.templ
 The documentation is [here](./doc/index.md)
 
 Per the BSD license in [LICENSE.txt](LICENSE.txt), this software is not guaranteed to work and might even destroy all life on this planet.
+
+## Known Differences
+
+The port closely resembles the original. Luckily, Java and TypeScript share many similarities, allowing for the implementation of even esoteric language features such as runtime method access and invocation using string names (also known as reflection). However, there are a few differences, which are listed below:
+
+- Importing modules is different in both languages and can be challenging when dealing with circular dependencies. To avoid these dependencies, interfaces and factory methods have been defined for certain classes that refer to each other. This should not impose any restrictions for normal usage.
+- Formatting numbers with arbitrary format strings and locale support is not available. We can either have locale aware formatting using the standard `toLocaleString` method or we can have a custom format string pattern, not both. I decided for the latter (which uses the `fast-printf` library). Once I have found a library which supports both (such as `luxon` for date and time), this can be improved.
 
 ## Installation
 
@@ -43,6 +52,8 @@ Check the repository out and run
 npm run build
 ```
 
+in the project root.
+
 ## Running Unit Tests
 
 Running the tests is equally simple. Just do:
@@ -50,3 +61,5 @@ Running the tests is equally simple. Just do:
 ```bash
 npm run test
 ```
+
+in the project root.

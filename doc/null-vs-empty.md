@@ -2,7 +2,7 @@
 
 *December 27, 2012*
 
-In [null vs missing vs empty vs nonexistent in ST 4](null-vs-empty-previous.md) a few years ago, I tried to resolve in my head the difference between a missing attribute, a null value, an array with no elements, and a string with no characters. I don't think I got it completely thought through and ST v4 might have some weird inconsistencies. This page is an attempt to finally write down all the cases and resolve exactly how things should work.
+A few years ago, I tried to resolve in my head the difference between a missing attribute, a null value, an array with no elements, and a string with no characters. I don't think I got it completely thought through and ST v4 might have some weird inconsistencies. This page is an attempt to finally write down all the cases and resolve exactly how things should work.
 
 I think the general rule should be: *no complete <...> expression evaluation ever equals null*.  A lone x can have value null, but the resulting <x> evaluates to the empty string. A missing entry in a list like [a,,b] is the only way to create a null value in ST and I think this might have been a mistake on my part to allow missing elements.
 

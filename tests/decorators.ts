@@ -1,15 +1,9 @@
 /*
  * Copyright (c) Mike Lischke. All rights reserved.
- * Licensed under the MIT License. See License.txt in the project root for license information.
+ * Licensed under the MIT License. See License-MIT.txt in the project root for license information.
  */
 
-/*
- eslint-disable
-    @typescript-eslint/naming-convention,
-    prefer-arrow/prefer-arrow-functions,
-    jsdoc/require-param,
-    jsdoc/require-returns
-*/
+/* eslint-disable @typescript-eslint/naming-convention */
 
 /**
  * This file contains the decorators for the test framework.
@@ -49,13 +43,19 @@ export interface IDataProviderParameters {
 /** A definition of the target function for a function decorator. */
 export type DecoratorTargetFunction<This, Args extends unknown[], Return> = (this: This, ...args: Args) => Return;
 
-/** Marks a method as overriding an inherited method. */
-export function Override<This, Args extends unknown[], Return>(
+/**
+ * Marks a method as overriding an inherited method.
+ * @param target The decorated target function.
+ * @param _context The context of the decorator.
+ *
+ * @returns The original method.
+ */
+export const Override = <This, Args extends unknown[], Return>(
     target: DecoratorTargetFunction<This, Args, Return>,
     _context: ClassMethodDecoratorContext<This, DecoratorTargetFunction<This, Args, Return>>,
-): DecoratorTargetFunction<This, Args, Return> {
+): DecoratorTargetFunction<This, Args, Return> => {
     return target;
-}
+};
 
 /**
  * Executes the given target method and handles expected exceptions.
@@ -86,6 +86,8 @@ function executeTarget(this: unknown, target: Function, expectedExceptions?: Arr
  * instance.
  * The list is ordered from the top of the prototype chain to the current instance and contains the original
  * methods (not the decorator methods).
+ * @param target The target method.
+ * @param args The arguments for the target method.
  */
 function executeTargetWithInheritance<This>(this: This, target: Function, ...args: unknown[]) {
     // Call the original method and all overridden methods in the prototype chain (in reverse order).
@@ -126,6 +128,7 @@ export function DataProvider(param: IDataProviderParameters): Function;
  *
  * @returns The original method.
  */
+// eslint-disable-next-line prefer-arrow/prefer-arrow-functions
 export function DataProvider<This, Args extends unknown[], Return>(
     ...args: unknown[]): Function | DecoratorTargetFunction<This, Args, Return> {
     if (args.length === 1) {
@@ -177,6 +180,7 @@ export function Test<T extends ITestParameters>(param: T): Function;
  *
  * @returns A decorator factory method.
  */
+// eslint-disable-next-line prefer-arrow/prefer-arrow-functions
 export function Test<T extends ITestParameters, This, Args extends unknown[], Return>(
     ...args: unknown[]): Function | DecoratorTargetFunction<This, Args, Return> {
 
@@ -302,10 +306,10 @@ export function Test<T extends ITestParameters, This, Args extends unknown[], Re
  *
  * @returns a method decorator.
  */
-export function BeforeEach<This, Args extends unknown[], Return>(
+export const BeforeEach = <This, Args extends unknown[], Return>(
     target: DecoratorTargetFunction<This, Args, Return>,
     context: ClassMethodDecoratorContext<This, DecoratorTargetFunction<This, Args, Return>>,
-): DecoratorTargetFunction<This, Args, Return> {
+): DecoratorTargetFunction<This, Args, Return> => {
 
     const result = function (this: This, ...args: Args): Return {
         beforeEach(() => {
@@ -319,7 +323,7 @@ export function BeforeEach<This, Args extends unknown[], Return>(
     Object.defineProperty(result, "isBeforeEach", { value: true });
 
     return result;
-}
+};
 
 /**
  * Decorator function for the BeforeAll annotation.
@@ -329,10 +333,10 @@ export function BeforeEach<This, Args extends unknown[], Return>(
  *
  * @returns a method decorator.
  */
-export function BeforeAll<This, Args extends unknown[], Return>(
+export const BeforeAll = <This, Args extends unknown[], Return>(
     target: DecoratorTargetFunction<This, Args, Return>,
     context: ClassMethodDecoratorContext<This, DecoratorTargetFunction<This, Args, Return>>,
-): DecoratorTargetFunction<This, Args, Return> {
+): DecoratorTargetFunction<This, Args, Return> => {
 
     const result = function (this: This, ...args: Args): Return {
         beforeAll(() => {
@@ -346,7 +350,7 @@ export function BeforeAll<This, Args extends unknown[], Return>(
     Object.defineProperty(result, "isBeforeAll", { value: true });
 
     return result;
-}
+};
 
 /**
  * Decorator function for the AfterEach annotation.
@@ -356,10 +360,10 @@ export function BeforeAll<This, Args extends unknown[], Return>(
  *
  * @returns a method decorator.
  */
-export function AfterEach<This, Args extends unknown[], Return>(
+export const AfterEach = <This, Args extends unknown[], Return>(
     target: DecoratorTargetFunction<This, Args, Return>,
     context: ClassMethodDecoratorContext<This, DecoratorTargetFunction<This, Args, Return>>,
-): DecoratorTargetFunction<This, Args, Return> {
+): DecoratorTargetFunction<This, Args, Return> => {
 
     const result = function (this: This, ...args: Args): Return {
         afterEach(() => {
@@ -373,7 +377,7 @@ export function AfterEach<This, Args extends unknown[], Return>(
     Object.defineProperty(result, "isAfterEach", { value: true });
 
     return result;
-}
+};
 /**
  * Decorator function for the AfterAll annotation.
  *
@@ -382,10 +386,10 @@ export function AfterEach<This, Args extends unknown[], Return>(
  *
  * @returns a method decorator.
  */
-export function AfterAll<This, Args extends unknown[], Return>(
+export const AfterAll = <This, Args extends unknown[], Return>(
     target: DecoratorTargetFunction<This, Args, Return>,
     context: ClassMethodDecoratorContext<This, DecoratorTargetFunction<This, Args, Return>>,
-): DecoratorTargetFunction<This, Args, Return> {
+): DecoratorTargetFunction<This, Args, Return> => {
 
     const result = function (this: This, ...args: Args): Return {
         afterAll(() => {
@@ -399,7 +403,7 @@ export function AfterAll<This, Args extends unknown[], Return>(
     Object.defineProperty(result, "isAfterAll", { value: true });
 
     return result;
-}
+};
 
 /**
  * Decorator function for the Ignore annotation.
@@ -408,7 +412,7 @@ export function AfterAll<This, Args extends unknown[], Return>(
  *
  * @returns the original method.
  */
-export function Ignore(param: string): Function {
+export const Ignore = (param: string): Function => {
 
     return <This, Args extends unknown[], Return>(target: DecoratorTargetFunction<This, Args, Return>,
         context: ClassMethodDecoratorContext<This, DecoratorTargetFunction<This, Args, Return>>) => {
@@ -417,4 +421,4 @@ export function Ignore(param: string): Function {
 
         return target;
     };
-}
+};

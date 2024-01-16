@@ -1,6 +1,10 @@
-# Motivation and philosophy
+# Motivation and Philosophy
 
-## Why should I use StringTemplate?
+## Why a TypeScript Port?
+
+The TypeScript port of the Java StringTemplate library was created as part of porting ANTLR4 to TypeScript. Of course it can serve as standalone library, like the Java version does, but it's main purpose is the ANTLR4 TypeScript port.
+
+## Why Should I Use StringTemplate?
 
 StringTemplate ensures the separation of the specification of business logic and computation required to generate structured text from the specification of how that text is presented (i.e. its formatting).
 

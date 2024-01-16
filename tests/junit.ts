@@ -1,6 +1,6 @@
 /*
  * Copyright (c) Mike Lischke. All rights reserved.
- * Licensed under the MIT License. See License.txt in the project root for license information.
+ * Licensed under the MIT License. See License-MIT.txt in the project root for license information.
  */
 
 type Throwable = Error;
@@ -36,13 +36,3 @@ export const assertNotNull = <T>(value: T | null): void => {
 export const assertArrayEquals = <T>(expected: T[], actual: T[]): void => {
     expect(actual).toEqual(expected);
 };
-
-export class Assert {
-    public static assertNotNull<T>(value: T | null): void {
-        expect(value).not.toBeNull();
-    }
-
-    public static assertEquals<T>(expected: T | null, actual: T | null): void {
-        expect(actual).toEqual(expected);
-    }
-}

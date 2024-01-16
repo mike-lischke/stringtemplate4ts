@@ -16,12 +16,12 @@
     "license": "MIT",
     "scripts": {
         "prepublishOnly": "npm run build && npm run test",
-        "build": "npm run generate-parsers && tsc && esbuild ./src/index.js --main-fields=module,main --bundle --outfile=dist/stringtemplate4-ts.mjs --format=esm --platform=node --sourcemap",
+        "build": "npm run generate-parsers && tsc && esbuild ./src/index.js --main-fields=module,main --bundle --outfile=dist/stringtemplate4ts.mjs --format=esm --platform=node",
         "build-minified": "npm run build -- --minify",
         "test": "node --experimental-vm-modules --no-warnings --loader ts-node/esm ./node_modules/jest/bin/jest.js --no-coverage --silent",
         "test-ci": "npm run test -- --no-coverage --watchAll=false --silent",
         "test-coverage": "npm run test -- --coverage --silent",
-        "generate-parsers": "antlr4ng -no-visitor -no-listener -Dlanguage=TypeScript -o src/org/stringtemplate/v4/compiler/generated -package parser -encoding utf8 -Xexact-output-dir src/org/stringtemplate/v4/compiler/*.g4"
+        "generate-parsers": "antlr4ng -no-visitor -no-listener -Dlanguage=TypeScript -o src/compiler/generated -package parser -encoding utf8 -Xexact-output-dir src/compiler/*.g4"
     },
     "devDependencies": {
         "@types/he": "1.2.3",
