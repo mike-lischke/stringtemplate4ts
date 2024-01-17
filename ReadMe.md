@@ -1,4 +1,4 @@
-[![GitHub Workflow Status (with event)](https://img.shields.io/github/actions/workflow/status/mike-lischke/stringtemplate4-ts/nodejs.yml?style=for-the-badge&logo=github)](https://github.com/mike-lischke/stringtemplate4-ts/actions/workflows/nodejs.yml)
+[![GitHub Workflow Status (with event)](https://img.shields.io/github/actions/workflow/status/mike-lischke/stringtemplate4ts/nodejs.yml?style=for-the-badge&logo=github)](https://github.com/mike-lischke/stringtemplate4ts/actions/workflows/nodejs.yml)
 [![Weekly Downloads](https://img.shields.io/npm/dw/stringtemplate4ts?style=for-the-badge&color=blue)](https://www.npmjs.com/package/stringtemplate4ts)
 [![npm version](https://img.shields.io/npm/v/stringtemplate4ts?style=for-the-badge&color=yellow)](https://www.npmjs.com/package/stringtemplate4ts)
 
