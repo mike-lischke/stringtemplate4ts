@@ -453,7 +453,7 @@ export class Interpreter {
             return o;
         }
 
-        const singleton = new ST.AttributeList();
+        const singleton: unknown[] = [];
         singleton.push(o);
 
         return singleton[Symbol.iterator]();
@@ -1476,7 +1476,7 @@ export class Interpreter {
      * {@code <a,b:t()>}.
      */
     // todo: i, i0 not set unless mentioned? map:{k,v | ..}?
-    protected zipMap(scope: InstanceScope, exprs: unknown[], prototype?: IST): ST.AttributeList | undefined {
+    protected zipMap(scope: InstanceScope, exprs: unknown[], prototype?: IST): IST[] | undefined {
         if (!prototype || exprs.length === 0) {
             return undefined; // do not apply if missing templates or empty values
         }
@@ -1518,7 +1518,7 @@ export class Interpreter {
 
         // keep walking while at least one attribute has values
 
-        const results = new ST.AttributeList();
+        const results: IST[] = [];
         let i = 0; // iteration number from 0
         while (true) {
             // get a value for each attribute in list; put into ST instance

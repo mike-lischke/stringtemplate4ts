@@ -45,13 +45,6 @@ export class ST implements IST {
      */
     public static readonly IMPLICIT_ARG_NAME = "it";
 
-    /**
-     * Just an alias for {@link ArrayList}, but this way I can track whether a
-     *  list is something ST created or it's an incoming list.
-     */
-    public static readonly AttributeList = class AttributeList extends Array<unknown> {
-    };
-
     /** The implementation for this template among all instances of same template . */
     public impl?: ICompiledST;
 
@@ -185,21 +178,12 @@ export class ST implements IST {
         return st.render(lineWidth);
     }
 
-    protected static convertToAttributeList(currentValue: unknown): ST.AttributeList {
-        let multi: ST.AttributeList;
-        if (currentValue instanceof ST.AttributeList) { // already a list made by ST
-            multi = currentValue;
+    protected static convertToAttributeList(currentValue: unknown): unknown[] {
+        if (Array.isArray(currentValue)) {
+            return currentValue;
         } else {
-            if (Array.isArray(currentValue)) {
-                multi = new ST.AttributeList();
-                multi.push(...(currentValue as unknown[]));
-            } else {
-                multi = new ST.AttributeList();
-                multi.push(currentValue);
-            }
+            return [currentValue];
         }
-
-        return multi;
     }
 
     /**
@@ -526,9 +510,4 @@ export class ST implements IST {
             return new ST();
         });
     }
-}
-
-// eslint-disable-next-line @typescript-eslint/no-namespace, no-redeclare
-export namespace ST {
-    export type AttributeList = InstanceType<typeof ST.AttributeList>;
 }
