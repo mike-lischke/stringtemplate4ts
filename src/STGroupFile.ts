@@ -32,11 +32,6 @@ export class STGroupFile extends STGroup {
     public constructor(fileName: string, delimiterStartChar: string, delimiterStopChar: string);
     public constructor(fullyQualifiedFileName: string, encoding: string, delimiterStartChar: string,
         delimiterStopChar: string);
-    /**
-     * Pass in a URL with the location of a group file. E.g.,
-     *  STGroup g = new STGroupFile(loader.getResource("org/foo/templates/g.stg"), "UTF-8", '<', '>');
-     */
-    public constructor(url: string, encoding: string, delimiterStartChar: string, delimiterStopChar: string);
     public constructor(...args: unknown[]) {
         let fileName;
         let encoding = "utf-8";
