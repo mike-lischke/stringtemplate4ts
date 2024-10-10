@@ -9,7 +9,7 @@ import path from "path";
 import os from "os";
 import { existsSync, mkdirSync, rmSync, statSync, unlinkSync, writeFileSync } from "fs";
 
-import { CharStreams, CommonToken, CommonTokenStream, Token } from "antlr4ng";
+import { CharStream, CommonToken, CommonTokenStream, Token } from "antlr4ng";
 
 import { Compiler, ST, STGroup, STLexer } from "../src/index.js";
 import { AfterEach, BeforeEach } from "./decorators.js";
@@ -210,7 +210,7 @@ export abstract class BaseTest {
         delimiterStartChar ??= "<";
         delimiterStopChar ??= ">";
 
-        const lexer = new STLexer(STGroup.DEFAULT_ERR_MGR, CharStreams.fromString(template), undefined,
+        const lexer = new STLexer(STGroup.DEFAULT_ERR_MGR, CharStream.fromString(template), undefined,
             delimiterStartChar, delimiterStopChar);
         const tokenStream = new CommonTokenStream(lexer);
         tokenStream.fill();

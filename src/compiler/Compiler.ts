@@ -6,7 +6,7 @@
 /* eslint-disable jsdoc/require-returns, jsdoc/require-param */
 
 import {
-    BaseErrorListener, CharStreams, CommonTokenStream, NoViableAltException, RecognitionException, Token, TokenStream,
+    BaseErrorListener, CharStream, CommonTokenStream, NoViableAltException, RecognitionException, Token, TokenStream,
 } from "antlr4ng";
 
 import { STLexer } from "./STLexer.js";
@@ -74,7 +74,7 @@ export class Compiler {
 
     /** Compile full template with known or unknown formal arguments. */
     public compile(values: ICompilerParameters): CompiledST | undefined {
-        const is = CharStreams.fromString(values.template);
+        const is = CharStream.fromString(values.template);
         is.name = values.srcName ?? values.name ?? "";
 
         let lexer: STLexer;

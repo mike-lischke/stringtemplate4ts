@@ -47,6 +47,7 @@ export * from "./ST.js";
 export * from "./compiler/generated/STParser.js";
 export * from "./compiler/generated/GroupParser.js";
 export * from "./compiler/generated/GroupLexer.js";
+export * from "./compiler/common.js";
 export * from "./compiler/CompiledST.js";
 export * from "./compiler/Bytecode.js";
 export * from "./compiler/STException.js";

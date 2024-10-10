@@ -43,7 +43,7 @@ export class STLexer implements TokenSource {
                 case 2: {
                     const [type, text] = args as [number, string];
 
-                    super([null, null], type, Token.DEFAULT_CHANNEL, -1, -1);
+                    super({ source: [null, null], type, channel: Token.DEFAULT_CHANNEL, start: -1, stop: -1 });
                     this.text = text;
 
                     break;
@@ -53,7 +53,7 @@ export class STLexer implements TokenSource {
                     const [source, input, type, start, stop]
                         = args as [TokenSource, CharStream, number, number, number];
 
-                    super([source, input], type, Token.DEFAULT_CHANNEL, start, stop);
+                    super({ source: [source, input], type, channel: Token.DEFAULT_CHANNEL, start, stop });
 
                     break;
                 }
@@ -70,7 +70,7 @@ export class STLexer implements TokenSource {
                 channelStr = ",channel=" + this.channel;
             }
 
-            let txt = this.text;
+            let txt = this.text!;
             if (txt !== null) {
                 txt = Misc.replaceEscapes(txt);
             } else {
@@ -204,6 +204,10 @@ export class STLexer implements TokenSource {
         if (delimiterStopChar) {
             this.delimiterStopChar = delimiterStopChar.codePointAt(0)!;
         }
+    }
+
+    public get column(): number {
+        return this._tokenStartColumn;
     }
 
     public nextToken(): Token {
@@ -587,7 +591,7 @@ export class STLexer implements TokenSource {
         }
 
         // Reset the input stream to where it was before we tried to match.
-        this.inputStream.index = currentStreamIndex;
+        this.inputStream.seek(currentStreamIndex);
         this.#currentLine = currentLine;
         this.#currentColumn = currentColumn;
 

@@ -9,7 +9,7 @@ import * as fs from "fs";
 import path from "path";
 
 import {
-    BaseErrorListener, CharStream, CharStreams, CommonToken, CommonTokenStream, RecognitionException, Token,
+    BaseErrorListener, CharStream, CommonToken, CommonTokenStream, RecognitionException, Token,
 } from "antlr4ng";
 
 import { ICompiledST, ICompilerParameters, IST, ISTGroup, RegionType, isCompiledST } from "./compiler/common.js";
@@ -365,7 +365,7 @@ export class STGroup {
                     fullyQualifiedTemplateName = "/" + fullyQualifiedTemplateName;
                 }
 
-                nameT = new CommonToken([null, null], GroupParser.ID, 0, -1, -1);
+                nameT = CommonToken.fromSource([null, null], GroupParser.ID, 0, -1, -1);
                 nameT.text = fullyQualifiedTemplateName;
                 break;
             }
@@ -385,7 +385,7 @@ export class STGroup {
                     compileArgs.push(new FormalArgument(entry));
                 }
 
-                nameT = new CommonToken([null, null], GroupParser.ID, 0, -1, -1);
+                nameT = CommonToken.fromSource([null, null], GroupParser.ID, 0, -1, -1);
                 nameT.text = fullyQualifiedTemplateName;
 
                 break;
@@ -639,7 +639,7 @@ export class STGroup {
 
                         if (fileURL.length > 0) {
                             const content = fs.readFileSync(fileURL, { encoding: this.encoding as BufferEncoding });
-                            const templateStream = CharStreams.fromString(content);
+                            const templateStream = CharStream.fromString(content);
                             templateStream.name = fileName;
                             const code = g.loadTemplateFile("/", fileName, templateStream);
                             if (!code) {
@@ -713,7 +713,7 @@ export class STGroup {
         let parser: GroupParser;
         try {
             const content = fs.readFileSync(fileName, { encoding: this.encoding as BufferEncoding });
-            const stream = CharStreams.fromString(content.toString());
+            const stream = CharStream.fromString(content.toString());
             stream.name = path.basename(fileName);
             const lexer = new GroupLexer(stream);
             const tokens = new CommonTokenStream(lexer);
@@ -760,7 +760,7 @@ export class STGroup {
      */
     public loadAbsoluteTemplateFile(fileName: string): ICompiledST | undefined {
         const content = fs.readFileSync(fileName, { encoding: this.encoding as BufferEncoding });
-        const stream = CharStreams.fromString(content.toString());
+        const stream = CharStream.fromString(content.toString());
 
         return this.loadTemplateFile("", fileName, stream);
     }

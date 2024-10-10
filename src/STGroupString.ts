@@ -3,7 +3,7 @@
  * Licensed under the BSD-3 License. See License.txt in the project root for license information.
  */
 
-import { CharStreams, CommonTokenStream } from "antlr4ng";
+import { CharStream, CommonTokenStream } from "antlr4ng";
 
 import { ICompiledST } from "./compiler/common.js";
 
@@ -84,7 +84,7 @@ export class STGroupString extends STGroup {
                 }
 
                 this.alreadyLoaded = true;
-                const stream = CharStreams.fromString(this.text);
+                const stream = CharStream.fromString(this.text);
                 stream.name = this.sourceName;
                 const lexer = new GroupLexer(stream);
                 const tokens = new CommonTokenStream(lexer);

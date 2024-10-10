@@ -3,10 +3,11 @@
  * Licensed under the BSD-3 License. See License.txt in the project root for license information.
  */
 
-import { HashCode, Token } from "antlr4ng";
+import type { Token } from "antlr4ng";
 
-import { IFormalArgument } from "./common.js";
+import { MurmurHash } from "../support/MurmurHash.js";
 import { CompiledST } from "./CompiledST.js";
+import { IFormalArgument } from "./common.js";
 
 /**
  * Implementation of the formal argument interface.
@@ -27,7 +28,11 @@ export class FormalArgument implements IFormalArgument {
     }
 
     public hashCode(): number {
-        return HashCode.hashStuff(this.name, this.defaultValueToken ? 1 : 0);
+        let hash = MurmurHash.initialize();
+        hash = MurmurHash.update(hash, this.name);
+        hash = MurmurHash.update(hash, this.defaultValueToken ? 1 : 0);
+
+        return MurmurHash.finish(hash, 2);
     }
 
     public equals(o: unknown): boolean {

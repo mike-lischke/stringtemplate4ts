@@ -85,7 +85,7 @@ public getSourceName(): string {
 
 group[aGroup: STGroup, prefix: string]
     @init {
-const lexer = this.inputStream.getTokenSource() as GroupLexer;
+const lexer = this.inputStream.tokenSource as GroupLexer;
 this.currentGroup = lexer.currentGroup = $aGroup;
 }:
     oldStyleHeader? delimiters? (
@@ -144,7 +144,6 @@ def[prefix: string]:
 ;
 catch[re] {
 if (re instanceof antlr.RecognitionException) {
-    localContext.exception = re;
     if (!this.errorHandler.inErrorRecoveryMode(this)) {
         this.error("garbled template definition starting at '" + this.inputStream.LT(1)!.text + "'", re);
     }
@@ -331,7 +330,7 @@ BIGSTRING:
 
 ANONYMOUS_TEMPLATE:
     '{' {
-const templateToken = new antlr.CommonToken([this, this.inputStream], GroupLexer.ANONYMOUS_TEMPLATE, 0, this.getCharIndex(), this.getCharIndex());
+const templateToken = antlr.CommonToken.fromSource([this, this.inputStream], GroupLexer.ANONYMOUS_TEMPLATE, 0, this.getCharIndex(), this.getCharIndex());
 const lexer = new STLexer(this.currentGroup.errMgr, this.inputStream, templateToken, this.currentGroup.delimiterStartChar, this.currentGroup.delimiterStopChar);
 lexer.subtemplateDepth = 1;
 let t = lexer.nextToken();

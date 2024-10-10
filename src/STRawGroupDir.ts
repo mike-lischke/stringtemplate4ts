@@ -19,14 +19,14 @@ import { Compiler } from "./compiler/Compiler.js";
 export class STRawGroupDir extends STGroupDir {
     protected override doLoadTemplateFile(prefix: string, unqualifiedFileName: string,
         templateStream: CharStream): ICompiledST | undefined {
-        const template = templateStream.getText(0, templateStream.size - 1);
+        const template = templateStream.getTextFromRange(0, templateStream.size - 1);
         const templateName = Misc.getFileNameNoSuffix(unqualifiedFileName);
         const fullyQualifiedTemplateName = prefix + templateName;
 
         const impl = new Compiler(this).compile({ srcName: fullyQualifiedTemplateName, template });
 
         // Seems like a hack, best I could come up with.
-        const nameT = new CommonToken([null, templateStream], STLexer.SEMI, 0, -1, -1);
+        const nameT = CommonToken.fromSource([null, templateStream], STLexer.SEMI, 0, -1, -1);
 
         if (impl) {
             this.rawDefineTemplate(fullyQualifiedTemplateName, impl, nameT);

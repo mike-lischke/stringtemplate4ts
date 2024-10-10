@@ -66,6 +66,11 @@ in the project root.
 
 ## Release Notes
 
+### 1.0.2
+
+- Upgraded dependencies to latest versions.
+- Added export for common interfaces.
+
 ### 1.0.0 - 1.0.1
 
 - Initial release.

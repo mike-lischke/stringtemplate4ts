@@ -8,7 +8,7 @@
 import * as fs from "fs";
 import * as path from "path";
 
-import { CharStream, CharStreams, Token } from "antlr4ng";
+import { CharStream, Token } from "antlr4ng";
 
 import { STGroup } from "./STGroup.js";
 import { Misc } from "./misc/Misc.js";
@@ -114,7 +114,7 @@ export class STGroupDir extends STGroup {
             return undefined;
         }
 
-        const stream = CharStreams.fromString(content);
+        const stream = CharStream.fromString(content);
         stream.name = unqualifiedFileName;
 
         return this.doLoadTemplateFile(prefix, unqualifiedFileName, stream);
