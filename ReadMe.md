@@ -66,6 +66,10 @@ in the project root.
 
 ## Release Notes
 
+### 1.0.3
+
+- Fixed a bug where members of model objects, which are themselves object were not accessible in templates. Added a test case for that.
+
 ### 1.0.2
 
 - Upgraded dependencies to latest versions.
