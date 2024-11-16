@@ -326,6 +326,35 @@ export class TestDictionaries extends BaseTest {
     }
 
     @Test
+    public testAccessDictionaryFromParameter(): void {
+        const dir = this.tmpdir;
+        const g = `
+a(parser) ::= <<
+	<if(parser.tokens)>
+	public static final int
+		<parser.tokens:{k | <k>=<parser.tokens.(k)>}; separator=", ", wrap, anchor>;
+	<endif>
+>>`;
+        TestDictionaries.writeFile(dir, "g.stg", g);
+
+        const group = new STGroupFile(this.tmpdir + "/g.stg");
+        const st = group.getInstanceOf("a");
+
+        const parser = {
+            tokens: new Map<string, number>([
+                ["ID", 1],
+                ["INT", 2],
+                ["FLOAT", 3],
+            ]),
+        };
+        st?.add("parser", parser);
+
+        const expected = "\tpublic static final int\n\t\tID=1, INT=2, FLOAT=3;\n";
+        const result = st?.render();
+        assertEquals(expected, result);
+    }
+
+    @Test
     public testAccessDictionaryFromAnonymousTemplateInRegion(): void {
         const dir = this.tmpdir;
         const g =

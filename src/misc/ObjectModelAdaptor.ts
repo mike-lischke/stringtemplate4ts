@@ -37,11 +37,7 @@ export class ObjectModelAdaptor implements ModelAdaptor<Constructor> {
 
         if (memberName in model) {
             // try for a visible field
-            const field = (model as never)[memberName];
-            if (typeof field !== "function" && typeof field !== "object") {
-                member = new Field(clazz, memberName);
-            }
-
+            member = new Field(clazz, memberName);
         }
 
         if (!member) {
