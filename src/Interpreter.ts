@@ -1122,7 +1122,7 @@ export class Interpreter {
     protected storeArgs(scope: IInstanceScope, argCount: number, st?: IST): void;
     protected storeArgs(...args: unknown[]): void {
         if (typeof args[1] !== "number") {
-            const [scope, attrs, st] = args as [IInstanceScope, Map<string, unknown>, IST | undefined];
+            const [scope, attrs, st] = args as [IInstanceScope, HashMap<string, unknown>, IST | undefined];
 
             let noSuchAttributeReported = false;
             if (attrs && st) {
@@ -1174,7 +1174,7 @@ export class Interpreter {
                             continue;
                         }
 
-                        if (!attrs || !attrs.has(argumentKey)) {
+                        if (!attrs || !attrs.containsKey(argumentKey)) {
                             argumentCountMismatch = true;
                             break;
                         }

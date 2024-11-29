@@ -218,7 +218,7 @@ export function Test<T extends ITestParameters, This, Args extends unknown[], Re
                             // provider name on the prototype.
                             Object.getOwnPropertyNames(Object.getPrototypeOf(this)).forEach((name) => {
                                 if (typeof this[name] === "function" && name === param.dataProvider) {
-                                    provider = this[name] as Function;
+                                    provider = this[name];
                                 }
                             });
                         }

@@ -18,6 +18,7 @@
     "license": "MIT",
     "scripts": {
         "prepublishOnly": "npm run build-minified && npm run test",
+        "build": "npm run generate-parsers && tsc && npm run build-mjs && npm run build-cjs",
         "build-minified": "npm run generate-parsers && tsc && npm run build-mjs-minified && npm run build-cjs-minified",
         "build-bundle": "esbuild ./src/index.js --main-fields=module,main --bundle --sourcemap",
         "build-mjs": "npm run build-bundle -- --outfile=dist/index.mjs --format=esm --platform=node",

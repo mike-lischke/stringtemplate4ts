@@ -151,8 +151,7 @@ export class AutoIndentWriter implements STWriter {
         let n = 0;
         // if want wrap and not already at start of line (last char was \n)
         // and we have hit or exceeded the threshold
-        if (this.lineWidth !== STWriter.NO_WRAP && wrap !== null && !this.atStartOfLine &&
-            this.charPosition >= this.lineWidth) {
+        if (this.lineWidth !== STWriter.NO_WRAP && !this.atStartOfLine && this.charPosition >= this.lineWidth) {
             // ok to wrap
             // Walk wrap string and look for A\nB.  Spit out A\n
             // then spit indent or anchor, whichever is larger

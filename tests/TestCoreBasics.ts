@@ -153,6 +153,16 @@ export class TestCoreBasics extends BaseTest {
     };
 
     @Test
+    public testBooleanGetName(): void {
+        const template = "<t.name>"; // call getName
+        const st = new ST(template);
+        st?.add("t", new BaseTest.User(32, "Ter"));
+        const expected = "Ter";
+        const result = st?.render();
+        assertEquals(expected, result);
+    };
+
+    @Test
     public testNullAttrProp(): void {
         const template = "<u.id>: <u.name>";
         const st = new ST(template);

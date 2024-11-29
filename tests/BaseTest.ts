@@ -19,13 +19,14 @@ export abstract class BaseTest {
 
     public static User = class User {
         public id: number;
-        public name: string;
+        #name: string;
         public constructor(id: number, name: string) {
-            this.id = id; this.name = name;
+            this.id = id;
+            this.#name = name;
         }
         public isManager(): boolean { return true; }
         public hasParkingSpot(): boolean { return true; }
-        public getName(): string { return this.name; }
+        public getName(): string { return this.#name; }
     };
 
     public static HashableUser = class HashableUser extends BaseTest.User {
@@ -39,7 +40,7 @@ export abstract class BaseTest {
             if (o instanceof HashableUser) {
                 const hu = o;
 
-                return this.id === hu.id && this.name === hu.name;
+                return this.id === hu.id && this.getName() === hu.getName();
             }
 
             return false;

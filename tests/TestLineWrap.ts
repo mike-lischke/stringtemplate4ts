@@ -10,8 +10,8 @@ import path from "path";
 import { BaseTest } from "./BaseTest.js";
 import { assertEquals } from "./junit.js";
 
-import { Test } from "./decorators.js";
 import { AutoIndentWriter, Misc, ST, STGroupFile, StringWriter } from "../src/index.js";
+import { Test } from "./decorators.js";
 
 export class TestLineWrap extends BaseTest {
     @Test

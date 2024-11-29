@@ -78,7 +78,13 @@ export class HashMap<Key, Value> implements Map<Key, Value> {
     }
 
     public has(key: Key): boolean {
-        return this.get(key) !== undefined;
+        return this.containsKey(key);
+    }
+
+    public containsKey(key: Key): boolean {
+        const hashCode = MurmurHash.hashCode(key);
+
+        return this.#data[hashCode] !== undefined;
     }
 
     public set(key: Key, value: Value): this {
