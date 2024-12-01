@@ -66,6 +66,10 @@ in the project root.
 
 ## Release Notes
 
+### 1.0.4
+
+- Bug fix for HashMap. It used get() to determine if a key exists (which returns the value instead).
+
 ### 1.0.3
 
 - Fixed a bug where members of model objects, which are themselves object were not accessible in templates. Added a test case for that.
