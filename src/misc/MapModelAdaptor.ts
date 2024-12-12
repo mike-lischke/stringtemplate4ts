@@ -21,7 +21,7 @@ export class MapModelAdaptor<Key extends AllowedMapKey, Value> implements ModelA
     public getProperty(_interp: IInterpreter, _self: IST, model: Map<Key, Value>, property: Key,
         propertyName: string): ValueOrIterable<Key, Value> | undefined {
         let value: ValueOrIterable<Key, Value> | undefined;
-        if (!property) {
+        if (property == null) {
             value = MapModelAdaptor.getDefaultValue(model);
         } else {
             if (model.has(property)) {
