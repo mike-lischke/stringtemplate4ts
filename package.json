@@ -1,6 +1,6 @@
 {
     "name": "stringtemplate4ts",
-    "version": "1.0.4",
+    "version": "1.0.5",
     "description": "A TypeScript port of the Java StringTemplate 4 library",
     "type": "module",
     "main": "dist/index.cjs",

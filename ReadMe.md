@@ -66,6 +66,10 @@ in the project root.
 
 ## Release Notes
 
+### 1.0.5
+
+- Property names for map model objects can be anything, including numbers or null. Using a general falsification test might wrongly reject them.
+
 ### 1.0.4
 
 - Bug fix for HashMap. It used get() to determine if a key exists (which returns the value instead).
