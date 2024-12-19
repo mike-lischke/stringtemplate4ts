@@ -66,6 +66,10 @@ in the project root.
 
 ## Release Notes
 
+### 1.0.6
+
+- Updated 3rd party packages.
+
 ### 1.0.5
 
 - Property names for map model objects can be anything, including numbers or null. Using a general falsification test might wrongly reject them.

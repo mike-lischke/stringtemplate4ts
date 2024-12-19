@@ -1,6 +1,6 @@
 {
     "name": "stringtemplate4ts",
-    "version": "1.0.5",
+    "version": "1.0.6",
     "description": "A TypeScript port of the Java StringTemplate 4 library",
     "type": "module",
     "main": "dist/index.cjs",
@@ -30,6 +30,12 @@
         "test-coverage": "npm run test -- --coverage --silent",
         "generate-parsers": "antlr4ng -no-visitor -no-listener -Dlanguage=TypeScript -o src/compiler/generated -package parser -encoding utf8 -Xexact-output-dir src/compiler/*.g4"
     },
+    "dependencies": {
+        "antlr4ng": "3.0.13",
+        "fast-printf": "1.6.9",
+        "he": "1.2.0",
+        "luxon": "3.5.0"
+    },
     "devDependencies": {
         "@types/he": "1.2.3",
         "@types/jest": "29.5.14",
@@ -47,11 +53,5 @@
         "ts-jest": "29.1.1",
         "ts-node": "10.9.2",
         "typescript": "5.5.3"
-    },
-    "dependencies": {
-        "antlr4ng": "3.0.7",
-        "fast-printf": "1.6.9",
-        "he": "1.2.0",
-        "luxon": "3.5.0"
     }
 }

@@ -8,7 +8,7 @@ dist/*.map
 src/
 doc/
 
-jest.config.ts
+vitest.config.ts
 .eslintignore
 .eslintrc.json
 .project
