@@ -66,6 +66,11 @@ in the project root.
 
 ## Release Notes
 
+### 1.0.7
+
+- The if<> check in Interpreter did not correctly handle maps and sets. Added a test case for the fix.
+- Renderer registration did not default the parameter "recursive" to true, causing rendering problems in nested templates, if this parameter isn't specified.
+
 ### 1.0.6
 
 - Updated 3rd party packages.
