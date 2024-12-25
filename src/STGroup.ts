@@ -860,6 +860,7 @@ export class STGroup {
      */
     public registerRenderer<T>(attributeType: Constructor<T>, r: AttributeRenderer<T>, recursive?: boolean): void {
         this.renderers.set(attributeType, r);
+        recursive ??= true;
 
         if (recursive) {
             this.load(); // make sure imports exist (recursively)

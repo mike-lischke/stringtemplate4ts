@@ -5,13 +5,13 @@
 
 // cspell: disable
 
-import { ErrorBufferAllErrors } from "./ErrorBufferAllErrors.js";
-import { BaseTest } from "./BaseTest.js";
-import { assertEquals } from "./junit.js";
 import {
-    ST, ErrorBuffer, STGroup, STGroupFile, STRuntimeMessage, STNoSuchPropertyException, STGroupString,
-    AutoIndentWriter, NoIndentWriter, Misc, StringWriter, ErrorManager,
+    AutoIndentWriter, ErrorBuffer, ErrorManager, HashMap, Misc, NoIndentWriter, ST, STGroup, STGroupFile, STGroupString,
+    STNoSuchPropertyException, StringWriter, STRuntimeMessage,
 } from "../src/index.js";
+import { BaseTest } from "./BaseTest.js";
+import { ErrorBufferAllErrors } from "./ErrorBufferAllErrors.js";
+import { assertEquals } from "./junit.js";
 
 import { AfterAll, BeforeAll, Test } from "./decorators.js";
 
@@ -645,6 +645,18 @@ export class TestCoreBasics extends BaseTest {
         const st = new ST(template);
         st?.add("name", null);
         const expected = "";
+        const result = st?.render();
+        assertEquals(expected, result);
+    };
+
+    @Test
+    public testEmptyMap(): void {
+        const template = "<if(lables)>has content<else>empty<endif>";
+        const st = new ST(template);
+
+        const labels = new HashMap<string, string>();
+        st?.add("lables", labels);
+        const expected = "empty";
         const result = st?.render();
         assertEquals(expected, result);
     };

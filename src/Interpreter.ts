@@ -1618,14 +1618,16 @@ export class Interpreter {
             return a.length > 0;
         }
 
-        if (a instanceof Map) {
-            return a.size > 0;
-        }
+        if (typeof a === "object") {
+            if ("size" in a && typeof a.size === "number") {
+                return a.size > 0;
+            }
 
-        if (isIterator(a)) {
-            const value = a.next();
+            if (isIterator(a)) {
+                const value = a.next();
 
-            return !value.done;
+                return !value.done;
+            }
         }
 
         return true; // any other non-null object, return true--it's present
