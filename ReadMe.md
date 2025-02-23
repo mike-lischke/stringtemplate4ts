@@ -66,6 +66,14 @@ in the project root.
 
 ## Release Notes
 
+### 1.0.9
+
+Also switched 3rd party deps that depended on antlr4ng-cli.
+
+### 1.0.8
+
+Switched from antlr4ng-cli to antlr-ng.
+
 ### 1.0.7
 
 - The if<> check in Interpreter did not correctly handle maps and sets. Added a test case for the fix.

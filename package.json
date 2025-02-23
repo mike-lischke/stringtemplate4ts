@@ -1,6 +1,6 @@
 {
     "name": "stringtemplate4ts",
-    "version": "1.0.7",
+    "version": "1.0.9",
     "description": "A TypeScript port of the Java StringTemplate 4 library",
     "type": "module",
     "main": "dist/index.cjs",
@@ -8,7 +8,7 @@
     "types": "dist/index.d.ts",
     "repository": {
         "type": "git",
-        "url": "https://github.com/mike-lischke/stringtemplate4-ts"
+        "url": "git+https://github.com/mike-lischke/stringtemplate4-ts.git"
     },
     "keywords": [
         "string",
@@ -28,11 +28,11 @@
         "test": "node --experimental-vm-modules --no-warnings --loader ts-node/esm ./node_modules/jest/bin/jest.js --no-coverage --silent",
         "test-ci": "npm run test -- --no-coverage --watchAll=false --silent",
         "test-coverage": "npm run test -- --coverage --silent",
-        "generate-parsers": "antlr4ng -no-visitor -no-listener -Dlanguage=TypeScript -o src/compiler/generated -package parser -encoding utf8 -Xexact-output-dir src/compiler/*.g4"
+        "generate-parsers": "antlr-ng -Dlanguage=TypeScript -o src/compiler/generated --package parser --exact-output-dir --encoding utf8 src/compiler/*.g4"
     },
     "dependencies": {
-        "antlr4ng": "3.0.13",
-        "fast-printf": "1.6.9",
+        "antlr4ng": "3.0.15",
+        "fast-printf": "1.6.10",
         "he": "1.2.0",
         "luxon": "3.5.0"
     },
@@ -40,11 +40,11 @@
         "@types/he": "1.2.3",
         "@types/jest": "29.5.14",
         "@types/luxon": "3.4.2",
-        "@types/node": "20.10.4",
+        "@types/node": "22.13.5",
         "@typescript-eslint/eslint-plugin": "6.14.0",
         "@typescript-eslint/parser": "6.13.2",
-        "antlr4ng-cli": "^2.0.0",
-        "esbuild": "0.24.0",
+        "antlr-ng": "1.0.3",
+        "esbuild": "0.25.0",
         "eslint": "8.55.0",
         "eslint-plugin-import": "2.29.0",
         "eslint-plugin-jsdoc": "46.9.0",
