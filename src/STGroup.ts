@@ -6,7 +6,6 @@
 /* eslint-disable jsdoc/require-returns, jsdoc/require-param */
 
 import * as fs from "fs";
-import path from "path";
 
 import {
     BaseErrorListener, CharStream, CommonToken, CommonTokenStream, RecognitionException, Token,
@@ -37,6 +36,7 @@ import { Compiler } from "./compiler/Compiler.js";
 import { GroupLexer } from "./compiler/generated/GroupLexer.js";
 import { Factories } from "./compiler/factories.js";
 import { HashMap } from "./support/HashMap.js";
+import { isAbsolutePath } from "./support/helpers.js";
 
 /**
  * A directory or directory tree of {@code .st} template files and/or group files.
@@ -623,10 +623,10 @@ export class STGroup {
                     const thisRoot = this.getRootDir();
                     let fileUnderRoot: string;
 
-                    if (path.isAbsolute(fileName)) {
+                    if (isAbsolutePath(fileName)) {
                         fileUnderRoot = fileName;
                     } else {
-                        fileUnderRoot = path.join(thisRoot, fileName);
+                        fileUnderRoot = thisRoot + "/" + fileName;
                     }
 
                     if (isTemplateFile) {
@@ -714,7 +714,7 @@ export class STGroup {
         try {
             const content = fs.readFileSync(fileName, { encoding: this.encoding as BufferEncoding });
             const stream = CharStream.fromString(content.toString());
-            stream.name = path.basename(fileName);
+            stream.name = fileName.substring(fileName.lastIndexOf("/") + 1);
             const lexer = new GroupLexer(stream);
             const tokens = new CommonTokenStream(lexer);
             parser = new GroupParser(tokens);

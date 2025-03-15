@@ -30,10 +30,6 @@
   * Licensed under the BSD- 3 License.See License.txt in the project root for license information.
   */
 
-// cspell: disable
-
-import path from "path";
-
 import { BaseTest } from "./BaseTest.js";
 import { assertEquals, assertNotNull } from "./junit.js";
 import { STGroupFile, ST, ErrorBuffer, STGroupString, Misc, HashMap, ErrorManager } from "../src/index.js";
@@ -96,7 +92,7 @@ export class TestDictionaries extends BaseTest {
         const templates = "foo(m,k) ::= \"<m.(k)>\"" + Misc.newLine;
         TestDictionaries.writeFile(this.tmpdir, "test.stg", templates);
 
-        const group = new STGroupFile(path.join(this.tmpdir, "test.stg"));
+        const group = new STGroupFile(this.tmpdir + "/test.stg");
         const st = group.getInstanceOf("foo");
         const m = new HashMap<BaseTest.HashableUser, string>();
 
@@ -412,7 +408,7 @@ a(parser) ::= <<
             "  <makeTmpl(\"I\", \"foo\")>\n" +
             ">>\n";
         TestDictionaries.writeFile(this.tmpdir, "t.stg", templates);
-        const group = new STGroupFile(path.join(this.tmpdir, "t.stg"));
+        const group = new STGroupFile(this.tmpdir + "/t.stg");
         const st = group.getInstanceOf("top");
         assertNotNull(st);
 
@@ -443,7 +439,7 @@ a(parser) ::= <<
             "  <makeTmpl(\"I\", \"foo\")>\n" +
             ">>\n";
         TestDictionaries.writeFile(this.tmpdir, "t.stg", templates);
-        const group = new STGroupFile(path.join(this.tmpdir, "t.stg"));
+        const group = new STGroupFile(this.tmpdir + "/t.stg");
         const st = group.getInstanceOf("top");
         assertNotNull(st);
 
@@ -467,7 +463,7 @@ a(parser) ::= <<
             ">>\n";
 
         TestDictionaries.writeFile(this.tmpdir, "t.stg", templates);
-        const group = new STGroupFile(path.join(this.tmpdir, "t.stg"));
+        const group = new STGroupFile(this.tmpdir + "/t.stg");
         const st = group.getInstanceOf("t");
         const expected = "true+";
         const result = st?.render();
@@ -487,7 +483,7 @@ a(parser) ::= <<
             ">>\n";
 
         TestDictionaries.writeFile(this.tmpdir, "t.stg", templates);
-        const group = new STGroupFile(path.join(this.tmpdir, "t.stg"));
+        const group = new STGroupFile(this.tmpdir + "/t.stg");
         const st = group.getInstanceOf("t");
         const expected = "false-";
         const result = st?.render();
@@ -507,7 +503,7 @@ a(parser) ::= <<
             ">>\n";
 
         TestDictionaries.writeFile(this.tmpdir, "t.stg", templates);
-        const group = new STGroupFile(path.join(this.tmpdir, "t.stg"));
+        const group = new STGroupFile(this.tmpdir + "/t.stg");
         const st = group.getInstanceOf("t");
         const expected = "+";
         const result = st?.render();
@@ -527,7 +523,7 @@ a(parser) ::= <<
             ">>\n";
 
         TestDictionaries.writeFile(this.tmpdir, "t.stg", templates);
-        const group = new STGroupFile(path.join(this.tmpdir, "t.stg"));
+        const group = new STGroupFile(this.tmpdir + "/t.stg");
         const st = group.getInstanceOf("t");
         const expected = "-";
         const result = st?.render();
@@ -552,7 +548,7 @@ a(parser) ::= <<
             ">>\n";
 
         TestDictionaries.writeFile(this.tmpdir, "t.stg", templates);
-        const group = new STGroupFile(path.join(this.tmpdir, "t.stg"));
+        const group = new STGroupFile(this.tmpdir + "/t.stg");
         const st = group.getInstanceOf("t");
         const expected = "hi";
         const result = st?.render();
@@ -572,7 +568,7 @@ a(parser) ::= <<
             "]\n";
 
         TestDictionaries.writeFile(this.tmpdir, "t.stg", templates);
-        const group = new STGroupFile(path.join(this.tmpdir, "t.stg"));
+        const group = new STGroupFile(this.tmpdir + "/t.stg");
 
         // try with mapped values
         let template = group.getInstanceOf("t")?.add("id", "keyword");
@@ -608,7 +604,7 @@ a(parser) ::= <<
             "]\n";
 
         TestDictionaries.writeFile(this.tmpdir, "t.stg", templates);
-        const group = new STGroupFile(path.join(this.tmpdir, "t.stg"));
+        const group = new STGroupFile(this.tmpdir + "/t.stg");
 
         // try with mapped values
         let template = group.getInstanceOf("t")?.add("id", "keyword");

@@ -3,10 +3,6 @@
   * Licensed under the BSD- 3 License.See License.txt in the project root for license information.
   */
 
-// cspell: disable
-
-import path from "path";
-
 import { BaseTest } from "./BaseTest.js";
 import { assertEquals } from "./junit.js";
 
@@ -21,7 +17,7 @@ export class TestScopes extends BaseTest {
             "u() ::= \"<x><y>\"";
         const errors = new ErrorBuffer();
         TestScopes.writeFile(this.tmpdir, "t.stg", templates);
-        const group = new STGroupFile(path.join(this.tmpdir, "t.stg"));
+        const group = new STGroupFile(this.tmpdir + "/t.stg");
         group.setListener(errors);
         const st = group.getInstanceOf("t");
         st?.add("x", "x");
@@ -41,7 +37,7 @@ export class TestScopes extends BaseTest {
             "u(z) ::= \"\"";
         const errors = new ErrorBuffer();
         TestScopes.writeFile(this.tmpdir, "t.stg", templates);
-        const group = new STGroupFile(path.join(this.tmpdir, "t.stg"));
+        const group = new STGroupFile(this.tmpdir + "/t.stg");
         group.setListener(errors);
         const st = group.getInstanceOf("t");
         st?.render();
@@ -55,7 +51,7 @@ export class TestScopes extends BaseTest {
         const templates = "t() ::= \"<x>\"\n";
         const errors = new ErrorBuffer();
         TestScopes.writeFile(this.tmpdir, "t.stg", templates);
-        const group = new STGroupFile(path.join(this.tmpdir, "t.stg"));
+        const group = new STGroupFile(this.tmpdir + "/t.stg");
         group.setListener(errors);
         const st = group.getInstanceOf("t");
         st?.render();
@@ -71,7 +67,7 @@ export class TestScopes extends BaseTest {
             "u(y) ::= \"<x><y>\"";
         const errors = new ErrorBuffer();
         TestScopes.writeFile(this.tmpdir, "t.stg", templates);
-        const group = new STGroupFile(path.join(this.tmpdir, "t.stg"));
+        const group = new STGroupFile(this.tmpdir + "/t.stg");
         group.setListener(errors);
         const st = group.getInstanceOf("t");
         st?.add("x", "x");
@@ -92,7 +88,7 @@ export class TestScopes extends BaseTest {
             "u(x) ::= \"<i>:<x>\"";
         const errors = new ErrorBuffer();
         TestScopes.writeFile(this.tmpdir, "t.stg", templates);
-        const group = new STGroupFile(path.join(this.tmpdir, "t.stg"));
+        const group = new STGroupFile(this.tmpdir + "/t.stg");
         group.setListener(errors);
         const st = group.getInstanceOf("t");
         st?.add("names", "Ter");

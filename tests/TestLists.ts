@@ -3,10 +3,6 @@
   * Licensed under the BSD- 3 License.See License.txt in the project root for license information.
   */
 
-// cspell: disable
-
-import path from "path";
-
 import { BaseTest } from "./BaseTest.js";
 import { assertEquals } from "./junit.js";
 import { ErrorManager, Misc, ST, STGroupFile } from "../src/index.js";
@@ -152,7 +148,7 @@ export class TestLists extends BaseTest {
             "test(names,phones) ::= \"<foo([names,phones])>\"" + Misc.newLine +
             "foo(items) ::= \"<items:{a | *<a>*}>\"" + Misc.newLine;
         TestLists.writeFile(this.tmpdir, "t.stg", templates);
-        const group = new STGroupFile(path.join(this.tmpdir, "t.stg"));
+        const group = new STGroupFile(this.tmpdir + "/t.stg");
         const e = group.getInstanceOf("test");
         e?.add("names", "Ter");
         e?.add("names", "Tom");

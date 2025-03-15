@@ -3,10 +3,6 @@
   * Licensed under the BSD- 3 License.See License.txt in the project root for license information.
   */
 
-// cspell: disable
-
-import * as path from "path";
-
 import { BaseTest } from "./BaseTest.js";
 import { assertEquals } from "./junit.js";
 import { STGroupDir, Misc, ErrorBuffer, STGroupFile } from "../src/index.js";
@@ -132,7 +128,7 @@ export class TestTemplateNames extends BaseTest {
 
         TestTemplateNames.writeFile(this.tmpdir, "t.stg", templates);
         const errors = new ErrorBuffer();
-        const group = new STGroupFile(path.join(this.tmpdir, "t.stg"));
+        const group = new STGroupFile(this.tmpdir + "/t.stg");
         group.setListener(errors);
         const template = group.getInstanceOf("t-entry")!;
         template.add("x-3", "x");

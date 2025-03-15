@@ -3,10 +3,6 @@
   * Licensed under the BSD- 3 License.See License.txt in the project root for license information.
   */
 
-// cspell: disable
-
-import path from "path";
-
 import { BaseTest } from "./BaseTest.js";
 import { assertEquals } from "./junit.js";
 
@@ -36,7 +32,7 @@ export class TestInterptimeErrors extends BaseTest {
         const templates = "t() ::= \"<foo()>\"" + Misc.newLine;
 
         TestInterptimeErrors.writeFile(this.tmpdir, "t.stg", templates);
-        const group = new STGroupFile(path.join(this.tmpdir, "t.stg"));
+        const group = new STGroupFile(this.tmpdir + "/t.stg");
         group.setListener(errors);
         const st = group.getInstanceOf("t");
         st?.render();
@@ -51,12 +47,12 @@ export class TestInterptimeErrors extends BaseTest {
         const templates = "t() ::= \"<super.t()>\"" + Misc.newLine;
 
         TestInterptimeErrors.writeFile(this.tmpdir, "t.stg", templates);
-        const group = new STGroupFile(path.join(this.tmpdir, "t.stg"));
+        const group = new STGroupFile(this.tmpdir + "/t.stg");
         group.setListener(errors);
         const templates2 = "u() ::= \"blech\"" + Misc.newLine;
 
         TestInterptimeErrors.writeFile(this.tmpdir, "t2.stg", templates2);
-        const group2 = new STGroupFile(path.join(this.tmpdir, "t2.stg"));
+        const group2 = new STGroupFile(this.tmpdir + "/t2.stg");
         group.importTemplates(group2);
         const st = group.getInstanceOf("t");
         st?.render();
@@ -71,7 +67,7 @@ export class TestInterptimeErrors extends BaseTest {
         const templates = "t(u) ::= \"<u.x>\"" + Misc.newLine;
 
         TestInterptimeErrors.writeFile(this.tmpdir, "t.stg", templates);
-        const group = new STGroupFile(path.join(this.tmpdir, "t.stg"));
+        const group = new STGroupFile(this.tmpdir + "/t.stg");
         group.setListener(errors);
         const st = group.getInstanceOf("t");
         st?.add("u", new BaseTest.User(32, "parrt"));
@@ -87,7 +83,7 @@ export class TestInterptimeErrors extends BaseTest {
         const templates = "t(u) ::= \"<u.name>\"" + Misc.newLine;
 
         TestInterptimeErrors.writeFile(this.tmpdir, "t.stg", templates);
-        const group = new STGroupFile(path.join(this.tmpdir, "t.stg"));
+        const group = new STGroupFile(this.tmpdir + "/t.stg");
         group.setListener(errors);
         const st = group.getInstanceOf("t");
         st?.add("u", new TestInterptimeErrors.UserHiddenName("parrt"));
@@ -102,7 +98,7 @@ export class TestInterptimeErrors extends BaseTest {
         const templates = "t(u) ::= \"<u.name>\"" + Misc.newLine;
 
         TestInterptimeErrors.writeFile(this.tmpdir, "t.stg", templates);
-        const group = new STGroupFile(path.join(this.tmpdir, "t.stg"));
+        const group = new STGroupFile(this.tmpdir + "/t.stg");
         group.setListener(errors);
         const st = group.getInstanceOf("t");
         st?.add("u", new TestInterptimeErrors.UserHiddenNameField("parrt"));
@@ -119,7 +115,7 @@ export class TestInterptimeErrors extends BaseTest {
             "u(x,y) ::= \"<x>\"\n";
 
         TestInterptimeErrors.writeFile(this.tmpdir, "t.stg", templates);
-        const group = new STGroupFile(path.join(this.tmpdir, "t.stg"));
+        const group = new STGroupFile(this.tmpdir + "/t.stg");
         group.setListener(errors);
         const st = group.getInstanceOf("t");
         st?.render();
@@ -136,7 +132,7 @@ export class TestInterptimeErrors extends BaseTest {
             "u(x,y) ::= \"<x>\"\n";
 
         TestInterptimeErrors.writeFile(this.tmpdir, "t.stg", templates);
-        const group = new STGroupFile(path.join(this.tmpdir, "t.stg"));
+        const group = new STGroupFile(this.tmpdir + "/t.stg");
         group.setListener(errors);
         const st = group.getInstanceOf("t");
         let expected = "9";
@@ -156,7 +152,7 @@ export class TestInterptimeErrors extends BaseTest {
             "u() ::= \"<x>\"\n";
 
         TestInterptimeErrors.writeFile(this.tmpdir, "t.stg", templates);
-        const group = new STGroupFile(path.join(this.tmpdir, "t.stg"));
+        const group = new STGroupFile(this.tmpdir + "/t.stg");
         group.setListener(errors);
         const st = group.getInstanceOf("t");
         st?.render();

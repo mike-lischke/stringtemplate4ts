@@ -100,3 +100,42 @@ export const convertUTF16ToString = (data: Uint16Array): string => {
 
     return decoder.decode(data);
 };
+
+const absolutePathRegex = /^([a-zA-Z]:[\\/]|\/|\\\\)/;
+
+export const isAbsolutePath = (path: string): boolean => {
+    return absolutePathRegex.test(path);
+};
+
+export const basename = (path: string, ext?: string): string => {
+    const parts = path.split(/[\\/]/);
+    const base = parts[parts.length - 1];
+    const index = ext ? base.lastIndexOf("." + ext) : -1;
+
+    return index === -1 ? base : base.substring(0, index);
+};
+
+export const dirname = (path: string): string => {
+    const parts = path.split(/[\\/]/);
+
+    return parts.slice(0, parts.length - 1).join("/");
+};
+
+export const extname = (path: string): string => {
+    const parts = path.split(".");
+
+    return parts[parts.length - 1];
+};
+
+export const resolve = (...paths: string[]): string => {
+    let result = paths.shift()!;
+    for (const path of paths) {
+        if (isAbsolutePath(path)) {
+            result = path;
+        } else {
+            result += "/" + path;
+        }
+    }
+
+    return result;
+};

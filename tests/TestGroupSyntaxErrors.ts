@@ -3,10 +3,6 @@
   * Licensed under the BSD- 3 License.See License.txt in the project root for license information.
   */
 
-// cspell: disable
-
-import path from "path";
-
 import { BaseTest } from "./BaseTest.js";
 import { assertEquals } from "./junit.js";
 import { ErrorBuffer, Misc, STGroupFile } from "../src/index.js";
@@ -22,7 +18,7 @@ export class TestGroupSyntaxErrors extends BaseTest {
         TestGroupSyntaxErrors.writeFile(this.tmpdir, "t.stg", templates);
 
         const errors = new ErrorBuffer();
-        const group = new STGroupFile(path.join(this.tmpdir, "t.stg"));
+        const group = new STGroupFile(this.tmpdir + "/t.stg");
         group.setListener(errors);
         group.load(); // force load
         const expected = "[t.stg 2:0: mismatched input 'foo' expecting {ID, STRING}, t.stg 2:3: mismatched input '(' " +
@@ -39,7 +35,7 @@ export class TestGroupSyntaxErrors extends BaseTest {
         TestGroupSyntaxErrors.writeFile(this.tmpdir, "t.stg", templates);
 
         const errors = new ErrorBuffer();
-        const group = new STGroupFile(path.join(this.tmpdir, "t.stg"));
+        const group = new STGroupFile(this.tmpdir + "/t.stg");
         group.setListener(errors);
         group.load(); // force load
         const expected = "[t.stg 1:7: mismatched input 'Super' expecting {ID, STRING}]";
@@ -53,7 +49,7 @@ export class TestGroupSyntaxErrors extends BaseTest {
         TestGroupSyntaxErrors.writeFile(this.tmpdir, "t.stg", templates);
 
         const errors = new ErrorBuffer();
-        const group = new STGroupFile(path.join(this.tmpdir, "t.stg"));
+        const group = new STGroupFile(this.tmpdir + "/t.stg");
         group.setListener(errors);
         group.load(); // force load
         const expected = "[t.stg 2:0: missing template at '<EOF>']";
@@ -67,7 +63,7 @@ export class TestGroupSyntaxErrors extends BaseTest {
         TestGroupSyntaxErrors.writeFile(this.tmpdir, "t.stg", templates);
 
         const errors = new ErrorBuffer();
-        const group = new STGroupFile(path.join(this.tmpdir, "t.stg"));
+        const group = new STGroupFile(this.tmpdir + "/t.stg");
         group.setListener(errors);
         group.load(); // force load
         const expected = "[t.stg 1:0: missing final '}' in {...} anonymous template, " +
@@ -82,7 +78,7 @@ export class TestGroupSyntaxErrors extends BaseTest {
         TestGroupSyntaxErrors.writeFile(this.tmpdir, "t.stg", templates);
 
         const errors = new ErrorBuffer();
-        const group = new STGroupFile(path.join(this.tmpdir, "t.stg"));
+        const group = new STGroupFile(this.tmpdir + "/t.stg");
         group.setListener(errors);
         group.load(); // force load
         const expected = "[t.stg 1:5: no viable alternative at input '::=']";
@@ -96,7 +92,7 @@ export class TestGroupSyntaxErrors extends BaseTest {
         TestGroupSyntaxErrors.writeFile(this.tmpdir, "t.stg", templates);
 
         const errors = new ErrorBuffer();
-        const group = new STGroupFile(path.join(this.tmpdir, "t.stg"));
+        const group = new STGroupFile(this.tmpdir + "/t.stg");
         group.setListener(errors);
         group.load(); // force load
         const expected = "[t.stg 2:4: \\n in string]";
@@ -112,7 +108,7 @@ export class TestGroupSyntaxErrors extends BaseTest {
         TestGroupSyntaxErrors.writeFile(this.tmpdir, "t.stg", templates);
 
         const errors = new ErrorBuffer();
-        const group = new STGroupFile(path.join(this.tmpdir, "t.stg"));
+        const group = new STGroupFile(this.tmpdir + "/t.stg");
         group.setListener(errors);
         group.load(); // force load
         const expected = "[t.stg 1:3: garbled template definition starting at 'foo']";
@@ -126,7 +122,7 @@ export class TestGroupSyntaxErrors extends BaseTest {
         TestGroupSyntaxErrors.writeFile(this.tmpdir, "t.stg", templates);
 
         const errors = new ErrorBuffer();
-        const group = new STGroupFile(path.join(this.tmpdir, "t.stg"));
+        const group = new STGroupFile(this.tmpdir + "/t.stg");
         group.setListener(errors);
         group.load(); // force load
         const expected = "[t.stg 1:6: missing ID at ')']";
@@ -140,7 +136,7 @@ export class TestGroupSyntaxErrors extends BaseTest {
         TestGroupSyntaxErrors.writeFile(this.tmpdir, "t.stg", templates);
 
         const errors = new ErrorBuffer();
-        const group = new STGroupFile(path.join(this.tmpdir, "t.stg"));
+        const group = new STGroupFile(this.tmpdir + "/t.stg");
         group.setListener(errors);
         group.load(); // force load
         const expected =
@@ -157,7 +153,7 @@ export class TestGroupSyntaxErrors extends BaseTest {
         TestGroupSyntaxErrors.writeFile(this.tmpdir, "t.stg", templates);
 
         const errors = new ErrorBuffer();
-        const group = new STGroupFile(path.join(this.tmpdir, "t.stg"));
+        const group = new STGroupFile(this.tmpdir + "/t.stg");
         group.setListener(errors);
         group.load(); // force load
         const expected = "[t.stg 1:6: extraneous input 'b' expecting ')']";
@@ -171,7 +167,7 @@ export class TestGroupSyntaxErrors extends BaseTest {
         TestGroupSyntaxErrors.writeFile(this.tmpdir, "t.stg", templates);
 
         const errors = new ErrorBuffer();
-        const group = new STGroupFile(path.join(this.tmpdir, "t.stg"));
+        const group = new STGroupFile(this.tmpdir + "/t.stg");
         group.setListener(errors);
         group.load(); // force load
 
@@ -187,7 +183,7 @@ export class TestGroupSyntaxErrors extends BaseTest {
         TestGroupSyntaxErrors.writeFile(this.tmpdir, "t.stg", templates);
 
         const errors = new ErrorBuffer();
-        const group = new STGroupFile(path.join(this.tmpdir, "t.stg"));
+        const group = new STGroupFile(this.tmpdir + "/t.stg");
         group.setListener(errors);
         group.load(); // force load
         const expected = "[t.stg 1:8: redefinition of parameter a]";
@@ -204,7 +200,7 @@ export class TestGroupSyntaxErrors extends BaseTest {
         TestGroupSyntaxErrors.writeFile(this.tmpdir, "t.stg", templates);
 
         const errors = new ErrorBuffer();
-        const group = new STGroupFile(path.join(this.tmpdir, "t.stg"));
+        const group = new STGroupFile(this.tmpdir + "/t.stg");
         group.setListener(errors);
         group.load(); // force load
         const expected =
@@ -220,7 +216,7 @@ export class TestGroupSyntaxErrors extends BaseTest {
         TestGroupSyntaxErrors.writeFile(this.tmpdir, "t.stg", templates);
 
         const errors = new ErrorBuffer();
-        const group = new STGroupFile(path.join(this.tmpdir, "t.stg"));
+        const group = new STGroupFile(this.tmpdir + "/t.stg");
         group.setListener(errors);
         group.load(); // force load
         const expected = "[t.stg 1:15: 'b' came as a complete surprise to me]";
@@ -234,7 +230,7 @@ export class TestGroupSyntaxErrors extends BaseTest {
         TestGroupSyntaxErrors.writeFile(this.tmpdir, "t.stg", templates);
 
         const errors = new ErrorBuffer();
-        const group = new STGroupFile(path.join(this.tmpdir, "t.stg"));
+        const group = new STGroupFile(this.tmpdir + "/t.stg");
         group.setListener(errors);
         group.load(); // force load
         const expected = "[t.stg 1:7: missing dictionary entry at ']']";
@@ -248,7 +244,7 @@ export class TestGroupSyntaxErrors extends BaseTest {
         TestGroupSyntaxErrors.writeFile(this.tmpdir, "t.stg", templates);
 
         const errors = new ErrorBuffer();
-        const group = new STGroupFile(path.join(this.tmpdir, "t.stg"));
+        const group = new STGroupFile(this.tmpdir + "/t.stg");
         group.setListener(errors);
         group.load(); // force load
         const expected = "[t.stg 1:11: mismatched input ']' expecting {'true', 'false', '[', ID, STRING, " +
@@ -263,7 +259,7 @@ export class TestGroupSyntaxErrors extends BaseTest {
         TestGroupSyntaxErrors.writeFile(this.tmpdir, "t.stg", templates);
 
         const errors = new ErrorBuffer();
-        const group = new STGroupFile(path.join(this.tmpdir, "t.stg"));
+        const group = new STGroupFile(this.tmpdir + "/t.stg");
         group.setListener(errors);
         group.load(); // force load
         const expected = "[t.stg 1:12: token recognition error at: '}']";
@@ -277,7 +273,7 @@ export class TestGroupSyntaxErrors extends BaseTest {
         TestGroupSyntaxErrors.writeFile(this.tmpdir, "t.stg", templates);
 
         const errors = new ErrorBuffer();
-        const group = new STGroupFile(path.join(this.tmpdir, "t.stg"));
+        const group = new STGroupFile(this.tmpdir + "/t.stg");
         group.setListener(errors);
         group.load(); // force load
         const expected = "[t.stg 1:8: token recognition error at: '\"', t.stg 1:9: missing template at '<EOF>']";

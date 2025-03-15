@@ -20,7 +20,7 @@ options {
 
 // cspell: disable
 
-import { basename } from "path";
+import { basename } from "../../support/helpers.js";
 
 import { GroupLexer } from "./GroupLexer.js";
 import { STGroup } from "../../STGroup.js";
@@ -37,7 +37,7 @@ import { Misc } from "../../misc/Misc.js";
 
 // cspell: disable
 
-import { basename } from "path";
+import { basename } from "../../support/helpers.js";
 
 import { STGroup } from "../../STGroup.js";
 import { ErrorType } from "../../misc/ErrorType.js";

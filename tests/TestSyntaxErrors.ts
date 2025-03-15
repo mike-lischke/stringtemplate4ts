@@ -3,10 +3,6 @@
   * Licensed under the BSD- 3 License.See License.txt in the project root for license information.
   */
 
-// cspell: disable
-
-import path from "path";
-
 import { BaseTest } from "./BaseTest.js";
 import { assertEquals } from "./junit.js";
 import { STGroup, ErrorBuffer, STException, STGroupFile, Misc } from "../src/index.js";
@@ -121,7 +117,7 @@ export class TestSyntaxErrors extends BaseTest {
         TestSyntaxErrors.writeFile(this.tmpdir, "t.stg", templates);
 
         const errors = new ErrorBuffer();
-        const group = new STGroupFile(path.join(this.tmpdir, "t.stg"));
+        const group = new STGroupFile(this.tmpdir + "/t.stg");
         group.setListener(errors);
         group.load(); // force load
         const expected = "[t.stg 1:15: doesn't look like an expression]";
@@ -135,7 +131,7 @@ export class TestSyntaxErrors extends BaseTest {
         TestSyntaxErrors.writeFile(this.tmpdir, "t.stg", templates);
 
         const errors = new ErrorBuffer();
-        const group = new STGroupFile(path.join(this.tmpdir, "t.stg"));
+        const group = new STGroupFile(this.tmpdir + "/t.stg");
         group.setListener(errors);
         group.load(); // force load
         const expected = "[t.stg 2:7: \\n in string, t.stg 1:14: doesn't look like an expression]";
@@ -149,7 +145,7 @@ export class TestSyntaxErrors extends BaseTest {
         TestSyntaxErrors.writeFile(this.tmpdir, "t.stg", templates);
 
         const errors = new ErrorBuffer();
-        const group = new STGroupFile(path.join(this.tmpdir, "t.stg"));
+        const group = new STGroupFile(this.tmpdir + "/t.stg");
         group.setListener(errors);
         group.load(); // force load
         const expected = "[t.stg 1:29: '!' came as a complete surprise to me]";
@@ -163,7 +159,7 @@ export class TestSyntaxErrors extends BaseTest {
         TestSyntaxErrors.writeFile(this.tmpdir, "t.stg", templates);
 
         const errors = new ErrorBuffer();
-        const group = new STGroupFile(path.join(this.tmpdir, "t.stg"));
+        const group = new STGroupFile(this.tmpdir + "/t.stg");
         group.setListener(errors);
         group.load(); // force load
         const expected = "[t.stg 1:19: premature EOF]";
@@ -177,7 +173,7 @@ export class TestSyntaxErrors extends BaseTest {
         TestSyntaxErrors.writeFile(this.tmpdir, "t.stg", templates);
 
         const errors = new ErrorBuffer();
-        const group = new STGroupFile(path.join(this.tmpdir, "t.stg"));
+        const group = new STGroupFile(this.tmpdir + "/t.stg");
         group.setListener(errors);
         group.load(); // force load
         const expected = "[t.stg 1:34: premature EOF]";
@@ -191,7 +187,7 @@ export class TestSyntaxErrors extends BaseTest {
         TestSyntaxErrors.writeFile(this.tmpdir, "t.stg", templates);
 
         const errors = new ErrorBuffer();
-        const group = new STGroupFile(path.join(this.tmpdir, "t.stg"));
+        const group = new STGroupFile(this.tmpdir + "/t.stg");
         group.setListener(errors);
         group.load(); // force load
         const expected = "[t.stg 1:20: EOF in string, t.stg 1:21: premature EOF]";
@@ -205,7 +201,7 @@ export class TestSyntaxErrors extends BaseTest {
         TestSyntaxErrors.writeFile(this.tmpdir, "t.stg", templates);
 
         const errors = new ErrorBuffer();
-        const group = new STGroupFile(path.join(this.tmpdir, "t.stg"));
+        const group = new STGroupFile(this.tmpdir + "/t.stg");
         group.setListener(errors);
         group.load(); // force load
         const expected = "[t.stg 1:20: Non-terminated comment starting at 1:1: '!>' missing]";
@@ -219,7 +215,7 @@ export class TestSyntaxErrors extends BaseTest {
         TestSyntaxErrors.writeFile(this.tmpdir, "t.stg", templates);
 
         const errors = new ErrorBuffer();
-        const group = new STGroupFile(path.join(this.tmpdir, "t.stg"));
+        const group = new STGroupFile(this.tmpdir + "/t.stg");
         group.setListener(errors);
         group.load(); // force load
         const expected = "[t.stg 1:19: '>' came as a complete surprise to me]";
@@ -233,7 +229,7 @@ export class TestSyntaxErrors extends BaseTest {
         TestSyntaxErrors.writeFile(this.tmpdir, "t.stg", templates);
 
         const errors = new ErrorBuffer();
-        const group = new STGroupFile(path.join(this.tmpdir, "t.stg"));
+        const group = new STGroupFile(this.tmpdir + "/t.stg");
         group.setListener(errors);
         group.load(); // force load
         const expected = "[t.stg 1:19: mismatched input ',' expecting {';', RDELIM}]";

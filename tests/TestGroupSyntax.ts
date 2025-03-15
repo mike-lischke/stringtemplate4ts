@@ -3,10 +3,6 @@
   * Licensed under the BSD- 3 License.See License.txt in the project root for license information.
   */
 
-// cspell: disable
-
-import path from "path";
-
 import { BaseTest } from "./BaseTest.js";
 import { assertEquals, assertNotNull } from "./junit.js";
 import { Misc, STGroupFile, ErrorBuffer, STGroupString } from "../src/index.js";
@@ -19,7 +15,7 @@ export class TestGroupSyntax extends BaseTest {
         const templates = "t() ::= <<foo>>" + Misc.newLine;
 
         TestGroupSyntax.writeFile(this.tmpdir, "t.stg", templates);
-        const group = new STGroupFile(path.join(this.tmpdir, "t.stg"));
+        const group = new STGroupFile(this.tmpdir + "/t.stg");
         const expected =
             "t() ::= <<" + Misc.newLine +
             "foo" + Misc.newLine +
@@ -213,7 +209,7 @@ export class TestGroupSyntax extends BaseTest {
             ">>\n";
 
         TestGroupSyntax.writeFile(this.tmpdir, "t.stg", templates);
-        const group = new STGroupFile(path.join(this.tmpdir, "t.stg"));
+        const group = new STGroupFile(this.tmpdir + "/t.stg");
         const st = group.getInstanceOf("t");
         const expected = "true+";
         const result = st?.render();
@@ -228,7 +224,7 @@ export class TestGroupSyntax extends BaseTest {
             ">>\n";
 
         TestGroupSyntax.writeFile(this.tmpdir, "t.stg", templates);
-        const group = new STGroupFile(path.join(this.tmpdir, "t.stg"));
+        const group = new STGroupFile(this.tmpdir + "/t.stg");
         const st = group.getInstanceOf("t");
         const expected = "false-";
         const result = st?.render();
@@ -243,7 +239,7 @@ export class TestGroupSyntax extends BaseTest {
             ">>\n";
 
         TestGroupSyntax.writeFile(this.tmpdir, "t.stg", templates);
-        const group = new STGroupFile(path.join(this.tmpdir, "t.stg"));
+        const group = new STGroupFile(this.tmpdir + "/t.stg");
         const st = group.getInstanceOf("t");
         const expected = "+";
         const result = st?.render();
@@ -258,7 +254,7 @@ export class TestGroupSyntax extends BaseTest {
             ">>\n";
 
         TestGroupSyntax.writeFile(this.tmpdir, "t.stg", templates);
-        const group = new STGroupFile(path.join(this.tmpdir, "t.stg"));
+        const group = new STGroupFile(this.tmpdir + "/t.stg");
         const st = group.getInstanceOf("t");
         const expected = "-";
         const result = st?.render();
@@ -271,7 +267,7 @@ export class TestGroupSyntax extends BaseTest {
             "t(a) ::= \"<a:{x | <x:{y | <y>}>}>\"" + Misc.newLine;
 
         TestGroupSyntax.writeFile(this.tmpdir, "t.stg", templates);
-        const group = new STGroupFile(path.join(this.tmpdir, "t.stg"));
+        const group = new STGroupFile(this.tmpdir + "/t.stg");
         const expected =
             "t(a) ::= <<" + Misc.newLine +
             "<a:{x | <x:{y | <y>}>}>" + Misc.newLine +
@@ -286,7 +282,7 @@ export class TestGroupSyntax extends BaseTest {
             "t(a={x | <x:{y|<y>}>}) ::= \"ick\"" + Misc.newLine;
 
         TestGroupSyntax.writeFile(this.tmpdir, "t.stg", templates);
-        const group = new STGroupFile(path.join(this.tmpdir, "t.stg"));
+        const group = new STGroupFile(this.tmpdir + "/t.stg");
         group.load();
         const expected =
             "t(a={x | <x:{y|<y>}>}) ::= <<" + Misc.newLine +
@@ -301,7 +297,7 @@ export class TestGroupSyntax extends BaseTest {
         const templates = "t(a={x | \\< <x:{y|<y>\\}}>}) ::= \"[<a>]\"" + Misc.newLine;
 
         TestGroupSyntax.writeFile(this.tmpdir, "t.stg", templates);
-        const group = new STGroupFile(path.join(this.tmpdir, "t.stg"));
+        const group = new STGroupFile(this.tmpdir + "/t.stg");
         const expected =
             "t(a={x | \\< <x:{y|<y>\\}}>}) ::= <<" + Misc.newLine +
             "[<a>]" + Misc.newLine +

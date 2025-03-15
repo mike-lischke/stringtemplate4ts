@@ -3,11 +3,7 @@
   * Licensed under the BSD- 3 License.See License.txt in the project root for license information.
   */
 
-// cspell: disable
-
 /* eslint-disable max-classes-per-file */
-
-import path from "path";
 
 import { BaseTest } from "./BaseTest.js";
 import { assertEquals, assertNotNull, assertNull, assertTrue } from "./junit.js";
@@ -713,7 +709,7 @@ export class TestGroups extends BaseTest {
             "  \t  bar" + Misc.newLine +
             ">>" + Misc.newLine;
         TestGroups.writeFile(this.tmpdir, "t.stg", templates);
-        const group = new STGroupFile(path.join(this.tmpdir, "t.stg"));
+        const group = new STGroupFile(this.tmpdir + "/t.stg");
         const st = group.getInstanceOf("t");
         assertNotNull(st);
         const expecting = "Foo bar";
@@ -728,7 +724,7 @@ export class TestGroups extends BaseTest {
             "  \t  bar" + Misc.newLine +
             ">>" + Misc.newLine;
         TestGroups.writeFile(this.tmpdir, "t.stg", templates);
-        const group = new STGroupFile(path.join(this.tmpdir, "t.stg"));
+        const group = new STGroupFile(this.tmpdir + "/t.stg");
         const st = group.getInstanceOf("t");
         assertNotNull(st);
         const expecting = "Foo bar";
@@ -739,7 +735,7 @@ export class TestGroups extends BaseTest {
     public testLineBreakMissingTrailingNewline(): void {
         TestGroups.writeFile(this.tmpdir, "t.stg", "a(x) ::= <<<\\\\>\r\n>>"); // that is <<<\\>>> not an escaped >>
         const errors = new ErrorBuffer();
-        const group = new STGroupFile(path.join(this.tmpdir, "t.stg"));
+        const group = new STGroupFile(this.tmpdir + "/t.stg");
         group.setListener(errors);
         const st = group.getInstanceOf("a");
         assertEquals("[t.stg 1:15: Missing newline after newline escape <\\\\>]", errors.toString());
@@ -754,7 +750,7 @@ export class TestGroups extends BaseTest {
     public testLineBreakWithScarfedTrailingNewline(): void {
         TestGroups.writeFile(this.tmpdir, "t.stg", "a(x) ::= <<<\\\\>\r\n>>"); // \r\n removed as trailing whitespace
         const errors = new ErrorBuffer();
-        const group = new STGroupFile(path.join(this.tmpdir, "t.stg"));
+        const group = new STGroupFile(this.tmpdir + "/t.stg");
         group.setListener(errors);
         const st = group.getInstanceOf("a");
         assertEquals("[t.stg 1:15: Missing newline after newline escape <\\\\>]", errors.toString());

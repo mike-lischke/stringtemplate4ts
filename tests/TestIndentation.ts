@@ -3,10 +3,6 @@
   * Licensed under the BSD- 3 License.See License.txt in the project root for license information.
   */
 
-// cspell: disable
-
-import path from "path";
-
 import { BaseTest } from "./BaseTest.js";
 import { STGroup, STGroupFile, ST, Misc, ErrorManager } from "../src/index.js";
 import { assertEquals } from "./junit.js";
@@ -22,7 +18,7 @@ export class TestIndentation extends BaseTest {
             ">>" + Misc.newLine;
 
         TestIndentation.writeFile(this.tmpdir, "t.stg", templates);
-        const group = new STGroupFile(path.join(this.tmpdir, "t.stg"));
+        const group = new STGroupFile(this.tmpdir + "/t.stg");
         const t = group.getInstanceOf("list");
         // t?.impl?.dump();
         t?.add("a", "Terence");
@@ -39,7 +35,7 @@ export class TestIndentation extends BaseTest {
             ">>" + Misc.newLine;
 
         TestIndentation.writeFile(this.tmpdir, "t.stg", templates);
-        const group = new STGroupFile(path.join(this.tmpdir, "t.stg"));
+        const group = new STGroupFile(this.tmpdir + "/t.stg");
         const t = group.getInstanceOf("list");
         t?.add("names", "Terence");
         t?.add("names", "Jim");
@@ -58,7 +54,7 @@ export class TestIndentation extends BaseTest {
             "  <names; separator=\"\n\">" + Misc.newLine +
             ">>" + Misc.newLine;
         TestIndentation.writeFile(this.tmpdir, "t.stg", templates);
-        const group = new STGroupFile(path.join(this.tmpdir, "t.stg"));
+        const group = new STGroupFile(this.tmpdir + "/t.stg");
         const t = group.getInstanceOf("list");
         t?.add("names", "Terence\nis\na\nmaniac");
         t?.add("names", "Jim");
@@ -82,7 +78,7 @@ export class TestIndentation extends BaseTest {
             "  <names>" + Misc.newLine +
             ">>" + Misc.newLine;
         TestIndentation.writeFile(this.tmpdir, "t.stg", templates);
-        const group = new STGroupFile(path.join(this.tmpdir, "t.stg"));
+        const group = new STGroupFile(this.tmpdir + "/t.stg");
         const t = group.getInstanceOf("list");
         t?.add("names", "Terence\n\nis a maniac");
         const expecting =
@@ -101,7 +97,7 @@ export class TestIndentation extends BaseTest {
             "after" + Misc.newLine +
             ">>" + Misc.newLine;
         TestIndentation.writeFile(this.tmpdir, "t.stg", templates);
-        const group = new STGroupFile(path.join(this.tmpdir, "t.stg"));
+        const group = new STGroupFile(this.tmpdir + "/t.stg");
         const t = group.getInstanceOf("list");
         t?.add("names", "Terence");
         t?.add("names", "Jim");
@@ -130,7 +126,7 @@ export class TestIndentation extends BaseTest {
             ">>" + Misc.newLine +
             "assign(lhs,expr) ::= \"<lhs>=<expr>;\"" + Misc.newLine;
         TestIndentation.writeFile(this.tmpdir, "t.stg", templates);
-        const group = new STGroupFile(path.join(this.tmpdir, "t.stg"));
+        const group = new STGroupFile(this.tmpdir + "/t.stg");
         const t = group.getInstanceOf("method");
         t?.add("name", "foo");
         const s1 = group.getInstanceOf("assign");

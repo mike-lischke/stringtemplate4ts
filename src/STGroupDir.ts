@@ -6,7 +6,6 @@
 /* eslint-disable jsdoc/require-returns, jsdoc/require-param */
 
 import * as fs from "fs";
-import * as path from "path";
 
 import { CharStream, Token } from "antlr4ng";
 
@@ -105,7 +104,7 @@ export class STGroupDir extends STGroup {
                 "from " + this.groupDirName + " prefix=" + prefix);
         }
 
-        const fullPath = path.join(this.groupDirName, prefix, unqualifiedFileName);
+        const fullPath = this.groupDirName + "/" + prefix + "/" + unqualifiedFileName;
 
         let content;
         try {
@@ -150,7 +149,7 @@ export class STGroupDir extends STGroup {
         const prefix = Misc.getPrefix(name);
 
         // see if parent of template name is a group file
-        const groupFile = path.join(this.groupDirName, parent + STGroupDir.GROUP_FILE_EXTENSION);
+        const groupFile = this.groupDirName + "/" + parent + STGroupDir.GROUP_FILE_EXTENSION;
         if (fs.existsSync(groupFile)) {
             this.loadGroupFile(prefix, groupFile);
 

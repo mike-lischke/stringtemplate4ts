@@ -3,10 +3,6 @@
   * Licensed under the BSD- 3 License.See License.txt in the project root for license information.
   */
 
-// cspell: disable
-
-import path from "path";
-
 import { BaseTest } from "./BaseTest.js";
 import { assertEquals } from "./junit.js";
 
@@ -18,7 +14,7 @@ export class TestLineWrap extends BaseTest {
     public testLineWrap(): void {
         const templates = "array(values) ::= <<int[] a = { <values; wrap=\"\\n\", separator=\",\"> };>>" + Misc.newLine;
         TestLineWrap.writeFile(this.tmpdir, "t.stg", templates);
-        const group = new STGroupFile(path.join(this.tmpdir, "t.stg"));
+        const group = new STGroupFile(this.tmpdir + "/t.stg");
 
         const a = group.getInstanceOf("array");
         a?.add("values",
@@ -43,7 +39,7 @@ export class TestLineWrap extends BaseTest {
     public testLineWrapAnchored(): void {
         const templates = "array(values) ::= <<int[] a = { <values; anchor, wrap, separator=\",\"> };>>" + Misc.newLine;
         TestLineWrap.writeFile(this.tmpdir, "t.stg", templates);
-        const group = new STGroupFile(path.join(this.tmpdir, "t.stg"));
+        const group = new STGroupFile(this.tmpdir + "/t.stg");
 
         const a = group.getInstanceOf("array");
         a?.add("values",
@@ -64,7 +60,7 @@ export class TestLineWrap extends BaseTest {
         const templates =
             "array(values) ::= <<{ <values; anchor, separator=\", \"> }>>" + Misc.newLine;
         TestLineWrap.writeFile(this.tmpdir, "t.stg", templates);
-        const group = new STGroupFile(path.join(this.tmpdir, "t.stg"));
+        const group = new STGroupFile(this.tmpdir + "/t.stg");
 
         const x = new ST("<\\n>{ <stuff; anchor, separator=\",\\n\"> }<\\n>");
         x.groupThatCreatedThisInstance = group;
@@ -88,7 +84,7 @@ export class TestLineWrap extends BaseTest {
         const templates =
             "func(args) ::= <<       FUNCTION line( <args; wrap=\"\\n      c\", separator=\",\"> )>>" + Misc.newLine;
         TestLineWrap.writeFile(this.tmpdir, "t.stg", templates);
-        const group = new STGroupFile(path.join(this.tmpdir, "t.stg"));
+        const group = new STGroupFile(this.tmpdir + "/t.stg");
 
         const a = group.getInstanceOf("func");
         a?.add("args",
@@ -104,7 +100,7 @@ export class TestLineWrap extends BaseTest {
         const templates =
             "array(values) ::= <<int[] a = { <{1,9,2,<values; wrap, separator=\",\">}; anchor> };>>" + Misc.newLine;
         TestLineWrap.writeFile(this.tmpdir, "t.stg", templates);
-        const group = new STGroupFile(path.join(this.tmpdir, "t.stg"));
+        const group = new STGroupFile(this.tmpdir + "/t.stg");
 
         const a = group.getInstanceOf("array");
         a?.add("values",
@@ -122,7 +118,7 @@ export class TestLineWrap extends BaseTest {
     public testLineWrapEdgeCase(): void {
         const templates = "duh(chars) ::= \"<chars; wrap={<\\n>}>\"" + Misc.newLine;
         TestLineWrap.writeFile(this.tmpdir, "t.stg", templates);
-        const group = new STGroupFile(path.join(this.tmpdir, "t.stg"));
+        const group = new STGroupFile(this.tmpdir + "/t.stg");
 
         const a = group.getInstanceOf("duh");
         a?.add("chars", ["a", "b", "c", "d", "e"]);
@@ -140,7 +136,7 @@ export class TestLineWrap extends BaseTest {
             "<chars; wrap=\"\\n\"\\>" + Misc.newLine +
             ">>" + Misc.newLine;
         TestLineWrap.writeFile(this.tmpdir, "t.stg", templates);
-        const group = new STGroupFile(path.join(this.tmpdir, "t.stg"));
+        const group = new STGroupFile(this.tmpdir + "/t.stg");
 
         const a = group.getInstanceOf("duh");
         a?.add("chars", ["a", "b", Misc.newLine, "d", "e"]);
@@ -158,7 +154,7 @@ export class TestLineWrap extends BaseTest {
             "<chars; wrap=\"\\n\"\\>" + Misc.newLine +
             ">>" + Misc.newLine;
         TestLineWrap.writeFile(this.tmpdir, "t.stg", templates);
-        const group = new STGroupFile(path.join(this.tmpdir, "t.stg"));
+        const group = new STGroupFile(this.tmpdir + "/t.stg");
 
         const a = group.getInstanceOf("duh");
         a?.add("chars", ["a", "b", "c", Misc.newLine, "d", "e"]);
@@ -176,7 +172,7 @@ export class TestLineWrap extends BaseTest {
     public testLineWrapForList(): void {
         const templates = "duh(data) ::= <<!<data; wrap>!>>" + Misc.newLine;
         TestLineWrap.writeFile(this.tmpdir, "t.stg", templates);
-        const group = new STGroupFile(path.join(this.tmpdir, "t.stg"));
+        const group = new STGroupFile(this.tmpdir + "/t.stg");
 
         const a = group.getInstanceOf("duh");
         a?.add("data", [1, 2, 3, 4, 5, 6, 7, 8, 9]);
@@ -191,7 +187,7 @@ export class TestLineWrap extends BaseTest {
     public testLineWrapForAnonTemplate(): void {
         const templates = "duh(data) ::= <<!<data:{v|[<v>]}; wrap>!>>" + Misc.newLine;
         TestLineWrap.writeFile(this.tmpdir, "t.stg", templates);
-        const group = new STGroupFile(path.join(this.tmpdir, "t.stg"));
+        const group = new STGroupFile(this.tmpdir + "/t.stg");
 
         const a = group.getInstanceOf("duh");
         a?.add("data", [1, 2, 3, 4, 5, 6, 7, 8, 9]);
@@ -206,7 +202,7 @@ export class TestLineWrap extends BaseTest {
     public testLineWrapForAnonTemplateAnchored(): void {
         const templates = "duh(data) ::= <<!<data:{v|[<v>]}; anchor, wrap>!>>" + Misc.newLine;
         TestLineWrap.writeFile(this.tmpdir, "t.stg", templates);
-        const group = new STGroupFile(path.join(this.tmpdir, "t.stg"));
+        const group = new STGroupFile(this.tmpdir + "/t.stg");
 
         const a = group.getInstanceOf("duh");
         a?.add("data", [1, 2, 3, 4, 5, 6, 7, 8, 9]);
@@ -223,7 +219,7 @@ export class TestLineWrap extends BaseTest {
             "top(s) ::= <<  <s>.>>" +
             "str(data) ::= <<!<data:{v|[<v>]}; wrap=\"!+\\n!\">!>>" + Misc.newLine;
         TestLineWrap.writeFile(this.tmpdir, "t.stg", templates);
-        const group = new STGroupFile(path.join(this.tmpdir, "t.stg"));
+        const group = new STGroupFile(this.tmpdir + "/t.stg");
 
         const t = group.getInstanceOf("top");
         const s = group.getInstanceOf("str");
@@ -245,7 +241,7 @@ export class TestLineWrap extends BaseTest {
             "    <chars; wrap=\"\\n\">" + Misc.newLine +
             ">>" + Misc.newLine;
         TestLineWrap.writeFile(this.tmpdir, "t.stg", templates);
-        const group = new STGroupFile(path.join(this.tmpdir, "t.stg"));
+        const group = new STGroupFile(this.tmpdir + "/t.stg");
 
         const a = group.getInstanceOf("duh");
         a?.add("chars", ["a", "b", "c", "d", "e"]);
@@ -266,7 +262,7 @@ export class TestLineWrap extends BaseTest {
             "    <chars; wrap=\"\\n\">" + Misc.newLine +
             ">>" + Misc.newLine;
         TestLineWrap.writeFile(this.tmpdir, "t.stg", templates);
-        const group = new STGroupFile(path.join(this.tmpdir, "t.stg"));
+        const group = new STGroupFile(this.tmpdir + "/t.stg");
 
         const a = group.getInstanceOf("duh");
         a?.add("chars", ["a", "b", "c", "d", "e"]);
@@ -287,7 +283,7 @@ export class TestLineWrap extends BaseTest {
             "  <chars; wrap=\"\\n\">" + Misc.newLine +
             ">>" + Misc.newLine;
         TestLineWrap.writeFile(this.tmpdir, "t.stg", templates);
-        const group = new STGroupFile(path.join(this.tmpdir, "t.stg"));
+        const group = new STGroupFile(this.tmpdir + "/t.stg");
 
         const top = group.getInstanceOf("top");
         const duh = group.getInstanceOf("duh");
@@ -309,7 +305,7 @@ export class TestLineWrap extends BaseTest {
             "x: <chars; anchor, wrap=\"\\n\">" + Misc.newLine +
             ">>" + Misc.newLine;
         TestLineWrap.writeFile(this.tmpdir, "t.stg", templates);
-        const group = new STGroupFile(path.join(this.tmpdir, "t.stg"));
+        const group = new STGroupFile(this.tmpdir + "/t.stg");
 
         const top = group.getInstanceOf("top");
         const duh = group.getInstanceOf("duh");
@@ -328,7 +324,7 @@ export class TestLineWrap extends BaseTest {
         const templates = "m(args,body) ::= <<@Test public voidfoo(<args; wrap=\"\\n\",separator=\", \">) throws " +
             "Ick { <body> }>>" + Misc.newLine;
         TestLineWrap.writeFile(this.tmpdir, "t.stg", templates);
-        const group = new STGroupFile(path.join(this.tmpdir, "t.stg"));
+        const group = new STGroupFile(this.tmpdir + "/t.stg");
 
         const a = group.getInstanceOf("m");
         a?.add("args",
@@ -344,7 +340,7 @@ export class TestLineWrap extends BaseTest {
     public testSingleValueWrap(): void {
         const templates = "m(args,body) ::= <<{ <body; anchor, wrap=\"\\n\"> }>>" + Misc.newLine;
         TestLineWrap.writeFile(this.tmpdir, "t.stg", templates);
-        const group = new STGroupFile(path.join(this.tmpdir, "t.stg"));
+        const group = new STGroupFile(this.tmpdir + "/t.stg");
 
         const m = group.getInstanceOf("m");
         m?.add("body", "i=3;");
@@ -361,7 +357,7 @@ export class TestLineWrap extends BaseTest {
             "top(arrays) ::= <<Arrays: <arrays>done>>" + Misc.newLine +
             "array(values) ::= <%int[] a = { <values; anchor, wrap=\"\\n\", separator=\",\"> };<\\n>%>" + Misc.newLine;
         TestLineWrap.writeFile(this.tmpdir, "t.stg", templates);
-        const group = new STGroupFile(path.join(this.tmpdir, "t.stg"));
+        const group = new STGroupFile(this.tmpdir + "/t.stg");
 
         const top = group.getInstanceOf("top");
         const a = group.getInstanceOf("array");

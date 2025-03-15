@@ -4,12 +4,12 @@
  */
 
 import { existsSync } from "fs";
-import { dirname, resolve } from "path";
 
 import { STGroup } from "./STGroup.js";
 import { Misc } from "./misc/Misc.js";
 import { ICompiledST } from "./compiler/common.js";
 import { Factories } from "./compiler/factories.js";
+import { dirname, resolve } from "./support/helpers.js";
 
 /**
  * The internal representation of a single group file (which must end in
