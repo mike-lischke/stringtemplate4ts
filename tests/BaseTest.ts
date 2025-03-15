@@ -3,8 +3,7 @@
  * Licensed under the BSD-3 License. See License.txt in the project root for license information.
  */
 
-import os from "os";
-import { existsSync, mkdirSync, rmSync, statSync, unlinkSync, writeFileSync } from "fs";
+import { fs } from "memfs";
 
 import { CharStream, CommonToken, CommonTokenStream, Token } from "antlr4ng";
 
@@ -48,11 +47,11 @@ export abstract class BaseTest {
         try {
             const f = dir + "/" + fileName;
             const realDir = dirname(f); // fileName can contain subdirectories.
-            if (!existsSync(realDir)) {
-                mkdirSync(realDir, { recursive: true });
+            if (!fs.existsSync(realDir)) {
+                fs.mkdirSync(realDir, { recursive: true });
             }
 
-            writeFileSync(f, content);
+            fs.writeFileSync(f, content);
         } catch (ioe) {
             if (ioe instanceof Error) {
                 console.error("can't write file " + fileName + "\n" + ioe.stack);
@@ -70,15 +69,15 @@ export abstract class BaseTest {
      * @param file the file or directory to remove
      */
     public static deleteFile(file: string): void {
-        if (!existsSync(file)) {
+        if (!fs.existsSync(file)) {
             return;
         }
 
-        const stat = statSync(file);
+        const stat = fs.statSync(file);
         if (stat.isDirectory()) {
-            rmSync(file, { recursive: true, force: true });
+            fs.rmSync(file, { recursive: true, force: true });
         } else {
-            unlinkSync(file);
+            fs.unlinkSync(file);
         }
     }
 
@@ -91,9 +90,8 @@ export abstract class BaseTest {
         STGroup.defaultGroup = new STGroup();
         Compiler.subtemplateCount = 0;
 
-        const baseTestDirectory = os.tmpdir();
         const testDirectory = this.constructor.name + "-" + new Date().getMilliseconds();
-        this.#tmpdir = resolve(baseTestDirectory, testDirectory);
+        this.#tmpdir = resolve("/tmp", testDirectory);
     };
 
     @AfterEach
@@ -144,63 +142,6 @@ export abstract class BaseTest {
         BaseTest.writeFile(dirName, "Test.java", outputFileST.render());
     };
 
-    /*    public java(mainClassName: string, extraCLASSPATH: string, workingDirName: string): string {
-            let classpathOption = "-classpath";
-
-            let path = "." + BaseTest.pathSep + BaseTest.CLASSPATH;
-            if (extraCLASSPATH !== null) {
-                path = "." + BaseTest.pathSep + extraCLASSPATH + BaseTest.pathSep + BaseTest.CLASSPATH;
-            }
-
-            let args = [
-                "java",
-                classpathOption, path,
-                mainClassName
-            ];
-            System.out.println("executing: " + Arrays.toString(args));
-            return this.exec(args, null, workingDirName);
-        }
-
-        public jar(fileName: string, files: string[], workingDirName: string): void {
-            let workingDir = new File(workingDirName);
-            let stream = new JarOutputStream(new FileOutputStream(new File(workingDir, fileName)));
-            try {
-                for (let inputFileName of files) {
-                    let file = new File(workingDirName, inputFileName);
-                    this.addJarFile(file, workingDir, stream);
-                }
-            }
-            finally {
-                stream.close();
-            }
-        }
-
-        public exec(args: string[], envp: string[], workingDirName: string): string {
-            let cmdLine = args.join(" ");
-
-            let process = Runtime.getRuntime().exec(args, envp, workingDir);
-            let stdout = new BaseTest.StreamVacuum(process.getInputStream());
-            let stderr = new BaseTest.StreamVacuum(process.getErrorStream());
-            stdout.start();
-            stderr.start();
-            process.waitFor();
-            stdout.join();
-            stderr.join();
-            if (stdout.toString().length() > 0) {
-                return stdout.toString();
-            }
-            if (stderr.toString().length() > 0) {
-                System.err.println("compile stderr from: " + cmdLine);
-                System.err.println(stderr);
-            }
-            let ret = process.exitValue();
-            if (ret !== 0) {
-                System.err.println("failed");
-            }
-
-            return null;
-        }*/
-
     public checkTokens(template: string, expected: string, delimiterStartChar?: string,
         delimiterStopChar?: string): void {
         delimiterStartChar ??= "<";
@@ -224,7 +165,7 @@ export abstract class BaseTest {
 
     public getRandomDir(): string {
         const randomDir = this.#tmpdir + "/dir" + Math.trunc(Math.random() * 100000);
-        mkdirSync(randomDir, { recursive: true });
+        fs.mkdirSync(randomDir, { recursive: true });
 
         return randomDir;
     }

@@ -5,13 +5,11 @@
 
 /* eslint-disable jsdoc/require-param, jsdoc/require-returns */
 
-import * as os from "os";
-
 import { Coordinate } from "./Coordinate.js";
 import { basename, extname } from "../support/helpers.js";
 
 export class Misc {
-    public static readonly newLine = os.EOL;
+    public static readonly newLine = "\n";
 
     /**
       Makes it clear when a comparison is intended as reference equality.

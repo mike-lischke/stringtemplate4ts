@@ -5,7 +5,7 @@
 
 /* eslint-disable jsdoc/require-returns, jsdoc/require-param */
 
-import * as fs from "fs";
+import { fs } from "memfs";
 
 import { CharStream, Token } from "antlr4ng";
 
@@ -113,7 +113,7 @@ export class STGroupDir extends STGroup {
             return undefined;
         }
 
-        const stream = CharStream.fromString(content);
+        const stream = CharStream.fromString(content as string);
         stream.name = unqualifiedFileName;
 
         return this.doLoadTemplateFile(prefix, unqualifiedFileName, stream);

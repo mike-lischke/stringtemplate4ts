@@ -3,7 +3,7 @@
  * Licensed under the BSD-3 License. See License.txt in the project root for license information.
  */
 
-import { existsSync } from "fs";
+import { fs } from "memfs";
 
 import { STGroup } from "./STGroup.js";
 import { Misc } from "./misc/Misc.js";
@@ -77,7 +77,7 @@ export class STGroupFile extends STGroup {
             throw new Error("Group file names must end in .stg: " + fileName);
         }
 
-        if (existsSync(fileName)) {
+        if (fs.existsSync(fileName)) {
             if (STGroupFile.verbose) {
                 console.log("STGroupFile(" + fileName + ") " + resolve(fileName));
             }

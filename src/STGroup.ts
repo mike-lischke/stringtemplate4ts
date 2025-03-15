@@ -5,7 +5,7 @@
 
 /* eslint-disable jsdoc/require-returns, jsdoc/require-param */
 
-import * as fs from "fs";
+import { fs } from "memfs";
 
 import {
     BaseErrorListener, CharStream, CommonToken, CommonTokenStream, RecognitionException, Token,
@@ -639,7 +639,7 @@ export class STGroup {
 
                         if (fileURL.length > 0) {
                             const content = fs.readFileSync(fileURL, { encoding: this.encoding as BufferEncoding });
-                            const templateStream = CharStream.fromString(content);
+                            const templateStream = CharStream.fromString(content as string);
                             templateStream.name = fileName;
                             const code = g.loadTemplateFile("/", fileName, templateStream);
                             if (!code) {
