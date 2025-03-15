@@ -5,14 +5,13 @@
 
 import { ModelAdaptor } from "../ModelAdaptor.js";
 import { IInterpreter, IST, ISTGroup } from "../compiler/common.js";
-import { HashMap } from "../support/HashMap.js";
 
 // TODO: get rid of `unknown` as allowed type.
 // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
 export type AllowedMapKey = string | number | boolean | unknown;
 export type ValueOrIterable<Key extends AllowedMapKey, Value> = Key | Value | Iterable<Value> | IterableIterator<Key>;
 
-export class MapModelAdaptor<Key extends AllowedMapKey, Value> implements ModelAdaptor<HashMap<Key, Value>> {
+export class MapModelAdaptor<Key extends AllowedMapKey, Value> implements ModelAdaptor<Map<Key, Value>> {
 
     private static getDefaultValue<Value>(map: Map<unknown, Value>): Value | undefined {
         return map.get(ISTGroup.DEFAULT_KEY);

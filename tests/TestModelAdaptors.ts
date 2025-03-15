@@ -8,7 +8,7 @@
 import { ErrorBufferAllErrors } from "./ErrorBufferAllErrors.js";
 import { BaseTest } from "./BaseTest.js";
 import {
-    ModelAdaptor, Interpreter, ST, STNoSuchPropertyException, STGroupFile, STRuntimeMessage, HashMap,
+    ModelAdaptor, Interpreter, ST, STNoSuchPropertyException, STGroupFile, STRuntimeMessage,
 } from "../src/index.js";
 import { assertEquals } from "./junit.js";
 
@@ -149,7 +149,7 @@ export class TestModelAdaptors extends BaseTest {
         TestModelAdaptors.writeFile(this.tmpdir, "foo.stg", templates);
         const group = new STGroupFile(this.tmpdir + "/foo.stg");
         const st = group.getInstanceOf("foo");
-        st?.add("x", new HashMap<string, string>());
+        st?.add("x", new Map<string, string>());
         st?.add("y", null);
         const expecting = "NULL";
         const result = st?.render();
@@ -165,7 +165,7 @@ export class TestModelAdaptors extends BaseTest {
         const group = new STGroupFile(this.tmpdir + "/foo.stg");
         const st = group.getInstanceOf("foo");
 
-        const x = new HashMap<number, string>();
+        const x = new Map<number, string>();
         x.set(1, "value");
         st?.add("x", x);
         const expecting = "1";

@@ -32,7 +32,7 @@
 
 import { BaseTest } from "./BaseTest.js";
 import { assertEquals, assertNotNull } from "./junit.js";
-import { STGroupFile, ST, ErrorBuffer, STGroupString, Misc, HashMap, ErrorManager } from "../src/index.js";
+import { STGroupFile, ST, ErrorBuffer, STGroupString, Misc, ErrorManager } from "../src/index.js";
 
 import { Test } from "./decorators.js";
 
@@ -82,27 +82,6 @@ export class TestDictionaries extends BaseTest {
         st?.add("type", new ST("int"));
         st?.add("name", "x");
         const expecting = "int x = 0L;";
-        const result = st?.render();
-        assertEquals(expecting, result);
-    }
-
-    @Test
-    public testDictKeyLookupAsNonToStringableObject(): void {
-        // Make sure we try rendering stuff to string if not found as regular object
-        const templates = "foo(m,k) ::= \"<m.(k)>\"" + Misc.newLine;
-        TestDictionaries.writeFile(this.tmpdir, "test.stg", templates);
-
-        const group = new STGroupFile(this.tmpdir + "/test.stg");
-        const st = group.getInstanceOf("foo");
-        const m = new HashMap<BaseTest.HashableUser, string>();
-
-        m.set(new BaseTest.HashableUser(99, "parrt"), "first");
-        m.set(new BaseTest.HashableUser(172036, "tombu"), "second");
-        m.set(new BaseTest.HashableUser(391, "sriram"), "third");
-        st?.add("m", m);
-        st?.add("k", new BaseTest.HashableUser(172036, "tombu"));
-
-        const expecting = "second";
         const result = st?.render();
         assertEquals(expecting, result);
     }

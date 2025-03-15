@@ -6,7 +6,7 @@
 // cspell: disable
 
 import {
-    AutoIndentWriter, ErrorBuffer, ErrorManager, HashMap, Misc, NoIndentWriter, ST, STGroup, STGroupFile, STGroupString,
+    AutoIndentWriter, ErrorBuffer, ErrorManager, Misc, NoIndentWriter, ST, STGroup, STGroupFile, STGroupString,
     STNoSuchPropertyException, StringWriter, STRuntimeMessage,
 } from "../src/index.js";
 import { BaseTest } from "./BaseTest.js";
@@ -654,7 +654,7 @@ export class TestCoreBasics extends BaseTest {
         const template = "<if(lables)>has content<else>empty<endif>";
         const st = new ST(template);
 
-        const labels = new HashMap<string, string>();
+        const labels = new Map<string, string>();
         st?.add("lables", labels);
         const expected = "empty";
         const result = st?.render();

@@ -25,7 +25,6 @@ import { constructorFromUnknown, isIterator } from "./support/helpers.js";
 import { printf } from "fast-printf";
 import { StringWriter } from "./support/StringWriter.js";
 import { IErrorManager, IInstanceScope, IST, ISTGroup } from "./compiler/common.js";
-import { HashMap } from "./support/HashMap.js";
 
 export enum InterpreterOption {
     ANCHOR = 0,
@@ -417,7 +416,7 @@ export class Interpreter {
             return o;
         }
 
-        if (o instanceof Map || o instanceof HashMap) {
+        if (o instanceof Map) {
             if (scope?.st?.groupThatCreatedThisInstance.iterateAcrossValues) {
                 return o.values();
             }
@@ -831,7 +830,7 @@ export class Interpreter {
                     }
 
                     case Bytecode.INSTR_ARGS: {
-                        this.operands[++this.sp] = new HashMap<string, unknown>();
+                        this.operands[++this.sp] = new Map<string, unknown>();
 
                         break;
                     }
@@ -840,7 +839,7 @@ export class Interpreter {
                         nameIndex = Interpreter.getShort(code, ip);
                         ip += Bytecode.OPERAND_SIZE_IN_BYTES;
                         name = self.impl.strings[nameIndex];
-                        const attrs = this.operands[this.sp] as HashMap<string, unknown>;
+                        const attrs = this.operands[this.sp] as Map<string, unknown>;
                         this.passthru(scope, name, attrs);
 
                         break;
@@ -1122,7 +1121,7 @@ export class Interpreter {
     protected storeArgs(scope: IInstanceScope, argCount: number, st?: IST): void;
     protected storeArgs(...args: unknown[]): void {
         if (typeof args[1] !== "number") {
-            const [scope, attrs, st] = args as [IInstanceScope, HashMap<string, unknown>, IST | undefined];
+            const [scope, attrs, st] = args as [IInstanceScope, Map<string, unknown>, IST | undefined];
 
             let noSuchAttributeReported = false;
             if (attrs && st) {
@@ -1174,7 +1173,7 @@ export class Interpreter {
                             continue;
                         }
 
-                        if (!attrs || !attrs.containsKey(argumentKey)) {
+                        if (!attrs || !attrs.has(argumentKey)) {
                             argumentCountMismatch = true;
                             break;
                         }

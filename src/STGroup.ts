@@ -35,7 +35,6 @@ import { GroupParser } from "./compiler/generated/GroupParser.js";
 import { Compiler } from "./compiler/Compiler.js";
 import { GroupLexer } from "./compiler/generated/GroupLexer.js";
 import { Factories } from "./compiler/factories.js";
-import { HashMap } from "./support/HashMap.js";
 import { isAbsolutePath } from "./support/helpers.js";
 
 /**
@@ -145,7 +144,6 @@ export class STGroup {
         const registry = new TypeRegistry<ModelAdaptor<Object>>();
         registry.put(Object, new ObjectModelAdaptor());
         registry.put(ST, new STModelAdaptor());
-        registry.put(HashMap, new MapModelAdaptor());
         registry.put(Map, new MapModelAdaptor());
         registry.put(Aggregate, new AggregateModelAdaptor());
         this.adaptors = registry;

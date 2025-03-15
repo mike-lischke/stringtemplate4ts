@@ -64,5 +64,4 @@ export * from "./reflection/Method.js";
 export * from "./reflection/IMember.js";
 export * from "./reflection/Field.js";
 
-export * from "./support/HashMap.js";
 export * from "./support/TimeZone.js";

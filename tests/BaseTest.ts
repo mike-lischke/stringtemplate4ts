@@ -23,24 +23,6 @@ export abstract class BaseTest {
         public getName(): string { return this.#name; }
     };
 
-    public static HashableUser = class HashableUser extends BaseTest.User {
-        public constructor(id: number, name: string) { super(id, name); }
-
-        public hashCode(): number {
-            return this.id;
-        }
-
-        public equals(o: unknown): boolean {
-            if (o instanceof HashableUser) {
-                const hu = o;
-
-                return this.id === hu.id && this.getName() === hu.getName();
-            }
-
-            return false;
-        }
-    };
-
     #tmpdir = ""; // Set in `setUp()`.
 
     public static writeFile(dir: string, fileName: string, content: string): void {
@@ -175,5 +157,4 @@ export abstract class BaseTest {
 // eslint-disable-next-line @typescript-eslint/no-namespace, no-redeclare
 export namespace BaseTest {
     export type User = InstanceType<typeof BaseTest.User>;
-    export type HashableUser = InstanceType<typeof BaseTest.HashableUser>;
 }

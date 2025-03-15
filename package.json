@@ -31,7 +31,7 @@
         "generate-parsers": "antlr-ng -Dlanguage=TypeScript -o src/compiler/generated --package parser --exact-output-dir --encoding utf8 src/compiler/*.g4"
     },
     "dependencies": {
-        "antlr4ng": "3.0.15",
+        "antlr4ng": "3.0.16",
         "fast-printf": "1.6.10",
         "he": "1.2.0",
         "luxon": "3.5.0",
@@ -43,7 +43,7 @@
         "@types/luxon": "3.4.2",
         "@typescript-eslint/eslint-plugin": "6.14.0",
         "@typescript-eslint/parser": "6.13.2",
-        "antlr-ng": "1.0.3",
+        "antlr-ng": "1.0.9",
         "esbuild": "0.25.0",
         "eslint": "8.55.0",
         "eslint-plugin-import": "2.29.0",
@@ -53,6 +53,6 @@
         "ts-jest": "29.1.1",
         "ts-node": "10.9.2",
         "tsx": "4.19.3",
-        "typescript": "5.5.3"
+        "typescript": "5.8.2"
     }
 }
