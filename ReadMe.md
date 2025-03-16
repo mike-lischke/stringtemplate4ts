@@ -10,6 +10,11 @@ This repository contains a TypeScript port of the StringTemplate 4 template engi
 - A MurmurHash implementation used by the HashMap class.
 - The HashMap class.
 
+> **Note: Breaking Change**
+> Starting with version 2.0 the package no longer depends on any Node.js support. Instead it's now ready to be used also in browser environments. To make this possible the Node.js fs module was replaced by [memfs](https://github.com/streamich/memfs), an in-memory file system.
+> 
+> You can still use the package like before, with the exception that all group files have to be provided in memfs now. Read more below in the "How To Use" section.
+
 ST4TS (StringTemplate4TypeScript) is a template engine for generating source code, web pages, emails, or any other formatted text output. ST4TS is particularly good at multi-targeted code generators, multiple site skins, and internationalization/localization.
 
 The main website for the original ST implementation is:
@@ -40,6 +45,70 @@ npm i stringtemplate4ts
 
 Or use your preferred package manager.
 
+## How to Use
+
+ST4TS works with template (`*.st`) and template group (`*.stg`) files. These files can import other files, which makes it necessary to provide a file system from which the automatic import can be performed. In Java the library directly accessed the real file system, which is not desirable in a web environment. Instead [memfs](https://github.com/streamich/memfs) comes into play. You can use it just like you use a disk based file system. The only difference is that you first have to transfer your group files to memfs under any path you like (which you then pass on to the ST4TS classes).
+
+There's a way to use the [native filesystem](https://github.com/streamich/memfs/blob/master/docs/node/index.md) with memfs, if you still want that.
+
+Other than that there's no difference in usage. For example the test cases still look the same as before. Here's one example:
+
+```typescript
+    @Test
+    public testSimpleAdaptor(): void {
+        const templates = "foo(x) ::= \"<x.id>: <x.name>\"\n";
+        TestModelAdaptors.writeFile(this.tmpdir, "foo.stg", templates);
+        const group = new STGroupFile(this.tmpdir + "/foo.stg");
+        group.registerModelAdaptor(BaseTest.User, new TestModelAdaptors.UserAdaptor());
+        const st = group.getInstanceOf("foo");
+        st?.add("x", new BaseTest.User(100, "parrt"));
+        const expecting = "100: parrt";
+        const result = st?.render();
+        assertEquals(expecting, result);
+    }
+```
+
+simply because they already generate all files manually. The function used to write the file is this:
+
+```typescript
+    public static writeFile(dir: string, fileName: string, content: string): void {
+        try {
+            const f = dir + "/" + fileName;
+            const realDir = dirname(f); // fileName can contain subdirectories.
+            if (!fs.existsSync(realDir)) {
+                fs.mkdirSync(realDir, { recursive: true });
+            }
+
+            fs.writeFileSync(f, content);
+        } catch (ioe) {
+            if (ioe instanceof Error) {
+                console.error("can't write file " + fileName + "\n" + ioe.stack);
+            } else {
+                throw ioe;
+            }
+        }
+    }
+
+```
+
+The general approach, however, is to prime memfs with the files you want it to work with. Here's an example from the [memfs documentation](https://github.com/streamich/memfs/blob/master/docs/node/usage.md):
+
+```typescript
+import { fs, vol } from 'memfs';
+
+const json = {
+  './README.md': '1',
+  './src/index.js': '2',
+  './node_modules/debug/index.js': '3',
+};
+vol.fromJSON(json, '/app');
+
+fs.readFileSync('/app/README.md', 'utf8'); // 1
+vol.readFileSync('/app/src/index.js', 'utf8'); // 2
+```
+
+This allows to get the template files from anywhere (file system, fetch, HTML input fields, source code etc.).
+
 ## Building from Source
 
 The source is at github.com:
@@ -65,6 +134,10 @@ npm run test
 in the project root.
 
 ## Release Notes
+
+### 2.0.0
+
+The library no longer needs Node.js to run. Instead it uses the in-memory file system memfs.
 
 ### 1.0.9
 
