@@ -120,7 +120,7 @@ const { fs } = memfs();
 // Tell ST4TS to use it.
 useFileSystem(fs);
 
-// Create a root folder called /templates, which will receive templates files needed when ST4TS has to import them.
+// Create a root folder for your templates and copy them from the physical disk into that.
 fs.mkdirSync("/templates", { recursive: true });
 
 // Copy here all the files from the physical file system to the virtual one.
@@ -155,6 +155,10 @@ npm run test
 in the project root.
 
 ## Release Notes
+
+### 2.0.1
+
+Allow configuration of ST4TS with a custom file system.
 
 ### 2.0.0
 
