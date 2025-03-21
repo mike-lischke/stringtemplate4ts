@@ -10,10 +10,10 @@ This repository contains a TypeScript port of the StringTemplate 4 template engi
 - A MurmurHash implementation used by the HashMap class.
 - The HashMap class.
 
-> **Note: Breaking Change**
-> Starting with version 2.0 the package no longer depends on any Node.js support. Instead it's now ready to be used also in browser environments. To make this possible the Node.js fs module was replaced by [memfs](https://github.com/streamich/memfs), an in-memory file system.
+> **Breaking Change:**
+> Starting with version 2.0 the package no longer depends on any Node.js support. Instead it's now ready to be used also in browser environments. To make this possible the file system to be used can now be configured. By default [memfs](https://github.com/streamich/memfs) is used, but can also specify Node.js `fs`.
 > 
-> You can still use the package like before, with the exception that all group files have to be provided in memfs now. Read more below in the "How To Use" section.
+> Read more below in the "How To Use" section.
 
 ST4TS (StringTemplate4TypeScript) is a template engine for generating source code, web pages, emails, or any other formatted text output. ST4TS is particularly good at multi-targeted code generators, multiple site skins, and internationalization/localization.
 
@@ -91,7 +91,7 @@ simply because they already generate all files manually. The function used to wr
 
 ```
 
-The general approach, however, is to prime memfs with the files you want it to work with. Here's an example from the [memfs documentation](https://github.com/streamich/memfs/blob/master/docs/node/usage.md):
+The general approach, however, is to create an own file system and prime it with the files you need. Here's an example from the [memfs documentation](https://github.com/streamich/memfs/blob/master/docs/node/usage.md):
 
 ```typescript
 import { fs, vol } from 'memfs';
@@ -108,6 +108,27 @@ vol.readFileSync('/app/src/index.js', 'utf8'); // 2
 ```
 
 This allows to get the template files from anywhere (file system, fetch, HTML input fields, source code etc.).
+
+Here's a real life example for the use of a custom file system in ST4TS.
+
+```typescript
+import { memfs } from "memfs";
+
+// Create the new private file system.
+const { fs } = memfs();
+
+// Tell ST4TS to use it.
+useFileSystem(fs);
+
+// Create a root folder called /templates, which will receive templates files needed when ST4TS has to import them.
+fs.mkdirSync("/templates", { recursive: true });
+
+// Copy here all the files from the physical file system to the virtual one.
+...
+
+```
+
+With that in place you can start creating STGroupFile instances (etc.) and give them the path from your virtual file system.
 
 ## Building from Source
 

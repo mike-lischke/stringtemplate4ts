@@ -3,7 +3,21 @@
  * Licensed under the BSD-3 License. See License.txt in the project root for license information.
  */
 
+import { type IFs, fs as defaultFs } from "memfs";
+
 import { Constructor } from "../reflection/IMember.js";
+
+export let fileSystem: IFs = defaultFs;
+
+/**
+ * Sets the filesystem to be used for importing templates.
+ * Default is the memfs filesystem.
+ *
+ * @param fs The filesystem to use.
+ */
+export const useFileSystem = (fs: IFs): void => {
+    fileSystem = fs;
+};
 
 /** Expresses the Java concept of object equality (equality based on the content of two objects). */
 export interface IEquatable {

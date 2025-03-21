@@ -387,17 +387,17 @@ export class CodeGenerator {
         this.includeExpr(context.includeExpr()!);
         let index = 1;
 
-        while (index < context.children!.length) {
+        while (index < context.children.length) {
             // Jump over the dot.
             ++index;
 
-            const child = context.children![index++] as TerminalNode;
+            const child = context.children[index++] as TerminalNode;
             if (child.symbol.type === STLexer.ID) {
                 // A simple ID.
                 this.prop(child);
             } else {
                 // A map expression in parentheses.
-                this.prop(context.children![index]);
+                this.prop(context.children[index]);
                 index += 2;
             }
         }

@@ -3,13 +3,11 @@
  * Licensed under the BSD-3 License. See License.txt in the project root for license information.
  */
 
-import { fs } from "memfs";
-
 import { STGroup } from "./STGroup.js";
 import { Misc } from "./misc/Misc.js";
 import { ICompiledST } from "./compiler/common.js";
 import { Factories } from "./compiler/factories.js";
-import { dirname, resolve } from "./support/helpers.js";
+import { dirname, fileSystem, resolve } from "./support/helpers.js";
 
 /**
  * The internal representation of a single group file (which must end in
@@ -23,7 +21,7 @@ export class STGroupFile extends STGroup {
 
     protected alreadyLoaded = false;
 
-    /** Load a file relative to current directory or from root or via CLASSPATH. */
+    /** Load a file relative to current directory or from root. */
     public constructor(fileName: string);
 
     /** Convenience ctor */
@@ -77,7 +75,7 @@ export class STGroupFile extends STGroup {
             throw new Error("Group file names must end in .stg: " + fileName);
         }
 
-        if (fs.existsSync(fileName)) {
+        if (fileSystem.existsSync(fileName)) {
             if (STGroupFile.verbose) {
                 console.log("STGroupFile(" + fileName + ") " + resolve(fileName));
             }

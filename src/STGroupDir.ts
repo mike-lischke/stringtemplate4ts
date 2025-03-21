@@ -5,14 +5,13 @@
 
 /* eslint-disable jsdoc/require-returns, jsdoc/require-param */
 
-import { fs } from "memfs";
-
 import { CharStream, Token } from "antlr4ng";
 
 import { STGroup } from "./STGroup.js";
-import { Misc } from "./misc/Misc.js";
 import { ICompiledST, ISTGroup } from "./compiler/common.js";
 import { Factories } from "./compiler/factories.js";
+import { Misc } from "./misc/Misc.js";
+import { fileSystem } from "./support/helpers.js";
 
 // TODO: caching?
 
@@ -69,7 +68,7 @@ export class STGroupDir extends STGroup {
 
         this.encoding = encoding;
         this.groupDirName = dirName;
-        const stat = fs.statSync(dirName);
+        const stat = fileSystem.statSync(dirName);
         if (stat.isDirectory()) {
             // we found the directory and it'll be file based
             if (STGroupDir.verbose) {
@@ -108,7 +107,7 @@ export class STGroupDir extends STGroup {
 
         let content;
         try {
-            content = fs.readFileSync(fullPath, this.encoding as BufferEncoding);
+            content = fileSystem.readFileSync(fullPath, this.encoding as BufferEncoding);
         } catch {
             return undefined;
         }
@@ -150,7 +149,7 @@ export class STGroupDir extends STGroup {
 
         // see if parent of template name is a group file
         const groupFile = this.groupDirName + "/" + parent + STGroupDir.GROUP_FILE_EXTENSION;
-        if (fs.existsSync(groupFile)) {
+        if (fileSystem.existsSync(groupFile)) {
             this.loadGroupFile(prefix, groupFile);
 
             return this.rawGetTemplate(name);

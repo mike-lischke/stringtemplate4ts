@@ -3,16 +3,14 @@
   * Licensed under the BSD- 3 License.See License.txt in the project root for license information.
   */
 
-// cspell: disable
-
-import { ErrorBufferAllErrors } from "./ErrorBufferAllErrors.js";
-import { BaseTest } from "./BaseTest.js";
 import {
-    ModelAdaptor, Interpreter, ST, STNoSuchPropertyException, STGroupFile, STRuntimeMessage,
+    Interpreter, ModelAdaptor, ST, STGroupFile, STNoSuchPropertyException, STRuntimeMessage,
 } from "../src/index.js";
+import { BaseTest } from "./BaseTest.js";
+import { ErrorBufferAllErrors } from "./ErrorBufferAllErrors.js";
 import { assertEquals } from "./junit.js";
 
-import { Test, Override } from "./decorators.js";
+import { Test } from "./decorators.js";
 
 export class TestModelAdaptors extends BaseTest {
     private static UserAdaptor = class UserAdaptor implements ModelAdaptor<BaseTest.User> {
@@ -23,7 +21,7 @@ export class TestModelAdaptors extends BaseTest {
             }
 
             if (propertyName === "name") {
-                return model.getName();
+                return model.name;
             }
 
             throw new STNoSuchPropertyException(undefined, BaseTest.User, "User." + propertyName);
@@ -47,14 +45,11 @@ export class TestModelAdaptors extends BaseTest {
 
     private static SuperUser = class SuperUser extends BaseTest.User {
         protected bitmask: number;
+
         public constructor(id: number, name: string) {
             super(id, name);
             this.bitmask = 0x8080;
-        }
-
-        @Override
-        public override  getName(): string {
-            return "super " + super.getName();
+            this.name = "super " + this.name;
         }
     };
 

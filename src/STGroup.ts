@@ -5,37 +5,35 @@
 
 /* eslint-disable jsdoc/require-returns, jsdoc/require-param */
 
-import { fs } from "memfs";
-
 import {
     BaseErrorListener, CharStream, CommonToken, CommonTokenStream, RecognitionException, Token,
 } from "antlr4ng";
 
 import { ICompiledST, ICompilerParameters, IST, ISTGroup, RegionType, isCompiledST } from "./compiler/common.js";
 
-import { STErrorListener } from "./STErrorListener.js";
-import { ST } from "./ST.js";
-import { ModelAdaptor } from "./ModelAdaptor.js";
-import { Interpreter } from "./Interpreter.js";
-import { InstanceScope } from "./InstanceScope.js";
 import { AttributeRenderer } from "./AttributeRenderer.js";
+import { Compiler } from "./compiler/Compiler.js";
+import { Factories } from "./compiler/factories.js";
 import { FormalArgument } from "./compiler/FormalArgument.js";
+import { GroupLexer } from "./compiler/generated/GroupLexer.js";
+import { GroupParser } from "./compiler/generated/GroupParser.js";
 import { STException } from "./compiler/STException.js";
+import { InstanceScope } from "./InstanceScope.js";
+import { Interpreter } from "./Interpreter.js";
 import { Aggregate } from "./misc/Aggregate.js";
 import { AggregateModelAdaptor } from "./misc/AggregateModelAdaptor.js";
+import { ErrorManager } from "./misc/ErrorManager.js";
 import { ErrorType } from "./misc/ErrorType.js";
 import { MapModelAdaptor } from "./misc/MapModelAdaptor.js";
 import { Misc } from "./misc/Misc.js";
 import { ObjectModelAdaptor } from "./misc/ObjectModelAdaptor.js";
 import { STModelAdaptor } from "./misc/STModelAdaptor.js";
 import { TypeRegistry } from "./misc/TypeRegistry.js";
-import { ErrorManager } from "./misc/ErrorManager.js";
+import { ModelAdaptor } from "./ModelAdaptor.js";
 import { Constructor } from "./reflection/IMember.js";
-import { GroupParser } from "./compiler/generated/GroupParser.js";
-import { Compiler } from "./compiler/Compiler.js";
-import { GroupLexer } from "./compiler/generated/GroupLexer.js";
-import { Factories } from "./compiler/factories.js";
-import { isAbsolutePath } from "./support/helpers.js";
+import { ST } from "./ST.js";
+import { STErrorListener } from "./STErrorListener.js";
+import { fileSystem, isAbsolutePath } from "./support/helpers.js";
 
 /**
  * A directory or directory tree of {@code .st} template files and/or group files.
@@ -631,12 +629,13 @@ export class STGroup {
                         g = new STGroup(this.delimiterStartChar, this.delimiterStopChar);
                         g.setListener(this.getListener());
                         let fileURL = "";
-                        if (fs.existsSync(fileUnderRoot)) {
+                        if (fileSystem.existsSync(fileUnderRoot)) {
                             fileURL = fileUnderRoot;
                         }
 
                         if (fileURL.length > 0) {
-                            const content = fs.readFileSync(fileURL, { encoding: this.encoding as BufferEncoding });
+                            const content = fileSystem.readFileSync(fileURL,
+                                { encoding: this.encoding as BufferEncoding });
                             const templateStream = CharStream.fromString(content as string);
                             templateStream.name = fileName;
                             const code = g.loadTemplateFile("/", fileName, templateStream);
@@ -646,7 +645,7 @@ export class STGroup {
                         }
                     } else {
                         if (isGroupFile) {
-                            if (fs.existsSync(fileUnderRoot)) {
+                            if (fileSystem.existsSync(fileUnderRoot)) {
                                 g = Factories.createStringTemplateGroupFile?.(fileUnderRoot, this.encoding,
                                     this.delimiterStartChar, this.delimiterStopChar);
                             } else {
@@ -654,7 +653,7 @@ export class STGroup {
                             }
                         } else {
                             if (isGroupDir) {
-                                if (fs.existsSync(fileUnderRoot)) {
+                                if (fileSystem.existsSync(fileUnderRoot)) {
                                     g = Factories.createStringTemplateGroupDir?.(fileUnderRoot);
                                 } else {
                                     g = Factories.createStringTemplateGroupDir?.(fileName);
@@ -710,7 +709,7 @@ export class STGroup {
 
         let parser: GroupParser;
         try {
-            const content = fs.readFileSync(fileName, { encoding: this.encoding as BufferEncoding });
+            const content = fileSystem.readFileSync(fileName, { encoding: this.encoding as BufferEncoding });
             const stream = CharStream.fromString(content.toString());
             stream.name = fileName.substring(fileName.lastIndexOf("/") + 1);
             const lexer = new GroupLexer(stream);
@@ -757,7 +756,7 @@ export class STGroup {
      * Load template file into this group using absolute {@code fileName}.
      */
     public loadAbsoluteTemplateFile(fileName: string): ICompiledST | undefined {
-        const content = fs.readFileSync(fileName, { encoding: this.encoding as BufferEncoding });
+        const content = fileSystem.readFileSync(fileName, { encoding: this.encoding as BufferEncoding });
         const stream = CharStream.fromString(content.toString());
 
         return this.loadTemplateFile("", fileName, stream);

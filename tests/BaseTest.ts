@@ -13,17 +13,17 @@ import { AfterEach, BeforeEach } from "./decorators.js";
 export abstract class BaseTest {
     public static User = class User {
         public id: number;
-        #name: string;
+        public name: string;
+
         public constructor(id: number, name: string) {
             this.id = id;
-            this.#name = name;
+            this.name = name;
         }
         public isManager(): boolean { return true; }
         public hasParkingSpot(): boolean { return true; }
-        public getName(): string { return this.#name; }
     };
 
-    #tmpdir = ""; // Set in `setUp()`.
+    public tmpdir = ""; // Set in `setUp()`.
 
     public static writeFile(dir: string, fileName: string, content: string): void {
         try {
@@ -63,22 +63,18 @@ export abstract class BaseTest {
         }
     }
 
-    public get tmpdir(): string {
-        return this.#tmpdir;
-    }
-
     @BeforeEach
     public setUp(): void {
         STGroup.defaultGroup = new STGroup();
         Compiler.subtemplateCount = 0;
 
         const testDirectory = this.constructor.name + "-" + new Date().getMilliseconds();
-        this.#tmpdir = resolve("/tmp", testDirectory);
+        this.tmpdir = resolve("/tmp", testDirectory);
     };
 
     @AfterEach
     public shutDown(): void {
-        BaseTest.deleteFile(this.#tmpdir);
+        BaseTest.deleteFile(this.tmpdir);
     }
     /**
      * Creates a file "Test.java" in the directory dirName containing a main
@@ -146,12 +142,11 @@ export abstract class BaseTest {
     }
 
     public getRandomDir(): string {
-        const randomDir = this.#tmpdir + "/dir" + Math.trunc(Math.random() * 100000);
+        const randomDir = this.tmpdir + "/dir" + Math.trunc(Math.random() * 100000);
         fs.mkdirSync(randomDir, { recursive: true });
 
         return randomDir;
     }
-
 }
 
 // eslint-disable-next-line @typescript-eslint/no-namespace, no-redeclare
